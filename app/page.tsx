@@ -11,8 +11,6 @@ import useConfiguration from './hooks/useConfiguration';
 
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit } = useChat();
-  const { useRag, llm, similarityMetric, setConfiguration } = useConfiguration();
-
   const messagesEndRef = useRef(null);
   const [configureOpen, setConfigureOpen] = useState(false);
 
@@ -25,12 +23,12 @@ export default function Home() {
   }, [messages]);
 
   const handleSend = (e) => {
-    handleSubmit(e, { options: { body: { useRag, llm, similarityMetric}}});
+    handleSubmit(e);
   }
 
   const handlePrompt = (promptText) => {
     const msg: Message = { id: crypto.randomUUID(),  content: promptText, role: 'user' };
-    append(msg, { options: { body: { useRag, llm, similarityMetric}}});
+    append(msg);
   };
 
   return (
@@ -76,14 +74,6 @@ export default function Home() {
         <Footer />
       </section>
     </main>
-    <Configure
-      isOpen={configureOpen}
-      onClose={() => setConfigureOpen(false)}
-      useRag={useRag}
-      llm={llm}
-      similarityMetric={similarityMetric}
-      setConfiguration={setConfiguration}
-    />
     </>
   )
 }
