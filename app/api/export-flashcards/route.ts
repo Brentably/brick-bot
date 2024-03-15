@@ -29,7 +29,6 @@ export async function POST(req: Request) {
             });
             deck.add_note(note);
         }
-
         await genanki.Package(deck).write_to_file('flashcards.apkg');
     } catch (e) {
         throw e;
