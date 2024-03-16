@@ -42,7 +42,7 @@ export default function Home() {
   return (
     <>
       <main className="flex h-screen flex-col items-center justify-center">
-        <section className='chatbot-section flex flex-col origin:w-[800px] w-full origin:h-[735px] h-full rounded-md p-2 md:p-6'>
+        <section className='chatbot-section flex flex-col origin:w-[800px] w-full h-full rounded-md p-2 md:p-6'>
           <div className='chatbot-header pb-6'>
             <div className='flex justify-between'>
               <div className='flex items-center gap-2'>
@@ -55,7 +55,7 @@ export default function Home() {
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
             <div className='absolute w-full overflow-x-hidden'>
-              {messages.map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} />)}
+              {messages.slice(1).map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} />)}
             </div>
           </div>
           {hasStarted ?
