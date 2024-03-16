@@ -45,23 +45,29 @@ export async function POST(req: Request) {
       })
       .on("end", () => console.log(fullMessage));
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        for await (const chunk of res) {
-          let anyChunk: any = chunk;
-          if (anyChunk?.delta && typeof anyChunk.delta.text === "string") {
-            console.log(anyChunk);
-            fullMessage += anyChunk.delta.text
-            controller.enqueue(anyChunk.delta.text);
-          }
-        }
-        controller.close();
-      },
-    });
+    // const stream = new ReadableStream({
+    //   async start(controller) {
+    //     for await (const chunk of res) {
+    //       let anyChunk: any = chunk;
+    //       if (anyChunk?.delta && typeof anyChunk.delta.text === "string") {
+    //         console.log(anyChunk);
+    //         fullMessage += anyChunk.delta.text
+    //         controller.enqueue(anyChunk.delta.text);
+    //       }
+    //     }
+    //     controller.close();
+    //   },
+    // });
 
 
 
-    return new StreamingTextResponse(stream);
+    return new StreamingTextResponse(
+      AnthropicStream(res, {
+        onText: (text) => {
+          fullMessage += text;
+        },
+      })
+    );
   } catch (e) {
     throw e;
   }

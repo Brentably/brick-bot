@@ -1,11 +1,15 @@
 import Link from "next/link";
-import {forwardRef, JSXElementConstructor, useMemo, RefObject} from "react";
+import {forwardRef, JSXElementConstructor, useMemo, RefObject, useEffect} from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const Bubble:JSXElementConstructor<any> = forwardRef(function Bubble({ content }, ref) {
   const { role } = content;
   const isUser = role === "user"
+
+  useEffect(() => {
+    if(content.content) console.log(JSON.stringify(content.content))
+  }, [content])
 
   return (
     <div ref={ref  as RefObject<HTMLDivElement>} className={`block mt-4 md:mt-6 pb-[7px] clear-both ${isUser ? 'float-right' : 'float-left'}`}>
@@ -17,6 +21,7 @@ const Bubble:JSXElementConstructor<any> = forwardRef(function Bubble({ content }
             </div>
           ) : (
             <Markdown
+            className=" whitespace-pre-line"
               remarkPlugins={[remarkGfm]}
               components={{
                 code({ node, children, ...props }) {
