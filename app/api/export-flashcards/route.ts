@@ -1,4 +1,7 @@
 // hey alice I commented the whole thing out b/c it was fucking up the compoiler
+export {}
+// i put the above `export {}` because it allows the project to build. feel free to delete it
+
 
 // const genanki = require('genanki');
 // const random = require('random');
