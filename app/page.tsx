@@ -4,8 +4,19 @@ import Bubble from '../components/Bubble'
 import { useChat, Message, CreateMessage } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 
+
 const LANGUAGE_TO_HELLO = {
-  "German": "Hallo!"
+  "German": "Hallo!",
+  "French": "Bonjour!",
+  "Spanish": "¡Hola!",
+  "Chinese": "你好！",
+  "Russian": "Привет!",
+  "Arabic": "مرحبا!",
+  "Portuguese": "Olá!",
+  "Japanese": "こんにちは！",
+  "Hindi": "नमस्ते!",
+  "Bengali": "হ্যালো!",
+  "Italian": "Ciao!"
 }
 
 
@@ -13,7 +24,7 @@ export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload} = useChat();
   const messagesEndRef = useRef(null);
   const [hasStarted, setHasStarted] = useState(false);
-  const [targetLanguage, setTargetLanguage] = useState('German')
+  const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
 
   const beginChat = () => {
     setHasStarted(true)
@@ -51,6 +62,26 @@ export default function Home() {
               </div>
             </div>
             <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.</p>
+          <div className="mt-1">
+            <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
+            <select
+              id="language-select"
+              value={targetLanguage}
+              onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
+              className="chatbot-input ml-2"
+            >
+              <option value="German">German</option>
+              <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="Chinese">Chinese</option>
+              <option value="Portuguese">Portuguese</option>
+              <option value="Japanese">Japanese</option>
+              <option value="Hindi">Hindi</option>
+              <option value="Bengali">Bengali</option>
+              <option value="Italian">Italian</option>
+            </select>
+          </div>
+            
           </div>
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
