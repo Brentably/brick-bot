@@ -17,11 +17,7 @@ export default function Home() {
 
   const beginChat = () => {
     setHasStarted(true)
-    const messageArr: Message[] = [
-      { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage] , role: 'user' },
-    ]
-    setMessages(messageArr)
-    reload()
+    append({content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user'}, {options: {body: {language: targetLanguage}}})
   }
 
   const scrollToBottom = () => {
