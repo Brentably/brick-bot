@@ -1,14 +1,28 @@
 "use client";
-import {useEffect, useRef, useState} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Bubble from '../components/Bubble'
-import { useChat, Message } from 'ai/react';
+import { useChat, Message, CreateMessage } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
+
+const LANGUAGE_TO_HELLO = {
+  "German": "Hallo!"
+}
 
 
 export default function Home() {
-  const { append, messages, input, handleInputChange, handleSubmit } = useChat();
+  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload} = useChat();
   const messagesEndRef = useRef(null);
-  const [configureOpen, setConfigureOpen] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState('German')
+
+  const beginChat = () => {
+    setHasStarted(true)
+    const messageArr: Message[] = [
+      { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage] , role: 'user' },
+    ]
+    setMessages(messageArr)
+    reload()
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -23,37 +37,43 @@ export default function Home() {
   }
 
   const handlePrompt = (promptText) => {
-    const msg: Message = { id: crypto.randomUUID(),  content: promptText, role: 'user' };
+    const msg: Message = { id: crypto.randomUUID(), content: promptText, role: 'user' };
     append(msg);
   };
 
+
+
   return (
     <>
-    <main className="flex h-screen flex-col items-center justify-center">
-      <section className='chatbot-section flex flex-col origin:w-[800px] w-full origin:h-[735px] h-full rounded-md p-2 md:p-6'>
-        <div className='chatbot-header pb-6'>
-          <div className='flex justify-between'>
-            <div className='flex items-center gap-2'>
-              <RobotIcon />
-              <h1 className='chatbot-text-primary text-xl md:text-2xl font-medium'>Nick Rosenksi is a bitch</h1>
+      <main className="flex h-screen flex-col items-center justify-center">
+        <section className='chatbot-section flex flex-col origin:w-[800px] w-full origin:h-[735px] h-full rounded-md p-2 md:p-6'>
+          <div className='chatbot-header pb-6'>
+            <div className='flex justify-between'>
+              <div className='flex items-center gap-2'>
+                <RobotIcon />
+                <h1 className='chatbot-text-primary text-xl md:text-2xl font-medium'>Nick Rosenksi is a bitch</h1>
+              </div>
+            </div>
+            <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.</p>
+          </div>
+
+          <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
+            <div className='absolute w-full overflow-x-hidden'>
+              {messages.map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} />)}
             </div>
           </div>
-          <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.</p>
-        </div>
-        <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
-          <div className='absolute w-full overflow-x-hidden'>
-            {messages.map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} />)}
-          </div>
-        </div>
-        <form className='flex h-[40px] gap-2' onSubmit={handleSend}>
-          <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-sm md:text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' />
-          <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-            <SendIcon />
-            <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
-          </button>
-        </form>
-      </section>
-    </main>
+          {hasStarted ?
+            <form className='flex h-[40px] gap-2' onSubmit={handleSend}>
+              <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-sm md:text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' />
+              <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                <SendIcon />
+                <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
+              </button>
+            </form>
+            : <button onClick={beginChat} className='rounded-md p-2.5 justify-center items-center text-white bg-black'>Begin</button>
+          }
+        </section>
+      </main>
     </>
   )
 }

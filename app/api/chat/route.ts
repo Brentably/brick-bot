@@ -11,10 +11,11 @@ const client = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY
 });
 
+const createSystemPrompt = (language: string) => `Hey, I'm a new ${language} language learner. Can we start at a really easy, basic level, and you can practice speaking with me? Make sure to adjust to my level! Correct any mistakes as I go, and tutor me in learning the language. Be encouraging.`
 
 export async function POST(req: Request) {
   try {
-    const {messages} = await req.json();
+    const {messages, language} = await req.json();
 
     const latestMessage = messages[messages?.length - 1]?.content;
 
@@ -29,7 +30,8 @@ export async function POST(req: Request) {
     const res = client.messages.stream({
       model: "claude-3-opus-20240229",
       messages: [...messages],
-      max_tokens: 4096
+      max_tokens: 4096,
+      system: createSystemPrompt(language)
     })
     // .on('text', (text) => console.log(text))
 
