@@ -110,9 +110,9 @@ body {
 }
 
 .talk-bubble {
-  text-align: left;
-  display: inline-block;
-  position: relative;
+  /* text-align: left; */
+  /* display: inline-block; */
+  /* position: relative; */
   color: var(--text-secondary-inverse);
   background-color: var(--background-bubble-secondary);
   border-radius: 10px;
@@ -125,6 +125,25 @@ body {
   background-color: var(--background-bubble-primary);
   border-radius: 10px;
   border-bottom-right-radius: 0px;
+}
+
+@layer components {
+  .talk-bubble p, .talk-bubble li {
+    @apply break-words
+  }
+  .talk-bubble p {
+    @apply whitespace-pre-wrap
+  }
+  .talk-bubble li {
+    @apply whitespace-normal
+  }
+  .talk-bubble ol {
+    @apply list-decimal pl-8 space-y-2
+  }
+  .talk-bubble ul {
+    @apply list-disc pl-8 space-y-2
+  }
+  
 }
 
 .talk-bubble svg {
