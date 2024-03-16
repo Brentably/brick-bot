@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     let fullMessage = "";
     const res = client.messages
       .stream({
-        model: "claude-3-opus-20240307",
+        model: "claude-3-opus-20240229",
         messages: [...messages],
         max_tokens: 4096,
         system: createSystemPrompt(language),
