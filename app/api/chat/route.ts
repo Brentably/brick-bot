@@ -16,6 +16,8 @@ const client = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
 });
 
+export const runtime = 'edge'; // 'nodejs' is the default
+
 const createSystemPrompt = (language: string) =>
   `Hey, I'm a new ${language} language learner. Can we start at a really easy, basic level, and you can practice speaking with me? Make sure to adjust to my level! Correct any mistakes as I go, and tutor me in learning the language. Be encouraging.`;
 
@@ -72,3 +74,4 @@ export async function POST(req: Request) {
     throw e;
   }
 }
+
