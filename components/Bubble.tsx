@@ -2,6 +2,7 @@ import Link from "next/link";
 import {forwardRef, JSXElementConstructor, useMemo, RefObject, useEffect} from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks"
 
 const Bubble:JSXElementConstructor<any> = forwardRef(function Bubble({ content }, ref) {
   const { role } = content;
@@ -14,14 +15,14 @@ const Bubble:JSXElementConstructor<any> = forwardRef(function Bubble({ content }
   return (
     <div ref={ref  as RefObject<HTMLDivElement>} className={`block mt-4 md:mt-6 pb-[7px] clear-both ${isUser ? 'float-right' : 'float-left'}`}>
       <div className="flex justify-end">
-        <div className={`talk-bubble${isUser ? ' user' : ''} p-2 md:p-4`}>
+        <div className={`talk-bubble${isUser ? ' user' : ''} p-2 md:p-4 leading-[1.65] pr-9 grid grid-cols-1 gap-3 relative`}>
           {content.processing ? (
             <div className="w-6 h-6 flex items-center justify-center">
               <div className="dot-flashing" />
             </div>
           ) : (
             <Markdown
-            className=" whitespace-pre-line"
+            className=" contents"
               remarkPlugins={[remarkGfm]}
               components={{
                 code({ node, children, ...props }) {
@@ -30,7 +31,14 @@ const Bubble:JSXElementConstructor<any> = forwardRef(function Bubble({ content }
                        {children}
                    </code>
                    )
-                }
+                },
+                // p({node, children, ...props}) {
+                //   return (
+                //     <p {...props} className="whitespace-pre-wrap">
+                //       {children}
+                //     </p>
+                //   )
+                // }
               }}
             >
               {content?.content}
