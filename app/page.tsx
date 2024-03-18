@@ -22,36 +22,29 @@ const LANGUAGE_TO_HELLO = {
 
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
-    onFinish: (message) => {
-      processInstructorMessage(message)
-    }
+    onResponse: () => setIsStreaming(true),
+    onFinish: () => setIsStreaming(false)
   });
 
+  const [isStreaming, setIsStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const [flashcards, setFlashcards] = useState([])
+
+  // useEffect(() => {
+  //   if(isStreaming) return
+
+  // }, [isStreaming])
 
   const beginChat = () => {
     setHasStarted(true)
     append({ content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' }, { options: { body: { language: targetLanguage } } })
   }
 
-  const processInstructorMessage = async (message: Message) => {
-    const pupilMessage = messages.at(-2).content
-    console.log(`pupilMessage: ${pupilMessage}`)
-    fetch(`/api/flashcardsFromMessage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-         language: targetLanguage,
-          pupilMessage,
-          instructorMessage: message.content
-        })
-    });
-  }
+
+
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,7 +52,32 @@ export default function Home() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    if (isStreaming) return
+    const processLatestMessage = async (message: Message) => {
+      if(message.role !== 'assistant') return
+      if(messages.length < 3) return // dont process first lil bit
+
+      console.log('pLM on message: ', message.content)
+      console.log(messages)
+      const pupilMessage = messages.at(-2).content
+      console.log(`pupilMessage: ${pupilMessage}`)
+      fetch(`/api/flashcardsFromMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          language: targetLanguage,
+          pupilMessage,
+          instructorMessage: message.content
+        })
+      });
+    }
+
+
+    console.log('processing latest message at index', messages.length-1)
+    if(messages.length) processLatestMessage(messages[messages.length-1])
+  }, [messages, isStreaming, targetLanguage]);
 
   const handleSend = (e) => {
     handleSubmit(e);

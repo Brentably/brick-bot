@@ -8,9 +8,9 @@ const Bubble:JSXElementConstructor<any> = forwardRef(function Bubble({ content }
   const { role } = content;
   const isUser = role === "user"
 
-  useEffect(() => {
-    if(content.content) console.log(JSON.stringify(content.content))
-  }, [content])
+  // useEffect(() => {
+  //   if(content.content) console.log(JSON.stringify(content.content))
+  // }, [content])
 
   return (
     <div ref={ref  as RefObject<HTMLDivElement>} className={`block mt-4 md:mt-6 pb-[7px] clear-both ${isUser ? 'float-right' : 'float-left'}`}>

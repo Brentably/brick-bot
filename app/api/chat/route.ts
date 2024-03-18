@@ -41,7 +41,6 @@ export async function POST(req: Request) {
       })
       .on("end", () => console.log(JSON.stringify(fullMessage)));
 
-
     return new StreamingTextResponse(
       AnthropicStream(res, {
         onText: (text) => {
