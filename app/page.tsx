@@ -21,14 +21,22 @@ const LANGUAGE_TO_HELLO = {
 
 
 export default function Home() {
-  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload} = useChat();
+  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload} = useChat({onFinish: (message) => {
+    processMessage(message)
+  }});
+  
   const messagesEndRef = useRef(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
+  const [flashcards, setFlashcards] = useState([])
 
   const beginChat = () => {
     setHasStarted(true)
     append({content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user'}, {options: {body: {language: targetLanguage}}})
+  }
+
+  const processMessage = (message: Message) => {
+    console.log('processing')
   }
 
   const scrollToBottom = () => {
