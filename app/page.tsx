@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import Bubble from '../components/Bubble'
-import { useChat, Message, CreateMessage } from 'ai/react';
+import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 
 
@@ -23,7 +23,7 @@ const LANGUAGE_TO_HELLO = {
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
     onFinish: (message) => {
-      processMessage(message)
+      processInstructorMessage(message)
     }
   });
 
@@ -37,8 +37,20 @@ export default function Home() {
     append({ content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' }, { options: { body: { language: targetLanguage } } })
   }
 
-  const processMessage = (message: Message) => {
-    console.log('processing')
+  const processInstructorMessage = async (message: Message) => {
+    const pupilMessage = messages.at(-2).content
+    console.log(`pupilMessage: ${pupilMessage}`)
+    fetch(`/api/flashcardsFromMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+         language: targetLanguage,
+          pupilMessage,
+          instructorMessage: message.content
+        })
+    });
   }
 
   const scrollToBottom = () => {
