@@ -21,10 +21,12 @@ const LANGUAGE_TO_HELLO = {
 
 
 export default function Home() {
-  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload} = useChat({onFinish: (message) => {
-    processMessage(message)
-  }});
-  
+  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
+    onFinish: (message) => {
+      processMessage(message)
+    }
+  });
+
   const messagesEndRef = useRef(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
@@ -32,7 +34,7 @@ export default function Home() {
 
   const beginChat = () => {
     setHasStarted(true)
-    append({content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user'}, {options: {body: {language: targetLanguage}}})
+    append({ content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' }, { options: { body: { language: targetLanguage } } })
   }
 
   const processMessage = (message: Message) => {
@@ -70,27 +72,56 @@ export default function Home() {
               </div>
             </div>
             <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.</p>
-          <div className="mt-1">
-            <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
-            <select
-              id="language-select"
-              value={targetLanguage}
-              onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
-              className="chatbot-input ml-2"
-            >
-              <option value="German">German</option>
-              <option value="Spanish">Spanish</option>
-              <option value="French">French</option>
-              <option value="Chinese">Chinese</option>
-              <option value="Portuguese">Portuguese</option>
-              <option value="Japanese">Japanese</option>
-              <option value="Hindi">Hindi</option>
-              <option value="Bengali">Bengali</option>
-              <option value="Italian">Italian</option>
-            </select>
+            <div className="mt-1">
+              <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
+              <select
+                id="language-select"
+                value={targetLanguage}
+                onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
+                className="chatbot-input ml-2"
+              >
+                <option value="German">German</option>
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Portuguese">Portuguese</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Bengali">Bengali</option>
+                <option value="Italian">Italian</option>
+              </select>
+            </div>
+
           </div>
-            
-          </div>
+          {/* <button onClick={() => {
+            fetch(`http://localhost:8000/export-flashcards`, {
+              method: "POST",
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                "jsonFlashcards": [
+                  { "front": "test", "back": "test" }
+                ]
+              })
+            })
+              .then(response => response.blob())
+              .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'flashcards.apkg';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+              })
+              .catch((error) => {
+                console.error('Error:', error);
+              });
+          }}>
+            TEST BUTTON
+          </button> */}
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
             <div className='absolute w-full overflow-x-hidden'>
