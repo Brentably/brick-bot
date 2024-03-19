@@ -19,6 +19,10 @@ const LANGUAGE_TO_HELLO = {
   "Italian": "Ciao!"
 }
 
+type Flashcard = {
+  front: string
+  back: string
+}
 
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
@@ -30,7 +34,7 @@ export default function Home() {
   const messagesEndRef = useRef(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
-  const [flashcards, setFlashcards] = useState([])
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
 
   // useEffect(() => {
   //   if(isStreaming) return
@@ -61,7 +65,7 @@ export default function Home() {
       console.log(messages)
       const pupilMessage = messages.at(-2).content
       console.log(`pupilMessage: ${pupilMessage}`)
-      fetch(`/api/flashcardsFromMessage`, {
+      fetch(`/api/unparsedFlashcardsFromMessage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -71,7 +75,27 @@ export default function Home() {
           pupilMessage,
           instructorMessage: message.content
         })
-      });
+      }).then(resp => resp.json())
+      .then(resp => {
+        console.log('resp: ', resp)
+        const uF = resp.unparsedFlashcards
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(uF, "text/xml");
+        console.log('xmlDoc')
+        console.log(xmlDoc)
+        let flashcards:Flashcard[] = []
+        
+        xmlDoc.querySelectorAll('card').forEach((card, i) => {
+          console.log(`card ${i}`)
+          console.log(card)
+          const front = card.querySelector('front').textContent
+          const back = card.querySelector('back').textContent
+          flashcards.push({ front, back })
+        })
+
+        console.log(flashcards)
+
+        setFlashcards(pf => [...pf, ...flashcards])})
     }
 
 

@@ -19,7 +19,7 @@ const client = new Anthropic({
 export const runtime = 'edge'; // 'nodejs' is the default
 
 const createSystemPrompt = (language: string) =>
-  `You are an expert ${language} tutor mentoring a pupil. Start at a really easy, basic level, and you can practice speaking with the pupil? Make sure to adjust to their level! Correct any mistakes as they go, and tutor them in learning the language. Be encouraging. Try to keep the conversation interesting and educational. Every response generally should correct the users mistakes, if there are any, and then reply to the user, if possible.`;
+  `You are an expert ${language} tutor mentoring a pupil. Start at a really easy, basic level, and you can practice speaking with the pupil? Make sure to adjust to their level! Correct any mistakes as they go, and tutor them in learning the language. Be encouraging. Try to keep the conversation interesting and educational. Every response generally should correct the user's mistakes, if there are any, and then reply to the user, if possible.`;
 
 export async function POST(req: Request) {
   try {
