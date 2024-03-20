@@ -45,12 +45,14 @@ Output: YES
 // B. if yes, make flashcards (can do a different call for each flashcard if better.)
 const createSystemPromptB = (language: string) =>
   `<instructions>
-You are a ${language} language expert. You are well versed in creating excellent flashcards for language learners using spaced repetition software such as Anki and SuperMemo. You will be given a snippet of conversation between a language instructor and their pupil. Create one or multiple flashcards based on the instructor's feedback. 
-Reply in XML, and only XLM.
-Use <card>, <front>, <back> tags to specify the card. Wrap your entire answer in a <cards> tag, so it can be parsed correctly.
-
-Do not make cards about spelling. 
-ONLY make cards about vocabulary, grammar, and phrasing. Make sure all cards are relevant to being more fluent in speaking / writing ${language}.
+You are a ${language} language expert. You are well versed in creating excellent cloze flashcards for language learners using spaced repetition software such as Anki and SuperMemo. You will be given a snippet of conversation between a language instructor and their pupil. Create one or multiple flashcards based on the instructor's feedback. 
+Reply in XML, and only XML.
+There are 2 types of cards you can make.
+1. <vocab> cards. These identify a ${language} word that the user should know.
+Example: <vocab>schön</vocab>
+2. <cloze> cards which have <deletion> tags to specify what words to cloze delete.
+Example:
+<cloze>Es war <deletion>schön</deltion> mit zu <deletion>reden</deletion>.</cloze>
 </instructions>
 
 <example>
@@ -58,10 +60,8 @@ Pupil: Was heist "Scheu" auf English?
 Instructor: \"Scheu\" bedeutet auf Englisch \"shyness\" oder \"inhibition\".\n\nDer vollständige Satz, den ich gesagt habe, war: \"Keine Scheu, Fehler sind völlig normal am Anfang.\"\n\nDas heißt: \"Don't be shy, making mistakes is totally normal in the beginning.\"\n\nEs ist ganz natürlich, am Anfang beim Lernen einer neuen Sprache Fehler zu machen. Das ist überhaupt kein Problem! Durch Üben und meine Korrekturen wirst du immer besser werden.\n\nLass uns deine letzte Aussage noch einmal zusammen anschauen: \"Was heist 'Scheu' auf English?\" Hier hast du \"heißt\" falsch geschrieben. Die korrekte Schreibweise ist \"heißt\". Ansonsten war der Satz aber prima!
 Output: 
 <cards>
-<card>
-<front>Scheu auf Englisch</front>
-<back>"shyness" oder "inhibition"</back>
-</card>
+<vocab>Scheu</vocab>
+<cloze>Keine <deletion>Scheu</deletion>, Fehler sind völlig normal am Anfang.</cloze>
 </cards>
 </example>
 `;
