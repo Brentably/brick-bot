@@ -20,10 +20,16 @@ const LANGUAGE_TO_HELLO = {
   "Italian": "Ciao!"
 }
 
-type Flashcard = {
+type BasicFlashcard = {
   front: string
   back: string
 }
+type ClozeFlashcard = {
+  text: string,
+  back_extra: string
+}
+
+type Flashcard = BasicFlashcard | ClozeFlashcard
 
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
@@ -46,26 +52,44 @@ export default function Home() {
 
   // }, [isStreaming])
 
-  const playNextAudio = async () => {
-    console.log("HELLO????")
-    if (sentenceQueue.length === 0) return;
+  // const playNextAudio = async () => {
+  //   console.log("HELLO????")
+  //   if (sentenceQueue.length === 0) return;
 
-    const res = await fetch('/api/tts', {
-      method: 'POST', 
-      body: JSON.stringify({
-        "input": sentenceQueue[0]
-      })
-    });
-    const blob = await res.blob();
-    const blobURL = URL.createObjectURL(blob);
-    const audio = new Audio(blobURL);
-    audio.onended = () => {
-      setSentenceQueue((queue) => queue.slice(1));
-    };
-    await audio.play();
-  }
+  //   const res = await fetch('/api/tts', {
+  //     method: 'POST', 
+  //     body: JSON.stringify({
+  //       "input": sentenceQueue[0]
+  //     })
+  //   });
+  //   const blob = await res.blob();
+  //   const blobURL = URL.createObjectURL(blob);
+  //   const audio = new Audio(blobURL);
+  //   audio.onended = () => {
+  //     setSentenceQueue((queue) => queue.slice(1));
+  //   };
+  //   await audio.play();
+  // }
 
   useEffect(() => {
+    const playNextAudio = async () => {
+      console.log("HELLO????")
+      if (sentenceQueue.length === 0) return;
+
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        body: JSON.stringify({
+          "input": sentenceQueue[0]
+        })
+      });
+      const blob = await res.blob();
+      const blobURL = URL.createObjectURL(blob);
+      const audio = new Audio(blobURL);
+      audio.onended = () => {
+        setSentenceQueue((queue) => queue.slice(1));
+      };
+      await audio.play();
+    }
     playNextAudio();
   }, [sentenceQueue]);
 
@@ -123,7 +147,7 @@ export default function Home() {
       console.log(messages)
       const pupilMessage = messages.at(-2).content
       console.log(`pupilMessage: ${pupilMessage}`)
-      
+
       fetch(`/api/unparsedFlashcardsFromMessage`, {
         method: 'POST',
         headers: {
@@ -143,13 +167,23 @@ export default function Home() {
             console.log(xmlDoc)
             let flashcards: Flashcard[] = []
 
-            xmlDoc.querySelectorAll('card').forEach((card, i) => {
-              console.log(`card ${i}`)
-              console.log(card)
-              const front = card.querySelector('front').textContent
-              const back = card.querySelector('back').textContent
-              flashcards.push({ front, back })
+            xmlDoc.querySelectorAll('cloze').forEach(clozeCard => {
+              console.log('cloze card: ')
+              console.dir(clozeCard)
+              let text = ''
+              let counter = 1
+                Array.from(clozeCard.childNodes).forEach((node, i) => {
+                  console.dir(node)
+                  console.log(node.nodeType)
+                  if(node.nodeType === 3) {
+                    text += node.textContent
+                  } else if(node.nodeName) {
+
+                  }
+                  else throw new Error('uncovered type of node')
+                })
             })
+            
             return flashcards
           }
 

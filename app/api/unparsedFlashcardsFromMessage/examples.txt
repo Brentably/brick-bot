@@ -1,0 +1,16 @@
+collecting examples that could be used for later. I think negative examples are really powerful, cause they can potentially be used to validate good responses, but not sure how to use them right now.
+
+bad example; prompt B
+---
+pupil: Danke! Mein lieblingsfarbe ist blue
+instructor: Das ist super, dass du deine Lieblingsfarbe auf Deutsch sagen möchtest! Lass mich dir dabei helfen.\n\nWenn du über eine Farbe sprichst, musst du das Wort \"Farbe\" benutzen und die Farbe selbst wird kleingeschrieben. Außerdem ist das Wort \"Farbe\" feminin, also musst du \"die\" davor setzen und ein \"e\" am Ende hinzufügen. Die korrekte Schreibweise von \"blau\" auf Deutsch ist außerdem mit \"au\" statt \"ue\". \n\nHier ist der Satz nochmal richtig:\n\n\"Meine Lieblingsfarbe ist blau.\"\n\nSehr gut! Hast du auch eine zweitliebste Farbe? Welche Farben magst du noch?
+output:
+<cards>
+<cloze><deletion>Meine</deletion> <deletion>Lieblingsfarbe</deletion> ist <deletion>blau</deletion>.</cloze>
+<vocab>blau</vocab>
+<cloze>Wenn du über eine <deletion>Farbe</deletion> sprichst, musst du das Wort "Farbe" benutzen und die Farbe selbst wird <deletion>kleingeschrieben</deletion>.</cloze>
+<cloze>Das Wort "Farbe" ist <deletion>feminin</deletion>, also musst du "<deletion>die</deletion>" davor setzen und ein "<deletion>e</deletion>" am Ende hinzufügen.</cloze>
+</cards>
+---
+
+why is it bad: the cloze sentences are excessive. Test articles in order to test masculine and feminine knowledge. Not explcitly. Also, don't copy what the instructor is saying. Instead, use a short example sentences as cloze sentences.

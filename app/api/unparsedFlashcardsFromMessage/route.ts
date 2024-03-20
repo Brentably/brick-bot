@@ -50,8 +50,12 @@ Reply in XML, and only XML.
 There are 2 types of cards you can make.
 1. <vocab> cards. These identify a ${language} word or short phrase that the user should know. They specify the vocab word / phrase in ${language}.
 Example: <vocab>schön</vocab>
+Use a vocab card when it's clear the pupil is being corrected on the correct vocab word or phrase.
+
 2. <cloze> cards which have <deletion> tags to specify what words to cloze delete.
 Example: <cloze>Es war <deletion>schön</deltion> mit zu <deletion>reden</deletion>.</cloze>
+Use a cloze sentence when the instructor gives a correct sentence to the pupil in order to remedy some mistakes. Do NOT use a cloze sentence on a direct comment / explanation made by the instructor. The sentence should be an example sentence around the conversation, not the actual feedback / grammatical / linguistic explanation.
+
 </instructions>
 
 <example>
@@ -66,13 +70,23 @@ Output:
 
 <example>
 Pupil: Hallo, ich bin \"wondering\" ob du sind eine gute Robot
-Instructor: "Hallo! Ich sehe, dass du einen Satz auf Deutsch schreiben möchtest. Das ist super! Lass uns deinen Satz ein wenig verbessern:\n\nAnstatt \"ich bin wondering\" kannst du sagen \"ich frage mich\". \"Wondering\" ist ein englisches Wort und auf Deutsch sagt man stattdessen \"sich fragen\".\n\nBei \"ob du sind eine gute Robot\" gibt es ein paar kleine Fehler. \"Sind\" benutzt man nur bei \"Sie\" oder in der Mehrzahl. Für \"du\" nimmt man stattdessen \"bist\". Und \"Robot\" ist auch ein englisches Wort. Auf Deutsch sagt man \"Roboter\".\n\nDer verbesserte Satz lautet also:\n\n\"Hallo, ich frage mich, ob du ein guter Roboter bist.\"\n\nIch hoffe, das hilft dir weiter! Und um deine Frage zu beantworten: Ich gebe mein Bestes, um ein guter Roboter und Lehrer zu sein. Lass uns weiter üben und sag mir, wenn du noch Fragen hast!"
+Instructor: Hallo! Ich sehe, dass du einen Satz auf Deutsch schreiben möchtest. Das ist super! Lass uns deinen Satz ein wenig verbessern:\n\nAnstatt \"ich bin wondering\" kannst du sagen \"ich frage mich\". \"Wondering\" ist ein englisches Wort und auf Deutsch sagt man stattdessen \"sich fragen\".\n\nBei \"ob du sind eine gute Robot\" gibt es ein paar kleine Fehler. \"Sind\" benutzt man nur bei \"Sie\" oder in der Mehrzahl. Für \"du\" nimmt man stattdessen \"bist\". Und \"Robot\" ist auch ein englisches Wort. Auf Deutsch sagt man \"Roboter\".\n\nDer verbesserte Satz lautet also:\n\n\"Hallo, ich frage mich, ob du ein guter Roboter bist.\"\n\nIch hoffe, das hilft dir weiter! Und um deine Frage zu beantworten: Ich gebe mein Bestes, um ein guter Roboter und Lehrer zu sein. Lass uns weiter üben und sag mir, wenn du noch Fragen hast!
 Output: 
 <cards>
 <vocab>ich frage mich</vocab>
 <vocab>sich fragen</vocab>
 <vocab>Roboter</vocab>
 <cloze>Hallo, <deletion>ich frage mich</deletion>, ob du ein guter <deletion>Roboter</deletion> <deletion>bist</deletion>.</cloze>
+</cards>
+</example>
+
+<example>
+Pupil: Danke! Mein lieblingsfarbe ist blue
+Instructor: Sehr gut! Du hast den Satz fast perfekt gebildet. Nur zwei kleine Korrekturen:\n\n1. \"mein\" sollte hier \"meine\" sein, da \"Lieblingsfarbe\" ein feminines Wort ist.\n2. \"blue\" auf Englisch heißt \"blau\" auf Deutsch.\n\nDer korrekte Satz lautet also: \"Meine Lieblingsfarbe ist blau.\"\n\nBlau ist eine schöne Farbe! Sie erinnert mich an den Himmel und das Meer. Was verbindest du mit der Farbe blau?
+Output:
+<cards>
+<cloze><deletion>Meine</deletion> <deletion>Lieblingsfarbe</deletion> ist <deletion>blau</deletion>.</cloze>
+<vocab>blau</vocab>
 </cards>
 </example>
 
