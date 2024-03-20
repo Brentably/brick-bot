@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import Bubble from '../components/Bubble'
-import { useChat, Message, CreateMessage } from 'ai/react';
+import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 
 
@@ -19,27 +19,36 @@ const LANGUAGE_TO_HELLO = {
   "Italian": "Ciao!"
 }
 
+type Flashcard = {
+  front: string
+  back: string
+}
 
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
-    onFinish: (message) => {
-      processMessage(message)
-    }
+    onResponse: () => setIsStreaming(true),
+    onFinish: () => setIsStreaming(false)
   });
 
+  const [isStreaming, setIsStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
-  const [flashcards, setFlashcards] = useState([])
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
+
+  // useEffect(() => {
+  //   if(isStreaming) return
+
+  // }, [isStreaming])
 
   const beginChat = () => {
     setHasStarted(true)
     append({ content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' }, { options: { body: { language: targetLanguage } } })
   }
 
-  const processMessage = (message: Message) => {
-    console.log('processing')
-  }
+
+
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -61,7 +70,53 @@ export default function Home() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    if (isStreaming) return
+    const processLatestMessage = async (message: Message) => {
+      if (message.role !== 'assistant') return
+      if (messages.length < 3) return // dont process first lil bit
+
+      console.log('pLM on message: ', message.content)
+      console.log(messages)
+      const pupilMessage = messages.at(-2).content
+      console.log(`pupilMessage: ${pupilMessage}`)
+      fetch(`/api/unparsedFlashcardsFromMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          language: targetLanguage,
+          pupilMessage,
+          instructorMessage: message.content
+        })
+      }).then(resp => resp.json())
+        .then(resp => {
+          console.log('resp: ', resp)
+          const uF = resp.unparsedFlashcards
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(uF, "text/xml");
+          console.log('xmlDoc')
+          console.log(xmlDoc)
+          let flashcards: Flashcard[] = []
+
+          xmlDoc.querySelectorAll('card').forEach((card, i) => {
+            console.log(`card ${i}`)
+            console.log(card)
+            const front = card.querySelector('front').textContent
+            const back = card.querySelector('back').textContent
+            flashcards.push({ front, back })
+          })
+
+          console.log(flashcards)
+
+          setFlashcards(pf => [...pf, ...flashcards])
+        })
+    }
+
+
+    console.log('processing latest message at index', messages.length - 1)
+    if (messages.length) processLatestMessage(messages[messages.length - 1])
+  }, [messages, isStreaming, targetLanguage]);
 
   const handleSend = (e) => {
     handleSubmit(e);
@@ -86,57 +141,60 @@ export default function Home() {
               </div>
             </div>
             <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.</p>
-            <div className="mt-1">
-              <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
-              <select
-                id="language-select"
-                value={targetLanguage}
-                onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
-                className="chatbot-input ml-2"
-              >
-                <option value="German">German</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-                <option value="Chinese">Chinese</option>
-                <option value="Portuguese">Portuguese</option>
-                <option value="Japanese">Japanese</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Bengali">Bengali</option>
-                <option value="Italian">Italian</option>
-              </select>
+            <div className='flex flex-col justify-between'>
+              <div className="mt-1">
+                <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
+                <select
+                  id="language-select"
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
+                  className="chatbot-input ml-2"
+                >
+                  <option value="German">German</option>
+                  <option value="Spanish">Spanish</option>
+                  <option value="French">French</option>
+                  <option value="Chinese">Chinese</option>
+                  <option value="Portuguese">Portuguese</option>
+                  <option value="Japanese">Japanese</option>
+                  <option value="Hindi">Hindi</option>
+                  <option value="Bengali">Bengali</option>
+                  <option value="Italian">Italian</option>
+                </select>
+              </div>
+              <div className=''>
+                Flashcards created: {flashcards.length}
+              </div>
+              <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
+                
+                fetch(true ? `https://api.brick.bot/export-flashcards?language=${targetLanguage}` : `http://localhost:8000/export-flashcards?language=${targetLanguage}`, {
+                  method: "POST",
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    jsonFlashcards: flashcards
+                  })
+                })
+                  .then(response => response.blob())
+                  .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'flashcards.apkg';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                  })
+                  .catch((error) => {
+                    console.error('Error:', error);
+                  });
+              }}>
+                Download flashcards!
+              </button>
             </div>
 
           </div>
-          <button onClick={playAudio}>TEST BUTTON</button>
-          {/* <button onClick={() => {
-            fetch(`http://localhost:8000/export-flashcards`, {
-              method: "POST",
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                "jsonFlashcards": [
-                  { "front": "test", "back": "test" }
-                ]
-              })
-            })
-              .then(response => response.blob())
-              .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'flashcards.apkg';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-              })
-              .catch((error) => {
-                console.error('Error:', error);
-              });
-          }}>
-            TEST BUTTON
-          </button> */}
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
             <div className='absolute w-full overflow-x-hidden'>
