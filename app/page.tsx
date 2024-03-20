@@ -102,7 +102,7 @@ export default function Home() {
 
   const playAudio = async () => {
     const res = await fetch('/api/tts', {
-      method: 'POST', 
+      method: 'POST',
       body: JSON.stringify({
         "input": messages[messages.length - 1].content
       })
@@ -135,22 +135,24 @@ export default function Home() {
         })
       }).then(resp => resp.json())
         .then(resp => {
-          console.log('resp: ', resp)
-          const uF = resp.unparsedFlashcards
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(uF, "text/xml");
-          console.log('xmlDoc')
-          console.log(xmlDoc)
-          let flashcards: Flashcard[] = []
+          function parseFlashcards(unparsedFlashcards: string) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(unparsedFlashcards, "text/xml");
+            console.log('xmlDoc')
+            console.log(xmlDoc)
+            let flashcards: Flashcard[] = []
 
-          xmlDoc.querySelectorAll('card').forEach((card, i) => {
-            console.log(`card ${i}`)
-            console.log(card)
-            const front = card.querySelector('front').textContent
-            const back = card.querySelector('back').textContent
-            flashcards.push({ front, back })
-          })
+            xmlDoc.querySelectorAll('card').forEach((card, i) => {
+              console.log(`card ${i}`)
+              console.log(card)
+              const front = card.querySelector('front').textContent
+              const back = card.querySelector('back').textContent
+              flashcards.push({ front, back })
+            })
+            return flashcards
+          }
 
+          const flashcards = parseFlashcards(resp.unparsedFlashcards)
           console.log(flashcards)
 
           setFlashcards(pf => [...pf, ...flashcards])
@@ -209,7 +211,7 @@ export default function Home() {
                 Flashcards created: {flashcards.length}
               </div>
               <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-                
+
                 fetch(`https://api.brick.bot/export-flashcards?language=${targetLanguage}`, {
                   method: "POST",
                   headers: {

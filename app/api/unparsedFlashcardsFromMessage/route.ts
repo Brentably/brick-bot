@@ -110,7 +110,7 @@ export async function POST(req: Request) {
 
     
     console.log(`unparsed flashcards: \n${unparsedFlashcards}`)
-
+// we send unparsed flashcards b/c edge runtime doesn't have DOMParser
     return Response.json({unparsedFlashcards: unparsedFlashcards})
   } catch (e) {
     throw e;
