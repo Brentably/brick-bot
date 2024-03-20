@@ -94,6 +94,10 @@ export default function Home() {
   }, [sentenceQueue]);
 
   useEffect(() => {
+    console.log(process.env)
+  }, [])
+
+  useEffect(() => {
     console.log(messages.length);
     if (messages.length) {
       console.log(messages[messages.length - 1].content);
@@ -136,7 +140,70 @@ export default function Home() {
     await new Audio(blobURL).play()
   }
 
+
+
   useEffect(() => {
+    const createClozeCard = async (clozeCardXml: Element) => {
+      console.log('createClozeCard called')
+      console.log('cloze card xml: ')
+      console.dir(clozeCardXml)
+      let foreignSentenceClozed = ''
+      const foreignSentenceBase = clozeCardXml.textContent
+      let counter = 1
+      Array.from(clozeCardXml.childNodes).forEach((node, i) => {
+        if (node.nodeType === 3) {
+          foreignSentenceClozed += node.textContent
+        } else if (node instanceof Element && node.tagName === 'deletion') {
+          const clozeDeletion = `{{c${counter}::${node.textContent}}}`
+          counter++
+          foreignSentenceClozed += clozeDeletion
+        }
+        else throw new Error(`uncovered type of node: ${node.nodeName}`)
+      })
+
+      const resp = await fetch(`/api/getClozeEnglishTranslation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          language: targetLanguage,
+          sentence: foreignSentenceBase
+        })
+      })
+      console.log(`resp: `, resp)
+      const englishTranslationJSON = await resp.json()
+      console.log('englishTranlsationJSON: ', englishTranslationJSON)
+      const englishTranslation = englishTranslationJSON.englishTranslation
+      const formattedCardText =
+        `${foreignSentenceClozed}
+      <br/><br/>
+    ${englishTranslation}`
+      console.log('clozeText =', foreignSentenceClozed)
+      const clozeFlashcard: ClozeFlashcard = {
+        text: formattedCardText,
+        back_extra: ''
+      }
+      return clozeFlashcard
+    }
+
+    async function createFlashcards(unparsedFlashcards: string) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(unparsedFlashcards, "text/xml");
+      console.log('xmlDoc')
+      console.log(xmlDoc)
+      let flashcardsPromises: (Promise<Flashcard>)[] = []
+
+      xmlDoc.querySelectorAll('cloze').forEach(clozeCardXml => {
+
+        flashcardsPromises.push(createClozeCard(clozeCardXml))
+      })
+
+      const flashcards = await Promise.all(flashcardsPromises);
+
+      return flashcards
+    }
+
     scrollToBottom();
     if (isStreaming) return
     const processLatestMessage = async (message: Message) => {
@@ -159,39 +226,8 @@ export default function Home() {
           instructorMessage: message.content
         })
       }).then(resp => resp.json())
-        .then(resp => {
-          function parseFlashcards(unparsedFlashcards: string) {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(unparsedFlashcards, "text/xml");
-            console.log('xmlDoc')
-            console.log(xmlDoc)
-            let flashcards: Flashcard[] = []
-
-            xmlDoc.querySelectorAll('cloze').forEach(clozeCard => {
-              console.log('cloze card: ')
-              console.dir(clozeCard)
-              let text = ''
-              let counter = 1
-                Array.from(clozeCard.childNodes).forEach((node, i) => {
-                  console.dir(node)
-                  console.log(node.nodeType)
-                  if(node.nodeType === 3) {
-                    text += node.textContent
-                  } else if(node.nodeName) {
-
-                  }
-                  else throw new Error('uncovered type of node')
-                })
-            })
-            
-            return flashcards
-          }
-
-          const flashcards = parseFlashcards(resp.unparsedFlashcards)
-          console.log(flashcards)
-
-          setFlashcards(pf => [...pf, ...flashcards])
-        })
+        .then(resp => createFlashcards(resp.unparsedFlashcards))
+        .then(flashcards => setFlashcards(flashcards))
     }
 
     console.log('processing latest message at index', messages.length - 1)
@@ -245,8 +281,9 @@ export default function Home() {
                 Flashcards created: {flashcards.length}
               </div>
               <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-
-                fetch(`https://api.brick.bot/export-flashcards?language=${targetLanguage}`, {
+                // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                fetch(url, {
                   method: "POST",
                   headers: {
                     'Content-Type': 'application/json'
