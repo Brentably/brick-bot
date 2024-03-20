@@ -175,7 +175,7 @@ export default function Home() {
               </div>
               <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
                 
-                fetch(true ? `https://api.brick.bot/export-flashcards?language=${targetLanguage}` : `http://localhost:8000/export-flashcards?language=${targetLanguage}`, {
+                fetch(`https://api.brick.bot/export-flashcards?language=${targetLanguage}`, {
                   method: "POST",
                   headers: {
                     'Content-Type': 'application/json'
@@ -190,7 +190,7 @@ export default function Home() {
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = 'flashcards.apkg';
+                    a.download = 'brick-bot-flashcards.apkg';
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
