@@ -45,6 +45,20 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const playAudio = async () => {
+    console.log("playing")
+    const res = await fetch('/api/tts', {
+      method: 'POST', 
+      body: JSON.stringify({
+        "input": "this is a test message"
+      })
+    })
+    const blob = await res.blob()
+    const blobURL = URL.createObjectURL(blob)
+    console.log(blobURL)
+    const audio = await new Audio(blobURL).play()
+  }
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -93,6 +107,7 @@ export default function Home() {
             </div>
 
           </div>
+          <button onClick={playAudio}>TEST BUTTON</button>
           {/* <button onClick={() => {
             fetch(`http://localhost:8000/export-flashcards`, {
               method: "POST",
