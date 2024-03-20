@@ -123,6 +123,7 @@ export default function Home() {
       console.log(messages)
       const pupilMessage = messages.at(-2).content
       console.log(`pupilMessage: ${pupilMessage}`)
+      
       fetch(`/api/unparsedFlashcardsFromMessage`, {
         method: 'POST',
         headers: {
@@ -158,7 +159,6 @@ export default function Home() {
           setFlashcards(pf => [...pf, ...flashcards])
         })
     }
-
 
     console.log('processing latest message at index', messages.length - 1)
     if (messages.length) processLatestMessage(messages[messages.length - 1])

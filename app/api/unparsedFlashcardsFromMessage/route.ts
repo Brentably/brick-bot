@@ -48,11 +48,10 @@ const createSystemPromptB = (language: string) =>
 You are a ${language} language expert. You are well versed in creating excellent cloze flashcards for language learners using spaced repetition software such as Anki and SuperMemo. You will be given a snippet of conversation between a language instructor and their pupil. Create one or multiple flashcards based on the instructor's feedback. 
 Reply in XML, and only XML.
 There are 2 types of cards you can make.
-1. <vocab> cards. These identify a ${language} word that the user should know.
+1. <vocab> cards. These identify a ${language} word or short phrase that the user should know. They specify the vocab word / phrase in ${language}.
 Example: <vocab>schön</vocab>
 2. <cloze> cards which have <deletion> tags to specify what words to cloze delete.
-Example:
-<cloze>Es war <deletion>schön</deltion> mit zu <deletion>reden</deletion>.</cloze>
+Example: <cloze>Es war <deletion>schön</deltion> mit zu <deletion>reden</deletion>.</cloze>
 </instructions>
 
 <example>
@@ -64,7 +63,23 @@ Output:
 <cloze>Keine <deletion>Scheu</deletion>, Fehler sind völlig normal am Anfang.</cloze>
 </cards>
 </example>
+
+<example>
+Pupil: Hallo, ich bin \"wondering\" ob du sind eine gute Robot
+Instructor: "Hallo! Ich sehe, dass du einen Satz auf Deutsch schreiben möchtest. Das ist super! Lass uns deinen Satz ein wenig verbessern:\n\nAnstatt \"ich bin wondering\" kannst du sagen \"ich frage mich\". \"Wondering\" ist ein englisches Wort und auf Deutsch sagt man stattdessen \"sich fragen\".\n\nBei \"ob du sind eine gute Robot\" gibt es ein paar kleine Fehler. \"Sind\" benutzt man nur bei \"Sie\" oder in der Mehrzahl. Für \"du\" nimmt man stattdessen \"bist\". Und \"Robot\" ist auch ein englisches Wort. Auf Deutsch sagt man \"Roboter\".\n\nDer verbesserte Satz lautet also:\n\n\"Hallo, ich frage mich, ob du ein guter Roboter bist.\"\n\nIch hoffe, das hilft dir weiter! Und um deine Frage zu beantworten: Ich gebe mein Bestes, um ein guter Roboter und Lehrer zu sein. Lass uns weiter üben und sag mir, wenn du noch Fragen hast!"
+Output: 
+<cards>
+<vocab>ich frage mich</vocab>
+<vocab>sich fragen</vocab>
+<vocab>Roboter</vocab>
+<cloze>Hallo, <deletion>ich frage mich</deletion>, ob du ein guter <deletion>Roboter</deletion> <deletion>bist</deletion>.</cloze>
+</cards>
+</example>
+
 `;
+
+// experiment with alternative formatting for cloze cards. I'm following a process where I put the sentence down, and then go through and figure out what words should be clozed. Can have claude emulate this.
+
 
 export async function POST(req: Request) {
   try {
