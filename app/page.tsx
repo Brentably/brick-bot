@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Bubble from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
+import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
 
 
 const LANGUAGE_TO_HELLO = {
@@ -35,24 +36,69 @@ export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
+  const [sentenceQueue, setSentenceQueue] = useState<string[]>([]);
+  const [numSentences, setNumSentences] = useState(0);
+  let sentenceEnds = [".", "!", "?"]
+  
 
   // useEffect(() => {
   //   if(isStreaming) return
 
   // }, [isStreaming])
 
+  const playNextAudio = async () => {
+    console.log("HELLO????")
+    if (sentenceQueue.length === 0) return;
+
+    const res = await fetch('/api/tts', {
+      method: 'POST', 
+      body: JSON.stringify({
+        "input": sentenceQueue[0]
+      })
+    });
+    const blob = await res.blob();
+    const blobURL = URL.createObjectURL(blob);
+    const audio = new Audio(blobURL);
+    audio.onended = () => {
+      setSentenceQueue((queue) => queue.slice(1));
+    };
+    await audio.play();
+  }
+
+  useEffect(() => {
+    playNextAudio();
+  }, [sentenceQueue]);
+
+  useEffect(() => {
+    console.log(messages.length);
+    if (messages.length) {
+      console.log(messages[messages.length - 1].content);
+      const str = messages[messages.length - 1].content;
+      let sentenceCount = sentenceEnds.reduce((total, char) => {
+        return total + (str.split(char).length - 1);
+      }, 0);
+      console.log(sentenceCount);
+      // if the # sentences has increased, add to sentence queue
+      // TODO there's probably an edge case where it has increased by multiple sentences in one turn. not a hard fix but i don't feel like doing it rn
+      if (sentenceCount > numSentences) {
+        console.log("new sentence");
+        const messageSentences = messages[messages.length - 1].content.split(/(?<=[.!?])\s+/);
+        setSentenceQueue(prevQueue => [...prevQueue, messageSentences[messageSentences.length - 1]]);
+        setNumSentences(prevNumSentences => prevNumSentences + 1);
+      }
+    }
+  }, [messages]);
+
   const beginChat = () => {
     setHasStarted(true)
     append({ content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' }, { options: { body: { language: targetLanguage } } })
   }
 
-
-
-
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+
 
   const playAudio = async () => {
     const res = await fetch('/api/tts', {
@@ -72,17 +118,6 @@ export default function Home() {
     const processLatestMessage = async (message: Message) => {
       if (message.role !== 'assistant') return
       if (messages.length < 3) return // dont process first lil bit
-
-      const res = await fetch('/api/tts', {
-        method: 'POST', 
-        body: JSON.stringify({
-          "input": message.content
-        })
-      })
-      const blob = await res.blob()
-      const blobURL = URL.createObjectURL(blob)
-      console.log("playing...")
-      await new Audio(blobURL).play()
 
       console.log('pLM on message: ', message.content)
       console.log(messages)

@@ -7,7 +7,7 @@ const openai = new OpenAI();
 
 export async function POST(req: Request) {
     try {
-        console.log("hello1");
+        console.log("post to tts api");
         const { input } = await req.json()
         console.log(input)
 
