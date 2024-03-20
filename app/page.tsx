@@ -44,7 +44,7 @@ export default function Home() {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [sentenceQueue, setSentenceQueue] = useState<string[]>([]);
   const [numSentences, setNumSentences] = useState(0);
-  let sentenceEnds = [".", "!", "?"]
+  let sentenceEnds = [".", "!", "?", ":", ")", "(", "[", "]"]
   
 
   // useEffect(() => {
@@ -52,6 +52,7 @@ export default function Home() {
 
   // }, [isStreaming])
 
+<<<<<<< HEAD
   // const playNextAudio = async () => {
   //   console.log("HELLO????")
   //   if (sentenceQueue.length === 0) return;
@@ -70,6 +71,30 @@ export default function Home() {
   //   };
   //   await audio.play();
   // }
+=======
+  const playNextAudio = async (): Promise<void> => {
+    if (sentenceQueue.length === 0) return Promise.resolve();
+    const sentence = sentenceQueue[0]
+    setSentenceQueue((queue) => queue.slice(1));
+
+    const res = await fetch('/api/tts', {
+      method: 'POST', 
+      body: JSON.stringify({
+        "input": sentence
+      })
+    });
+    const blob = await res.blob();
+    const blobURL = URL.createObjectURL(blob);
+    const audio = new Audio(blobURL);
+    await audio.play();
+
+    return new Promise<void>((resolve) => {
+      audio.onended = () => {
+        resolve();
+      };
+    })
+  }
+>>>>>>> 343eb04 (still truckin on tts)
 
   useEffect(() => {
     const playNextAudio = async () => {
@@ -94,6 +119,7 @@ export default function Home() {
   }, [sentenceQueue]);
 
   useEffect(() => {
+<<<<<<< HEAD
     console.log(process.env)
   }, [])
 
@@ -101,18 +127,24 @@ export default function Home() {
     console.log(messages.length);
     if (messages.length) {
       console.log(messages[messages.length - 1].content);
+=======
+    if (messages.length > 1) {
+      console.log("message: " + messages[messages.length - 1].content);
+>>>>>>> 343eb04 (still truckin on tts)
       const str = messages[messages.length - 1].content;
       let sentenceCount = sentenceEnds.reduce((total, char) => {
         return total + (str.split(char).length - 1);
       }, 0);
-      console.log(sentenceCount);
+      console.log("sentence count: " + sentenceCount + "\nnum sentences: " + numSentences);
       // if the # sentences has increased, add to sentence queue
       // TODO there's probably an edge case where it has increased by multiple sentences in one turn. not a hard fix but i don't feel like doing it rn
       if (sentenceCount > numSentences) {
-        console.log("new sentence");
-        const messageSentences = messages[messages.length - 1].content.split(/(?<=[.!?])\s+/);
-        setSentenceQueue(prevQueue => [...prevQueue, messageSentences[messageSentences.length - 1]]);
-        setNumSentences(prevNumSentences => prevNumSentences + 1);
+        const messageSentences = str.split(/(?<=[.!?])\s+/);
+        // if it ends with a full sentence, add last sentence. if not, add second to last sentence
+        const newSentence = (sentenceEnds.includes(str[str.length - 1])) ? messageSentences[messageSentences.length - 1] : messageSentences[messageSentences.length - 2];
+        console.log("new sentence: " + newSentence);
+        setSentenceQueue(prevQueue => [...prevQueue, newSentence]);
+        setNumSentences(() => sentenceCount);
       }
     }
   }, [messages]);
