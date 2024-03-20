@@ -55,17 +55,15 @@ export default function Home() {
   };
 
   const playAudio = async () => {
-    console.log("playing")
     const res = await fetch('/api/tts', {
       method: 'POST', 
       body: JSON.stringify({
-        "input": "this is a test message"
+        "input": messages[messages.length - 1].content
       })
     })
     const blob = await res.blob()
     const blobURL = URL.createObjectURL(blob)
-    console.log(blobURL)
-    const audio = await new Audio(blobURL).play()
+    await new Audio(blobURL).play()
   }
 
   useEffect(() => {
@@ -74,6 +72,17 @@ export default function Home() {
     const processLatestMessage = async (message: Message) => {
       if (message.role !== 'assistant') return
       if (messages.length < 3) return // dont process first lil bit
+
+      const res = await fetch('/api/tts', {
+        method: 'POST', 
+        body: JSON.stringify({
+          "input": message.content
+        })
+      })
+      const blob = await res.blob()
+      const blobURL = URL.createObjectURL(blob)
+      console.log("playing...")
+      await new Audio(blobURL).play()
 
       console.log('pLM on message: ', message.content)
       console.log(messages)
@@ -192,6 +201,7 @@ export default function Home() {
               }}>
                 Download flashcards!
               </button>
+              <button onClick={playAudio}>play audio</button>
             </div>
 
           </div>
