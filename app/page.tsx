@@ -52,26 +52,6 @@ export default function Home() {
 
   // }, [isStreaming])
 
-<<<<<<< HEAD
-  // const playNextAudio = async () => {
-  //   console.log("HELLO????")
-  //   if (sentenceQueue.length === 0) return;
-
-  //   const res = await fetch('/api/tts', {
-  //     method: 'POST', 
-  //     body: JSON.stringify({
-  //       "input": sentenceQueue[0]
-  //     })
-  //   });
-  //   const blob = await res.blob();
-  //   const blobURL = URL.createObjectURL(blob);
-  //   const audio = new Audio(blobURL);
-  //   audio.onended = () => {
-  //     setSentenceQueue((queue) => queue.slice(1));
-  //   };
-  //   await audio.play();
-  // }
-=======
   const playNextAudio = async (): Promise<void> => {
     if (sentenceQueue.length === 0) return Promise.resolve();
     const sentence = sentenceQueue[0]
@@ -94,7 +74,6 @@ export default function Home() {
       };
     })
   }
->>>>>>> 343eb04 (still truckin on tts)
 
   useEffect(() => {
     const playNextAudio = async () => {
@@ -119,18 +98,8 @@ export default function Home() {
   }, [sentenceQueue]);
 
   useEffect(() => {
-<<<<<<< HEAD
-    console.log(process.env)
-  }, [])
-
-  useEffect(() => {
-    console.log(messages.length);
-    if (messages.length) {
-      console.log(messages[messages.length - 1].content);
-=======
     if (messages.length > 1) {
       console.log("message: " + messages[messages.length - 1].content);
->>>>>>> 343eb04 (still truckin on tts)
       const str = messages[messages.length - 1].content;
       let sentenceCount = sentenceEnds.reduce((total, char) => {
         return total + (str.split(char).length - 1);
