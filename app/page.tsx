@@ -33,19 +33,19 @@ type Flashcard = BasicFlashcard | ClozeFlashcard
 
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
-    onResponse: () => setIsStreaming(true),
-    onFinish: () => setIsStreaming(false)
+    onResponse: () => setIsTextStreaming(true),
+    onFinish: () => setIsTextStreaming(false)
   });
 
-  const [isStreaming, setIsStreaming] = useState(false)
+  const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [sentenceQueue, setSentenceQueue] = useState<string[]>([]);
-  const [numSentences, setNumSentences] = useState(0);
-  let sentenceEnds = [".", "!", "?", ":", ")", "(", "[", "]"]
-  
+  const sentenceCount = useRef(0)
+  const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
+
 
   // useEffect(() => {
   //   if(isStreaming) return
@@ -58,7 +58,7 @@ export default function Home() {
     setSentenceQueue((queue) => queue.slice(1));
 
     const res = await fetch('/api/tts', {
-      method: 'POST', 
+      method: 'POST',
       body: JSON.stringify({
         "input": sentence
       })
@@ -76,47 +76,65 @@ export default function Home() {
   }
 
   useEffect(() => {
-    const playNextAudio = async () => {
-      console.log("HELLO????")
-      if (sentenceQueue.length === 0) return;
+    console.log('sentenceQueue update', sentenceQueue)
 
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        body: JSON.stringify({
-          "input": sentenceQueue[0]
-        })
-      });
-      const blob = await res.blob();
-      const blobURL = URL.createObjectURL(blob);
-      const audio = new Audio(blobURL);
-      audio.onended = () => {
-        setSentenceQueue((queue) => queue.slice(1));
-      };
-      await audio.play();
-    }
-    playNextAudio();
+    // const playNextAudio = async () => {
+    //   console.log("HELLO????")
+    //   if (sentenceQueue.length === 0) return;
+
+    //   const res = await fetch('/api/tts', {
+    //     method: 'POST',
+    //     body: JSON.stringify({
+    //       "input": sentenceQueue[0]
+    //     })
+    //   });
+    //   const blob = await res.blob();
+    //   const blobURL = URL.createObjectURL(blob);
+    //   const audio = new Audio(blobURL);
+    //   audio.onended = () => {
+    //     setSentenceQueue((queue) => queue.slice(1));
+    //   };
+    //   await audio.play();
+    // }
+    // playNextAudio();
   }, [sentenceQueue]);
 
   useEffect(() => {
-    if (messages.length > 1) {
-      console.log("message: " + messages[messages.length - 1].content);
-      const str = messages[messages.length - 1].content;
-      let sentenceCount = sentenceEnds.reduce((total, char) => {
-        return total + (str.split(char).length - 1);
-      }, 0);
-      console.log("sentence count: " + sentenceCount + "\nnum sentences: " + numSentences);
-      // if the # sentences has increased, add to sentence queue
-      // TODO there's probably an edge case where it has increased by multiple sentences in one turn. not a hard fix but i don't feel like doing it rn
-      if (sentenceCount > numSentences) {
-        const messageSentences = str.split(/(?<=[.!?])\s+/);
-        // if it ends with a full sentence, add last sentence. if not, add second to last sentence
-        const newSentence = (sentenceEnds.includes(str[str.length - 1])) ? messageSentences[messageSentences.length - 1] : messageSentences[messageSentences.length - 2];
-        console.log("new sentence: " + newSentence);
-        setSentenceQueue(prevQueue => [...prevQueue, newSentence]);
-        setNumSentences(() => sentenceCount);
-      }
+    // build the queue of sentences as they come in. 
+    // no duplication.
+    if (messages.length < 1) return
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage.role !== 'assistant') return
+
+    const messageStr = lastMessage.content;
+
+    // const sentenceChunks = messageStr.split(/(?<=[.!?])\s+/);
+    // const sentenceChunks = messageStr.split(/(?<=[.!?]|--?|\u2014|\u2013)\s+/);
+    const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
+
+    const newSentenceCount = sentenceChunks.length
+
+    
+    const isFinal = !isTextStreaming
+    
+    // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
+    // skip over first chunk because we don't want to add array[-1] chunk
+    if (newSentenceCount !== sentenceCount.current && newSentenceCount >= 2) {
+      console.log("new sentence count: " + newSentenceCount + "\ncurr sentence count: " + sentenceCount.current);
+      console.log('adding chunk to queue: ', sentenceChunks[sentenceChunks.length - 2])
+      setSentenceQueue(pq => [...pq, sentenceChunks[sentenceChunks.length - 2]])
     }
-  }, [messages]);
+
+    sentenceCount.current = newSentenceCount
+
+    // on final chunk, we add the last chunk though.
+    if (isFinal) {
+      setSentenceQueue(pq => [...pq, sentenceChunks[sentenceChunks.length - 1]])
+      sentenceCount.current = 0
+    }
+
+
+  }, [messages, isTextStreaming]);
 
   const beginChat = () => {
     setHasStarted(true)
@@ -206,7 +224,7 @@ export default function Home() {
     }
 
     scrollToBottom();
-    if (isStreaming) return
+    if (isTextStreaming) return
     const processLatestMessage = async (message: Message) => {
       if (message.role !== 'assistant') return
       if (messages.length < 3) return // dont process first lil bit
@@ -233,7 +251,7 @@ export default function Home() {
 
     console.log('processing latest message at index', messages.length - 1)
     if (messages.length) processLatestMessage(messages[messages.length - 1])
-  }, [messages, isStreaming, targetLanguage]);
+  }, [messages, isTextStreaming, targetLanguage]);
 
   const handleSend = (e) => {
     handleSubmit(e);
