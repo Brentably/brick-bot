@@ -50,6 +50,7 @@ export default function Home() {
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [sentenceQueue, setSentenceQueue] = useState<string[]>([]);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const sentenceCount = useRef(0)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
 
@@ -58,29 +59,6 @@ export default function Home() {
   //   if(isStreaming) return
 
   // }, [isStreaming])
-
-  const playNextAudio = async (): Promise<void> => {
-    if (sentenceQueue.length === 0) return Promise.resolve();
-    const sentence = sentenceQueue[0]
-    setSentenceQueue((queue) => queue.slice(1));
-
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      body: JSON.stringify({
-        "input": sentence
-      })
-    });
-    const blob = await res.blob();
-    const blobURL = URL.createObjectURL(blob);
-    const audio = new Audio(blobURL);
-    await audio.play();
-
-    return new Promise<void>((resolve) => {
-      audio.onended = () => {
-        resolve();
-      };
-    })
-  }
 
   useEffect(() => {
     console.log('sentenceQueue update', sentenceQueue)
@@ -104,7 +82,43 @@ export default function Home() {
     //   await audio.play();
     // }
     // playNextAudio();
-  }, [sentenceQueue]);
+
+    const playNextAudio = async (): Promise<void> => {
+      // make sure not to call it if audio is currently playing
+      if (isAudioPlaying) return;
+      if (sentenceQueue.length === 0) {
+        setIsAudioPlaying(false);
+        return Promise.resolve();
+      }
+
+      setIsAudioPlaying(true);
+
+      console.log("sentence q: " + sentenceQueue)
+
+      const sentence = sentenceQueue[0]
+      setSentenceQueue((queue) => queue.slice(1));
+  
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        body: JSON.stringify({
+          "input": sentence
+        })
+      });
+      const blob = await res.blob();
+      const blobURL = URL.createObjectURL(blob);
+      const audio = new Audio(blobURL);
+      await audio.play();
+  
+      return new Promise<void>((resolve) => {
+        audio.onended = async () => {
+          resolve();
+          setIsAudioPlaying(false);
+        };
+      })
+    }
+    playNextAudio();
+
+  }, [sentenceQueue, isAudioPlaying]);
 
   useEffect(() => {
     // build the queue of sentences as they come in. 
@@ -125,20 +139,28 @@ export default function Home() {
     const isFinal = !isTextStreaming
 
     console.log("sentence chunks: " + sentenceChunks)
+    console.log("new sentence count: " + newSentenceCount + "\ncurr sentence count: " + sentenceCount.current);
     
     // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
     // skip over first chunk because we don't want to add array[-1] chunk
-    if (newSentenceCount > sentenceCount.current && sentenceChunks.length >= 2) {
-      console.log("new sentence count: " + newSentenceCount + "\ncurr sentence count: " + sentenceCount.current);
-      console.log('adding chunk to queue: ', sentenceChunks[sentenceChunks.length - 2])
-      setSentenceQueue(pq => [...pq, sentenceChunks[sentenceChunks.length - 2]])
-      sentenceCount.current += 1;
-      console.log("update sentence count to: " + newSentenceCount)
+    if (sentenceChunks.length >= 2) {
+      // iterate until we have added all new sentences to queue
+      while (newSentenceCount > sentenceCount.current) {
+        // we need to get the first sentence that hasn't been added to the queue yet
+        // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
+        // subtract an extra 1 becasue last index = sentenceChunks.length - 1
+        const chunkIndex = sentenceChunks.length - (newSentenceCount - sentenceCount.current) - 1
+        console.log('adding chunk to queue: ', sentenceChunks[chunkIndex])
+        setSentenceQueue(pq => [...pq, sentenceChunks[chunkIndex]])
+        sentenceCount.current += 1;
+        console.log("update sentence count to: " + sentenceCount.current)
+      }
     }
 
     // on final chunk, we add the last chunk though.
     if (isFinal) {
       setSentenceQueue(pq => [...pq, sentenceChunks[sentenceChunks.length - 1]])
+      console.log("resetting sentence count")
       sentenceCount.current = 0
     }
 
