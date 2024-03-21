@@ -112,20 +112,22 @@ export default function Home() {
     // const sentenceChunks = messageStr.split(/(?<=[.!?]|--?|\u2014|\u2013)\s+/);
     const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
 
-    const newSentenceCount = sentenceChunks.length
+    const newSentenceCount = sentenceChunks.length - 1;
 
     
     const isFinal = !isTextStreaming
+
+    console.log("sentence chunks: " + sentenceChunks)
     
     // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
     // skip over first chunk because we don't want to add array[-1] chunk
-    if (newSentenceCount !== sentenceCount.current && newSentenceCount >= 2) {
+    if (newSentenceCount > sentenceCount.current && sentenceChunks.length >= 2) {
       console.log("new sentence count: " + newSentenceCount + "\ncurr sentence count: " + sentenceCount.current);
       console.log('adding chunk to queue: ', sentenceChunks[sentenceChunks.length - 2])
       setSentenceQueue(pq => [...pq, sentenceChunks[sentenceChunks.length - 2]])
+      sentenceCount.current += 1;
+      console.log("update sentence count to: " + newSentenceCount)
     }
-
-    sentenceCount.current = newSentenceCount
 
     // on final chunk, we add the last chunk though.
     if (isFinal) {
