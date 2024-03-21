@@ -52,6 +52,7 @@ export default function Home() {
   const [sentenceQueue, setSentenceQueue] = useState<string[]>([]);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const sentenceCount = useRef(0)
+  const [isHeaderOpen, setIsHeaderOpen] = useState(true)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
 
 
@@ -173,6 +174,7 @@ export default function Home() {
       { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
       { id: crypto.randomUUID(), content: LANGUAGE_TO_INTRO[targetLanguage], role: 'assistant' }
     ])
+    if(typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
   }
 
   const scrollToBottom = () => {
@@ -303,70 +305,88 @@ export default function Home() {
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
         <section className='chatbot-section flex flex-col origin:w-[800px] w-full h-full rounded-md p-2 md:p-6'>
-          <div className='chatbot-header pb-6'>
-            <div className='flex justify-between'>
+          <header className='chatbot-header pb-6'>
+            <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 <RobotIcon />
                 <h1 className='chatbot-text-primary text-xl md:text-2xl font-medium'>Nick Rosenksi is a bitch</h1>
               </div>
+              <button
+                className='text-sm md:text-base'
+                onClick={() => setIsHeaderOpen(!isHeaderOpen)}
+              >
+                {isHeaderOpen ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}              </button>
             </div>
-            <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.</p>
-            <div className='flex flex-col justify-between'>
-              <div className="mt-1">
-                <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
-                <select
-                  id="language-select"
-                  value={targetLanguage}
-                  onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
-                  className="chatbot-input ml-2"
-                >
-                  <option value="German">German</option>
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                  <option value="Chinese">Chinese</option>
-                  <option value="Portuguese">Portuguese</option>
-                  <option value="Japanese">Japanese</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Bengali">Bengali</option>
-                  <option value="Italian">Italian</option>
-                </select>
-              </div>
-              <div className=''>
-                Flashcards created: {flashcards.length}
-              </div>
-              <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-                // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
-                const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                fetch(url, {
-                  method: "POST",
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    jsonFlashcards: flashcards
-                  })
-                })
-                  .then(response => response.blob())
-                  .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = 'brick-bot-flashcards.apkg';
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                  })
-                  .catch((error) => {
-                    console.error('Error:', error);
-                  });
-              }}>
-                Download flashcards!
-              </button>
-              <button onClick={playAudio}>play audio</button>
-            </div>
-
-          </div>
+            {isHeaderOpen && (
+              <>
+                <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">
+                  Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
+                </p>
+                <div className='flex flex-col justify-between'>
+                  <div className="mt-1">
+                    <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
+                    <select
+                      id="language-select"
+                      value={targetLanguage}
+                      onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
+                      className="chatbot-input ml-2"
+                    >
+                      <option value="German">German</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                      <option value="Chinese">Chinese</option>
+                      <option value="Portuguese">Portuguese</option>
+                      <option value="Japanese">Japanese</option>
+                      <option value="Hindi">Hindi</option>
+                      <option value="Bengali">Bengali</option>
+                      <option value="Italian">Italian</option>
+                    </select>
+                  </div>
+                  <div className=''>
+                    Flashcards created: {flashcards.length}
+                  </div>
+                  <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
+                    // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                    const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                    fetch(url, {
+                      method: "POST",
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        jsonFlashcards: flashcards
+                      })
+                    })
+                      .then(response => response.blob())
+                      .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = 'brick-bot-flashcards.apkg';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      })
+                      .catch((error) => {
+                        console.error('Error:', error);
+                      });
+                  }}>
+                    Download flashcards!
+                  </button>
+                  <button onClick={playAudio}>play audio</button>
+                </div>
+              </>
+            )}
+          </header>
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
             <div className='absolute w-full overflow-x-hidden'>
