@@ -19,6 +19,7 @@
     "openai": "^4.14.2",
     "random": "^4.1.0",
     "react": "^18",
+    "react-div-100vh": "^0.7.0",
     "react-dom": "^18",
     "react-markdown": "^9.0.0",
     "remark-breaks": "^4.0.0",

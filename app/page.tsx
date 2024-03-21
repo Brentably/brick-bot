@@ -4,6 +4,7 @@ import Bubble from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
+import Div100vh from 'react-div-100vh';
 
 
 const LANGUAGE_TO_HELLO = {
@@ -18,6 +19,12 @@ const LANGUAGE_TO_HELLO = {
   "Hindi": "नमस्ते!",
   "Bengali": "হ্যালো!",
   "Italian": "Ciao!"
+}
+
+// TODO: will add the rest later b/c want to make sure this is a good prompt now.
+const LANGUAGE_TO_INTRO = {
+  "German": "Hallo! Ich bin Brick Bot, ein persönlicher Sprachlehrer! Ich werde mit dir auf Deutsch sprechen und deine Fehler korrigieren.  Wie viel Deutsch kannst du?",
+  "French": "Bonjour ! Je suis Brick Bot, un professeur de langue personnel ! Je te parlerai en français et je corrigerai tes erreurs.  Quel est ton niveau de français ?"
 }
 
 type BasicFlashcard = {
@@ -140,7 +147,10 @@ export default function Home() {
 
   const beginChat = () => {
     setHasStarted(true)
-    append({ content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' }, { options: { body: { language: targetLanguage } } })
+    setMessages([
+      { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
+      { id: crypto.randomUUID(), content: LANGUAGE_TO_INTRO[targetLanguage], role: 'assistant' }
+    ])
   }
 
   const scrollToBottom = () => {
@@ -164,6 +174,7 @@ export default function Home() {
 
 
   useEffect(() => {
+    console.log('messages; ', messages)
     const createClozeCard = async (clozeCardXml: Element) => {
       console.log('createClozeCard called')
       console.log('cloze card xml: ')
@@ -267,8 +278,8 @@ export default function Home() {
 
 
   return (
-    <>
-      <main className="flex h-screen flex-col items-center justify-center">
+    <Div100vh>
+      <main className="flex h-full flex-col items-center justify-center">
         <section className='chatbot-section flex flex-col origin:w-[800px] w-full h-full rounded-md p-2 md:p-6'>
           <div className='chatbot-header pb-6'>
             <div className='flex justify-between'>
@@ -352,7 +363,7 @@ export default function Home() {
           }
         </section>
       </main>
-    </>
+    </Div100vh>
   )
 }
 function RobotIcon() {
