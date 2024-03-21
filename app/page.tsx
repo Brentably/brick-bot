@@ -4,6 +4,7 @@ import Bubble from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
+import Div100vh from 'react-div-100vh';
 
 
 const LANGUAGE_TO_HELLO = {
@@ -275,8 +276,8 @@ export default function Home() {
 
 
   return (
-    <>
-      <main className="flex h-screen flex-col items-center justify-center">
+    <Div100vh>
+      <main className="flex h-full flex-col items-center justify-center">
         <section className='chatbot-section flex flex-col origin:w-[800px] w-full h-full rounded-md p-2 md:p-6'>
           <div className='chatbot-header pb-6'>
             <div className='flex justify-between'>
@@ -360,7 +361,7 @@ export default function Home() {
           }
         </section>
       </main>
-    </>
+    </Div100vh>
   )
 }
 function RobotIcon() {
