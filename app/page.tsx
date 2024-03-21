@@ -4,7 +4,7 @@ import Bubble from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
-import Div100vh from 'react-div-100vh';
+import Div100vh, { measureHeight } from 'react-div-100vh';
 
 
 const LANGUAGE_TO_HELLO = {
@@ -49,8 +49,11 @@ export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
-  const [sentenceQueue, setSentenceQueue] = useState<string[]>([]);
+  const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
+  // lock to make sure only one audio plays at a time
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  // lock to make sure only one instance of adding to queue happens at once
+  const [isAddingToQueue, setIsAddingToQueue] = useState(false);
   const sentenceCount = useRef(0)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
 
@@ -61,7 +64,6 @@ export default function Home() {
   // }, [isStreaming])
 
   useEffect(() => {
-    console.log('sentenceQueue update', sentenceQueue)
 
     // const playNextAudio = async () => {
     //   console.log("HELLO????")
@@ -86,26 +88,15 @@ export default function Home() {
     const playNextAudio = async (): Promise<void> => {
       // make sure not to call it if audio is currently playing
       if (isAudioPlaying) return;
-      if (sentenceQueue.length === 0) {
+      if (audioQueue.length === 0) {
         setIsAudioPlaying(false);
         return Promise.resolve();
       }
 
       setIsAudioPlaying(true);
 
-      console.log("sentence q: " + sentenceQueue)
-
-      const sentence = sentenceQueue[0]
-      setSentenceQueue((queue) => queue.slice(1));
-  
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        body: JSON.stringify({
-          "input": sentence
-        })
-      });
-      const blob = await res.blob();
-      const blobURL = URL.createObjectURL(blob);
+      const blobURL = URL.createObjectURL(audioQueue[0]);
+      setAudioQueue((queue) => queue.slice(1));
       const audio = new Audio(blobURL);
       await audio.play();
   
@@ -118,52 +109,84 @@ export default function Home() {
     }
     playNextAudio();
 
-  }, [sentenceQueue, isAudioPlaying]);
+  }, [audioQueue, isAudioPlaying]);
 
   useEffect(() => {
-    // build the queue of sentences as they come in. 
-    // no duplication.
-    if (messages.length < 1) return
-    const lastMessage = messages[messages.length - 1]
-    if (lastMessage.role !== 'assistant') return
 
-    const messageStr = lastMessage.content;
+    const addToAudioQueue = async () => {
+      console.log("adding to q: " + isAddingToQueue)
+      console.log("streaming: " + isTextStreaming)
+      if (isAddingToQueue) return
+      // build the queue of sentences as they come in. 
+      // no duplication.
+      if (messages.length < 1) return
+      const lastMessage = messages[messages.length - 1]
+      if (lastMessage.role !== 'assistant') return
 
-    // const sentenceChunks = messageStr.split(/(?<=[.!?])\s+/);
-    // const sentenceChunks = messageStr.split(/(?<=[.!?]|--?|\u2014|\u2013)\s+/);
-    const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
+      setIsAddingToQueue(true);
 
-    const newSentenceCount = sentenceChunks.length - 1;
+      const messageStr = lastMessage.content;
+      // const sentenceChunks = messageStr.split(/(?<=[.!?])\s+/);
+      // const sentenceChunks = messageStr.split(/(?<=[.!?]|--?|\u2014|\u2013)\s+/);
+      const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
+      const newSentenceCount = sentenceChunks.length - 1;
 
-    
-    const isFinal = !isTextStreaming
+      console.log("sentence chunks: " + sentenceChunks)
+      
+      // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
+      // skip over first chunk because we don't want to add array[-1] chunk
+      if (sentenceChunks.length >= 2) {
+        // iterate until we have added all new sentences to queue
+        while (newSentenceCount > sentenceCount.current) {
+          console.log("new sentence count: " + newSentenceCount + "\ncurr sentence count: " + sentenceCount.current);
+          // we need to get the first sentence that hasn't been added to the queue yet
+          // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
+          // subtract an extra 1 becasue last index = sentenceChunks.length - 1
+          const chunkIndex = sentenceChunks.length - (newSentenceCount - sentenceCount.current) - 1
 
-    console.log("sentence chunks: " + sentenceChunks)
-    console.log("new sentence count: " + newSentenceCount + "\ncurr sentence count: " + sentenceCount.current);
-    
-    // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
-    // skip over first chunk because we don't want to add array[-1] chunk
-    if (sentenceChunks.length >= 2) {
-      // iterate until we have added all new sentences to queue
-      while (newSentenceCount > sentenceCount.current) {
-        // we need to get the first sentence that hasn't been added to the queue yet
-        // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
-        // subtract an extra 1 becasue last index = sentenceChunks.length - 1
-        const chunkIndex = sentenceChunks.length - (newSentenceCount - sentenceCount.current) - 1
-        console.log('adding chunk to queue: ', sentenceChunks[chunkIndex])
-        setSentenceQueue(pq => [...pq, sentenceChunks[chunkIndex]])
-        sentenceCount.current += 1;
-        console.log("update sentence count to: " + sentenceCount.current)
+          console.log('adding chunk to queue: ', sentenceChunks[chunkIndex])
+
+          // get audio blob from sentence
+          const res = await fetch('/api/tts', {
+            method: 'POST',
+            body: JSON.stringify({
+              "input": sentenceChunks[chunkIndex]
+            })
+          });
+          const blob = await res.blob();
+
+          setAudioQueue(pq => [...pq, blob]);
+          sentenceCount.current += 1;
+          console.log("update sentence count to: " + sentenceCount.current)
+        }
       }
+
+      console.log("message: " + messageStr)
+      // const isFinal = !isTextStreaming
+      // console.log("final: " + isFinal)
+      // on final chunk, we add the last chunk though.
+      console.log("streaming: " + isTextStreaming)
+      if (!isTextStreaming) {
+        // get audio blob from sentence
+        
+        console.log('adding chunk to queue: ', sentenceChunks[sentenceChunks.length - 1])
+
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          body: JSON.stringify({
+            "input": sentenceChunks[sentenceChunks.length - 1]
+          })
+        });
+        const blob = await res.blob();
+        setAudioQueue(pq => [...pq, blob])
+        console.log("resetting sentence count")
+        sentenceCount.current = 0
+      }
+
+      setIsAddingToQueue(false);
     }
 
-    // on final chunk, we add the last chunk though.
-    if (isFinal) {
-      setSentenceQueue(pq => [...pq, sentenceChunks[sentenceChunks.length - 1]])
-      console.log("resetting sentence count")
-      sentenceCount.current = 0
-    }
-
+    addToAudioQueue();
 
   }, [messages, isTextStreaming]);
 
