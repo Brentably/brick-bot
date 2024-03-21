@@ -138,7 +138,7 @@ export default function Home() {
 
   const beginChat = () => {
     setHasStarted(true)
-    append({ content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' }, { options: { body: { language: targetLanguage } } })
+    append({ content: '.', role: 'user' }, { options: { body: { language: targetLanguage } } })
   }
 
   const scrollToBottom = () => {
