@@ -33,7 +33,8 @@ type BasicFlashcard = {
 }
 type ClozeFlashcard = {
   text: string,
-  back_extra: string
+  back_extra: string,
+  foreign_sentence_base: string
 }
 
 type Flashcard = BasicFlashcard | ClozeFlashcard
@@ -261,7 +262,8 @@ export default function Home() {
       console.log('clozeText =', foreignSentenceClozed)
       const clozeFlashcard: ClozeFlashcard = {
         text: formattedCardText,
-        back_extra: ''
+        back_extra: '',
+        foreign_sentence_base: foreignSentenceBase
       }
       return clozeFlashcard
     }
