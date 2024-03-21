@@ -55,37 +55,12 @@ export default function Home() {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   // lock to make sure only one instance of adding to queue happens at once
   const [isAddingToQueue, setIsAddingToQueue] = useState(false);
-  const sentenceCount = useRef(0)
+  const processedSentenceCount = useRef(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
 
 
-  // useEffect(() => {
-  //   if(isStreaming) return
-
-  // }, [isStreaming])
-
   useEffect(() => {
-
-    // const playNextAudio = async () => {
-    //   console.log("HELLO????")
-    //   if (sentenceQueue.length === 0) return;
-
-    //   const res = await fetch('/api/tts', {
-    //     method: 'POST',
-    //     body: JSON.stringify({
-    //       "input": sentenceQueue[0]
-    //     })
-    //   });
-    //   const blob = await res.blob();
-    //   const blobURL = URL.createObjectURL(blob);
-    //   const audio = new Audio(blobURL);
-    //   audio.onended = () => {
-    //     setSentenceQueue((queue) => queue.slice(1));
-    //   };
-    //   await audio.play();
-    // }
-    // playNextAudio();
 
     const playNextAudio = async (): Promise<void> => {
       // make sure not to call it if audio is currently playing
@@ -101,7 +76,7 @@ export default function Home() {
       setAudioQueue((queue) => queue.slice(1));
       const audio = new Audio(blobURL);
       await audio.play();
-  
+
       return new Promise<void>((resolve) => {
         audio.onended = async () => {
           resolve();
@@ -116,9 +91,6 @@ export default function Home() {
   useEffect(() => {
 
     const addToAudioQueue = async () => {
-      console.log("adding to q: " + isAddingToQueue)
-      console.log("streaming: " + isTextStreaming)
-      if (isAddingToQueue) return
       // build the queue of sentences as they come in. 
       // no duplication.
       if (messages.length < 1) return
@@ -128,61 +100,57 @@ export default function Home() {
       setIsAddingToQueue(true);
 
       const messageStr = lastMessage.content;
+      console.log('processing: ', messageStr)
       // const sentenceChunks = messageStr.split(/(?<=[.!?])\s+/);
       // const sentenceChunks = messageStr.split(/(?<=[.!?]|--?|\u2014|\u2013)\s+/);
-      const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
-      const newSentenceCount = sentenceChunks.length - 1;
+      const sentencesChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
+      // 
+      const currSentenceCount = sentencesChunks.length - 1;
+      console.log('sentences chunks: ', sentencesChunks)
 
-      console.log("sentence chunks: " + sentenceChunks)
-      
       // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
       // skip over first chunk because we don't want to add array[-1] chunk
-      if (sentenceChunks.length >= 2) {
-        // iterate until we have added all new sentences to queue
-        while (newSentenceCount > sentenceCount.current) {
-          console.log("new sentence count: " + newSentenceCount + "\ncurr sentence count: " + sentenceCount.current);
-          // we need to get the first sentence that hasn't been added to the queue yet
-          // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
-          // subtract an extra 1 becasue last index = sentenceChunks.length - 1
-          const chunkIndex = sentenceChunks.length - (newSentenceCount - sentenceCount.current) - 1
+      if(currSentenceCount < 1) return
 
-          console.log('adding chunk to queue: ', sentenceChunks[chunkIndex])
+      // iterate until we have added all new sentences to queue
+      while (currSentenceCount > processedSentenceCount.current) {
+        // we need to get the first sentence that hasn't been added to the queue yet
+        // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
+        const numMissedSentences = (currSentenceCount - processedSentenceCount.current)
+        console.log('missed sentences = ', numMissedSentences)
+        
+        processedSentenceCount.current += 1;
+        const chunkIndex = (sentencesChunks.length - 1) - numMissedSentences
 
-          // get audio blob from sentence
-          const res = await fetch('/api/tts', {
-            method: 'POST',
-            body: JSON.stringify({
-              "input": sentenceChunks[chunkIndex]
-            })
-          });
-          const blob = await res.blob();
+        // get audio blob from sentence
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          body: JSON.stringify({
+            "input": sentencesChunks[chunkIndex]
+          })
+        });
+        const blob = await res.blob();
+        console.log('adding sentence audio to queue for sentence: ', chunkIndex)
 
-          setAudioQueue(pq => [...pq, blob]);
-          sentenceCount.current += 1;
-          console.log("update sentence count to: " + sentenceCount.current)
-        }
+        setAudioQueue(pq => [...pq, blob]);
       }
 
-      console.log("message: " + messageStr)
+
       // const isFinal = !isTextStreaming
       // console.log("final: " + isFinal)
       // on final chunk, we add the last chunk though.
-      console.log("streaming: " + isTextStreaming)
       if (!isTextStreaming) {
         // get audio blob from sentence
-        
-        console.log('adding chunk to queue: ', sentenceChunks[sentenceChunks.length - 1])
 
         const res = await fetch('/api/tts', {
           method: 'POST',
           body: JSON.stringify({
-            "input": sentenceChunks[sentenceChunks.length - 1]
+            "input": sentencesChunks[sentencesChunks.length - 1]
           })
         });
         const blob = await res.blob();
         setAudioQueue(pq => [...pq, blob])
-        console.log("resetting sentence count")
-        sentenceCount.current = 0
+        processedSentenceCount.current = 0
       }
 
       setIsAddingToQueue(false);
@@ -198,7 +166,7 @@ export default function Home() {
       { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
       { id: crypto.randomUUID(), content: LANGUAGE_TO_INTRO[targetLanguage], role: 'assistant' }
     ])
-    if(typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
+    if (typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
   }
 
   const scrollToBottom = () => {
@@ -222,10 +190,7 @@ export default function Home() {
 
 
   useEffect(() => {
-    console.log('messages; ', messages)
     const createClozeCard = async (clozeCardXml: Element) => {
-      console.log('createClozeCard called')
-      console.log('cloze card xml: ')
       console.dir(clozeCardXml)
       let foreignSentenceClozed = ''
       const foreignSentenceBase = clozeCardXml.textContent
@@ -251,15 +216,12 @@ export default function Home() {
           sentence: foreignSentenceBase
         })
       })
-      console.log(`resp: `, resp)
       const englishTranslationJSON = await resp.json()
-      console.log('englishTranlsationJSON: ', englishTranslationJSON)
       const englishTranslation = englishTranslationJSON.englishTranslation
       const formattedCardText =
         `${foreignSentenceClozed}
       <br/><br/>
     ${englishTranslation}`
-      console.log('clozeText =', foreignSentenceClozed)
       const clozeFlashcard: ClozeFlashcard = {
         text: formattedCardText,
         back_extra: '',
@@ -271,8 +233,6 @@ export default function Home() {
     async function createFlashcards(unparsedFlashcards: string) {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(unparsedFlashcards, "text/xml");
-      console.log('xmlDoc')
-      console.log(xmlDoc)
       let flashcardsPromises: (Promise<Flashcard>)[] = []
 
       xmlDoc.querySelectorAll('cloze').forEach(clozeCardXml => {
@@ -291,10 +251,7 @@ export default function Home() {
       if (message.role !== 'assistant') return
       if (messages.length < 3) return // dont process first lil bit
 
-      console.log('pLM on message: ', message.content)
-      console.log(messages)
       const pupilMessage = messages.at(-2).content
-      console.log(`pupilMessage: ${pupilMessage}`)
 
       fetch(`/api/unparsedFlashcardsFromMessage`, {
         method: 'POST',
@@ -311,7 +268,6 @@ export default function Home() {
         .then(flashcards => setFlashcards(flashcards))
     }
 
-    console.log('processing latest message at index', messages.length - 1)
     if (messages.length) processLatestMessage(messages[messages.length - 1])
   }, [messages, isTextStreaming, targetLanguage]);
 
