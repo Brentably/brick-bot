@@ -55,11 +55,17 @@ export default function Home() {
   const [audioQueue, setAudioQueue] = useState<[number, Blob][]>([]);
   // lock to make sure only one audio plays at a time
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  // # sentences that have been processed and put in queue
   const processedSentenceCount = useRef(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
+  // # sentences that have been played
+  const playedSentenceCount = useRef(0)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
 
   useEffect(() => {
+
+    console.log("audio queue update: " + audioQueue);
+
     const playNextAudio = async (): Promise<void> => {
 
       // make sure not to call it if audio is currently playing
@@ -67,28 +73,30 @@ export default function Home() {
       const audioQueueLength = Object.keys(audioQueue).length;
       if (audioQueueLength === 0) {
         setIsAudioPlaying(false);
+        playedSentenceCount.current = 0;
         return Promise.resolve();
       }
-      // do not run if we don't have a fully updated queue
-      if (audioQueueLength < processedSentenceCount.current) return;
 
       setIsAudioPlaying(true);
 
-      // sort audio queue based on index
-      const sortedAudioQueue = audioQueue.sort((a, b) => a[0] - b[0]);
-      console.log("audio queue: " + audioQueue);
-      console.log("sorted audio queue: " + sortedAudioQueue);
-      console.log("processing sentence #" + sortedAudioQueue[0][0]);
+      // get the current tuple which has the index of playedSentenceCount
+      // playedSentenceCount is keeping track of what index we're on using the # of sentences that have already been played
+      const currentTuple = audioQueue.find(idx => idx[0] === playedSentenceCount.current);
+      // return if it's not in the queue yet.
+      if (!currentTuple) return;
+      const currentBlob = currentTuple[1];
 
-      // get the blob of the first index in the queue
-      const blobURL = URL.createObjectURL(sortedAudioQueue[0][1]);
+      // remove the next index from the queue
+      // this filter is checking against all of the tuples to remove the tuple whose index is equal to playedSentenceCount
+      const updatedAudioQueue = audioQueue.filter(idx => idx[0] !== playedSentenceCount.current);
+      setAudioQueue(pq => updatedAudioQueue);
+      console.log("audio queue after removal: " + audioQueue)
 
-      // we want to remove the index that we just used to get the blob URL (sortedAudioQueue[0][0])
-      const indexToRemove = audioQueue.findIndex(i => i[0] === sortedAudioQueue[0][0])
-      setAudioQueue((queue) => queue.splice(indexToRemove, 1));
-
-      const audio = new Audio(blobURL);
+      const currentBlobURL = URL.createObjectURL(currentBlob)
+      const audio = new Audio(currentBlobURL);
       await audio.play();
+
+      playedSentenceCount.current += 1;
 
       return new Promise<void>((resolve) => {
         audio.onended = async () => {
@@ -130,6 +138,7 @@ export default function Home() {
         processedSentenceCount.current += 1;
         const chunkIndex = (sentencesChunks.length - 1) - numMissedSentences
 
+        console.log("sentence chunks: " + sentencesChunks);
         console.log("adding sentence #" + chunkIndex + " to queue: " + sentencesChunks[chunkIndex])
 
         // get audio blob from sentence
@@ -141,6 +150,7 @@ export default function Home() {
         });
         const blob = await res.blob();
         setAudioQueue(pq => [...pq, [chunkIndex, blob]]);
+
       }
 
       // const isFinal = !isTextStreaming
