@@ -51,8 +51,8 @@ export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
-  // index indicates order blobs should be played in
-  const [audioQueue, setAudioQueue] = useState<[number, Blob][]>([]);
+  // audioQueue uses promises because blobs must be played in order, boolean signifies whether this is the last sentence in the message
+  const [audioQueue, setAudioQueue] = useState<[Promise<Blob>, boolean][]>([]);
   // lock to make sure only one audio plays at a time
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   // # sentences that have been processed and put in queue
@@ -70,34 +70,35 @@ export default function Home() {
 
       // make sure not to call it if audio is currently playing
       if (isAudioPlaying) return;
-      const audioQueueLength = Object.keys(audioQueue).length;
-      if (audioQueueLength === 0) {
+      if (audioQueue.length === 0) {
         setIsAudioPlaying(false);
-        playedSentenceCount.current = 0;
-        return Promise.resolve();
+        Promise.resolve();
+        return;
       }
 
       setIsAudioPlaying(true);
 
-      // get the current tuple which has the index of playedSentenceCount
-      // playedSentenceCount is keeping track of what index we're on using the # of sentences that have already been played
-      const currentTuple = audioQueue.find(idx => idx[0] === playedSentenceCount.current);
-      // return if it's not in the queue yet.
-      if (!currentTuple) return;
-      const currentBlob = currentTuple[1];
-
-      // remove the next index from the queue
-      // this filter is checking against all of the tuples to remove the tuple whose index is equal to playedSentenceCount
-      const updatedAudioQueue = audioQueue.filter(idx => idx[0] !== playedSentenceCount.current);
-      setAudioQueue(pq => updatedAudioQueue);
-      console.log("audio queue after removal: " + audioQueue)
-
+      // idx of the blob we're on is equal to the number of sentences that have already played, wait for audio blob to come in
+      const currentTuple = audioQueue[playedSentenceCount.current]
+      if (!currentTuple) {
+        console.log("tuple DNE")
+        return;
+      }
+      const currentBlob = await currentTuple[0]
       const currentBlobURL = URL.createObjectURL(currentBlob)
       const audio = new Audio(currentBlobURL);
       await audio.play();
 
-      playedSentenceCount.current += 1;
+      // remove blob from queue
+      setAudioQueue(pq => pq.slice(1))
 
+      // if it's not the last sentence in the message, queue keeps going
+      if (!currentTuple[1]) playedSentenceCount.current += 1;
+      // else, we're at the end of the message and we reset playedSentenceCount for the next message
+      else {
+        console.log("played all sentences. resetting playedSentenceCount to 0.")
+        playedSentenceCount.current = 0;
+      }
       return new Promise<void>((resolve) => {
         audio.onended = async () => {
           resolve();
@@ -141,16 +142,16 @@ export default function Home() {
         console.log("sentence chunks: " + sentencesChunks);
         console.log("adding sentence #" + chunkIndex + " to queue: " + sentencesChunks[chunkIndex])
 
-        // get audio blob from sentence
-        const res = await fetch('/api/tts', {
+        // get promise of audio blob from sentence
+        const blob = fetch('/api/tts', {
           method: 'POST',
           body: JSON.stringify({
             "input": sentencesChunks[chunkIndex]
           })
-        });
-        const blob = await res.blob();
-        setAudioQueue(pq => [...pq, [chunkIndex, blob]]);
+        }).then(res => res.blob())
 
+        // add promise to the correct index of the array according to the order the sentence came into the message
+        setAudioQueue(pq => pq.toSpliced(chunkIndex, 0, [blob, false]));
       }
 
       // const isFinal = !isTextStreaming
@@ -158,18 +159,18 @@ export default function Home() {
 
       // once text streaming has ended, add last chunk
       if (!isTextStreaming) {
-        // get audio blob from sentence
-        const res = await fetch('/api/tts', {
+        // get promise of audio blob from sentence
+        const blob = fetch('/api/tts', {
           method: 'POST',
           body: JSON.stringify({
             "input": sentencesChunks[sentencesChunks.length - 1]
           })
-        });
-        const blob = await res.blob();
-        console.log("adding sentence #" + (sentencesChunks.length - 1) + " to queue: " + sentencesChunks[sentencesChunks.length - 1])
-        setAudioQueue(pq => [...pq, [sentencesChunks.length - 1, blob]]);
+        }).then(res => res.blob())
+
+        // add promise to the correct index of the array according to the order the sentence came into the message
+        setAudioQueue(pq => pq.toSpliced(sentencesChunks.length - 1, 0, [blob, true]));
         processedSentenceCount.current = 0
-        console.log("done with this message. resetting sentence count.")
+        console.log("done adding current message to queue. resetting processed sentence count.")
       }
     }
 
