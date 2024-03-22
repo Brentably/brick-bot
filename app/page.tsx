@@ -46,7 +46,8 @@ export default function Home() {
   const setHasStarted = useBrickStore(state => state.setHasStarted)
   const zustandMessages = useBrickStore(state => state.zustandMessages)
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
-  // index indicates order blobs should be played in
+  const resetStore = useBrickStore(state => state.resetStore)
+  // boolean is whether it is the last message
   const [audioQueue, setAudioQueue] = useState<[Promise<Blob>, boolean][]>([]);
   // lock to make sure only one audio plays at a time
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -56,8 +57,8 @@ export default function Home() {
   // # sentences that have been played
   const playedSentenceCount = useRef(0)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
-  
-  const getInitMessages:() => Message[] = () => [
+
+  const getInitMessages: () => Message[] = () => [
     { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
     { id: crypto.randomUUID(), content: LANGUAGE_TO_INTRO[targetLanguage], role: 'assistant' }
   ]
@@ -67,63 +68,53 @@ export default function Home() {
     // BUT, if they refresh and messages is set back to 0, then want to make sure it's up to date with the messages that have been saved
     // whichever is longer should update the other!
 
-    console.log('messages length: ', messages.length)
-    console.log('zustand messages length: ', zustandMessages.length)
+    // console.log('messages length: ', messages.length)
+    // console.log('zustand messages length: ', zustandMessages.length)
 
-    if(messages.length > zustandMessages.length && messages.length) {
-    
-      console.log('setting zustand messages from messages: ', messages)
-      setZustandMessages(messages)}
+    if (messages.length > zustandMessages.length && messages.length) {
+      // console.log('setting zustand messages from messages: ', messages)
+      setZustandMessages(messages)
+    }
     else if (zustandMessages.length > messages.length) {
-      console.log('setting messages from zustand messages')
-      
+      // console.log('setting messages from zustand messages')
       setMessages(zustandMessages)
     }
   }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
-
-    console.log("audio queue update: " + audioQueue);
-
-    const playNextAudio = async (): Promise<void> => {
-
-      // make sure not to call it if audio is currently playing
-      if (isAudioPlaying) return;
-      if (audioQueue.length === 0) {
-        setIsAudioPlaying(false);
-        Promise.resolve();
-        return;
-      }
-
+    console.log('audio use effect')
+    console.log('isAudioPlaying', isAudioPlaying)
+    console.log('audioQueue length:', audioQueue.length)
+    if (isAudioPlaying) return;
+    
+    const playNextAudio = async () => {
+      if(audioQueue.length === 0) return
+      console.log('playnextaudio called')
       setIsAudioPlaying(true);
-
-      // idx of the blob we're on is equal to the number of sentences that have already played, wait for audio blob to come in
+      
+      console.log('awaiting blob', playedSentenceCount.current)
+      console.log('current audio queue: ', audioQueue)
       const currentTuple = audioQueue[playedSentenceCount.current]
-      if (!currentTuple) {
-        console.log("tuple DNE")
-        return;
-      }
       const currentBlob = await currentTuple[0]
       const currentBlobURL = URL.createObjectURL(currentBlob)
       const audio = new Audio(currentBlobURL);
-      await audio.play();
-
-      // remove blob from queue
-      setAudioQueue(pq => pq.slice(1))
-
       // if it's not the last sentence in the message, queue keeps going
-      if (!currentTuple[1]) playedSentenceCount.current += 1;
       // else, we're at the end of the message and we reset playedSentenceCount for the next message
+      if (!currentTuple[1]) playedSentenceCount.current += 1;
       else {
         console.log("played all sentences. resetting playedSentenceCount to 0.")
         playedSentenceCount.current = 0;
+        setAudioQueue([])
+        setIsAudioPlaying(false)
+        console.log('resetting audio queue')
+        audio.play()
+        return
       }
-      return new Promise<void>((resolve) => {
-        audio.onended = async () => {
-          resolve();
-          setIsAudioPlaying(false);
-        };
-      })
+      audio.onended = () => {
+        setIsAudioPlaying(false);
+      }
+      // audio.onended = playNextAudio
+      audio.play();
     }
     playNextAudio();
 
@@ -147,20 +138,20 @@ export default function Home() {
 
       // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
       // skip over first chunk because we don't want to add array[-1] chunk
-      if(currSentenceCount < 1) return
+      if (currSentenceCount < 1) return
 
       // iterate until we have added all new sentences to queue
       while (currSentenceCount > processedSentenceCount.current) {
         // we need to get the first sentence that hasn't been added to the queue yet
         // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
         const numMissedSentences = (currSentenceCount - processedSentenceCount.current)
-        
+
         processedSentenceCount.current += 1;
         const chunkIndex = (sentencesChunks.length - 1) - numMissedSentences
 
-        console.log("sentence chunks: " + sentencesChunks);
-        console.log("adding sentence #" + chunkIndex + " to queue: " + sentencesChunks[chunkIndex])
-
+        // console.log("sentence chunks: " + sentencesChunks);
+        // console.log("adding sentence #" + chunkIndex + " to queue: " + sentencesChunks[chunkIndex])
+        console.log("adding sentence #" + chunkIndex )
         // get promise of audio blob from sentence
         const blob = fetch('/api/tts', {
           method: 'POST',
@@ -169,10 +160,8 @@ export default function Home() {
           })
         }).then(res => res.blob())
 
-        // add promise to the correct index of the array according to the order the sentence came into the message
-        setAudioQueue(pq => pq.toSpliced(chunkIndex, 0, [blob, false]));
+        setAudioQueue(pq => [...pq, [blob, false]])
       }
-
       // const isFinal = !isTextStreaming
       // console.log("final: " + isFinal)
 
@@ -186,11 +175,12 @@ export default function Home() {
           })
         }).then(res => res.blob())
 
-        // add promise to the correct index of the array according to the order the sentence came into the message
-        setAudioQueue(pq => pq.toSpliced(sentencesChunks.length - 1, 0, [blob, true]));
+        setAudioQueue(pq => [...pq, [blob, true]])
+
         processedSentenceCount.current = 0
         console.log("done adding current message to queue. resetting processed sentence count.")
       }
+
     }
 
     addToAudioQueue();
@@ -347,69 +337,68 @@ export default function Home() {
                 </p>
                 <div className='flex flex-col md:flex-row justify-between'>
                   <div className='flex flex-col flex-wrap'>
-                  <div className="mt-1">
-                    <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
-                    <select
-                      id="language-select"
-                      value={targetLanguage}
-                      onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
-                      className="chatbot-input ml-2"
-                    >
-                      <option value="German">German</option>
-                      <option value="Spanish">Spanish</option>
-                      <option value="French">French</option>
-                      <option value="Chinese">Chinese</option>
-                      <option value="Portuguese">Portuguese</option>
-                      <option value="Japanese">Japanese</option>
-                      <option value="Hindi">Hindi</option>
-                      <option value="Bengali">Bengali</option>
-                      <option value="Italian">Italian</option>
-                    </select>
-                  </div>
-                  <div className=''>
-                    Flashcards created: {flashcards.length}
-                  </div>
-                  <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-                    // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
-                    const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                    fetch(url, {
-                      method: "POST",
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        jsonFlashcards: flashcards
+                    <div className="mt-1">
+                      <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
+                      <select
+                        id="language-select"
+                        value={targetLanguage}
+                        onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
+                        className="chatbot-input ml-2"
+                      >
+                        <option value="German">German</option>
+                        <option value="Spanish">Spanish</option>
+                        <option value="French">French</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="Portuguese">Portuguese</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Hindi">Hindi</option>
+                        <option value="Bengali">Bengali</option>
+                        <option value="Italian">Italian</option>
+                      </select>
+                    </div>
+                    <div className=''>
+                      Flashcards created: {flashcards.length}
+                    </div>
+                    <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
+                      // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                      const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                      fetch(url, {
+                        method: "POST",
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          jsonFlashcards: flashcards
+                        })
                       })
-                    })
-                      .then(response => response.blob())
-                      .then(blob => {
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = 'brick-bot-flashcards.apkg';
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                      })
-                      .catch((error) => {
-                        console.error('Error:', error);
-                      });
-                  }}>
-                    Download flashcards!
-                  </button>
+                        .then(response => response.blob())
+                        .then(blob => {
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.style.display = 'none';
+                          a.href = url;
+                          a.download = 'brick-bot-flashcards.apkg';
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                        })
+                        .catch((error) => {
+                          console.error('Error:', error);
+                        });
+                    }}>
+                      Download flashcards!
+                    </button>
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stop()
-                    setZustandMessages([])
                     setMessages([])
-                    setHasStarted(false)
+                    resetStore()
                   }}>
                     Reset chat
                   </button>
 
                 </div>
-                  <button onClick={playAudio}>play audio</button>
+                <button onClick={playAudio}>play audio</button>
               </>
             )}
           </header>

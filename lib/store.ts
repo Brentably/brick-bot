@@ -10,6 +10,7 @@ export interface Store {
   setZustandMessages: (zustandMessages: Message[]) => void;
   hasStarted: boolean;
   setHasStarted: (hasStarted: boolean) => void;
+  resetStore: () => void;
 }
 
 const INIT_STORE = {
@@ -30,6 +31,7 @@ export const useBrickStore = create<Store>()(
       setZustandMessages: (zustandMessages) =>
         set((pS) => ({ ...pS, zustandMessages })),
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),
+      resetStore: () => set(() => ({ ...INIT_STORE })),
     }),
     {
       name: "brick-storage",
