@@ -7,6 +7,8 @@ import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
 import Div100vh, { measureHeight } from 'react-div-100vh';
 import Image from 'next/image'
 import bricks from "../public/assets/bricks.svg"
+import { useBrickStore } from '../lib/store';
+import { ClozeFlashcard, Flashcard } from '../lib/types';
 
 const LANGUAGE_TO_HELLO = {
   "German": "Hallo!",
@@ -28,18 +30,6 @@ const LANGUAGE_TO_INTRO = {
   "French": "Bonjour ! Je suis Brick Bot, un professeur de langue personnel ! Je te parlerai en français et je corrigerai tes erreurs.  Quel est ton niveau de français ?"
 }
 
-type BasicFlashcard = {
-  front: string
-  back: string
-}
-type ClozeFlashcard = {
-  text: string,
-  back_extra: string,
-  foreign_sentence_base: string
-}
-
-type Flashcard = BasicFlashcard | ClozeFlashcard
-
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
     onResponse: () => setIsTextStreaming(true),
@@ -48,9 +38,14 @@ export default function Home() {
 
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
-  const [hasStarted, setHasStarted] = useState(false);
+
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
+  const flashcards = useBrickStore(state => state.flashcards)
+  const addFlashcards = useBrickStore(state => state.addFlashcards)
+  const hasStarted = useBrickStore(state => state.hasStarted)
+  const setHasStarted = useBrickStore(state => state.setHasStarted)
+  const zustandMessages = useBrickStore(state => state.zustandMessages)
+  const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   // index indicates order blobs should be played in
   const [audioQueue, setAudioQueue] = useState<[number, Blob][]>([]);
   // lock to make sure only one audio plays at a time
@@ -61,6 +56,30 @@ export default function Home() {
   // # sentences that have been played
   const playedSentenceCount = useRef(0)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
+  
+  const getInitMessages:() => Message[] = () => [
+    { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
+    { id: crypto.randomUUID(), content: LANGUAGE_TO_INTRO[targetLanguage], role: 'assistant' }
+  ]
+
+  useEffect(() => {
+    // normally just want to be serializing to localstorage/zustand, 
+    // BUT, if they refresh and messages is set back to 0, then want to make sure it's up to date with the messages that have been saved
+    // whichever is longer should update the other!
+
+    console.log('messages length: ', messages.length)
+    console.log('zustand messages length: ', zustandMessages.length)
+
+    if(messages.length > zustandMessages.length && messages.length) {
+    
+      console.log('setting zustand messages from messages: ', messages)
+      setZustandMessages(messages)}
+    else if (zustandMessages.length > messages.length) {
+      console.log('setting messages from zustand messages')
+      
+      setMessages(zustandMessages)
+    }
+  }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
 
@@ -179,10 +198,7 @@ export default function Home() {
 
   const beginChat = () => {
     setHasStarted(true)
-    setMessages([
-      { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
-      { id: crypto.randomUUID(), content: LANGUAGE_TO_INTRO[targetLanguage], role: 'assistant' }
-    ])
+    setMessages(getInitMessages())
     if (typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
   }
 
@@ -282,7 +298,7 @@ export default function Home() {
         })
       }).then(resp => resp.json())
         .then(resp => createFlashcards(resp.unparsedFlashcards))
-        .then(_flashcards => setFlashcards(pf => [...pf, ..._flashcards]))
+        .then(_flashcards => addFlashcards(_flashcards))
     }
 
     if (messages.length) processLatestMessage(messages[messages.length - 1])
@@ -405,11 +421,6 @@ export default function Home() {
       </main>
     </Div100vh>
   )
-}
-function RobotIcon() {
-  return <svg width="24" height="25" viewBox="0 0 24 25">
-    <path d="M20 9.96057V7.96057C20 6.86057 19.1 5.96057 18 5.96057H15C15 4.30057 13.66 2.96057 12 2.96057C10.34 2.96057 9 4.30057 9 5.96057H6C4.9 5.96057 4 6.86057 4 7.96057V9.96057C2.34 9.96057 1 11.3006 1 12.9606C1 14.6206 2.34 15.9606 4 15.9606V19.9606C4 21.0606 4.9 21.9606 6 21.9606H18C19.1 21.9606 20 21.0606 20 19.9606V15.9606C21.66 15.9606 23 14.6206 23 12.9606C23 11.3006 21.66 9.96057 20 9.96057ZM7.5 12.4606C7.5 11.6306 8.17 10.9606 9 10.9606C9.83 10.9606 10.5 11.6306 10.5 12.4606C10.5 13.2906 9.83 13.9606 9 13.9606C8.17 13.9606 7.5 13.2906 7.5 12.4606ZM16 17.9606H8V15.9606H16V17.9606ZM15 13.9606C14.17 13.9606 13.5 13.2906 13.5 12.4606C13.5 11.6306 14.17 10.9606 15 10.9606C15.83 10.9606 16.5 11.6306 16.5 12.4606C16.5 13.2906 15.83 13.9606 15 13.9606Z" />
-  </svg>
 }
 
 function SendIcon() {
