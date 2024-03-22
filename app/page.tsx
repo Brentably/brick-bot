@@ -5,7 +5,8 @@ import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
 import Div100vh, { measureHeight } from 'react-div-100vh';
-
+import Image from 'next/image'
+import bricks from "../public/assets/bricks.svg"
 
 const LANGUAGE_TO_HELLO = {
   "German": "Hallo!",
@@ -295,8 +296,8 @@ export default function Home() {
           <header className='chatbot-header pb-6'>
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
-                <RobotIcon />
-                <h1 className='chatbot-text-primary text-xl md:text-2xl font-medium'>Nick Rosenksi is a bitch</h1>
+                <Image src={bricks} alt='' className='w-10' />
+                <h1 className='chatbot-text-primary text-xl md:text-2xl font-medium'>Brick Bot</h1>
               </div>
               <button
                 className='text-sm md:text-base'
