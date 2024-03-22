@@ -31,7 +31,7 @@ const LANGUAGE_TO_INTRO = {
 }
 
 export default function Home() {
-  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload } = useChat({
+  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop } = useChat({
     onResponse: () => setIsTextStreaming(true),
     onFinish: () => setIsTextStreaming(false)
   });
@@ -400,8 +400,10 @@ export default function Home() {
                   </button>
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
+                    stop()
                     setZustandMessages([])
-                    setMessages(getInitMessages())
+                    setMessages([])
+                    setHasStarted(false)
                   }}>
                     Reset chat
                   </button>
