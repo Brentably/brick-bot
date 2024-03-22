@@ -54,8 +54,9 @@ Use a vocab card when it's clear the pupil is being corrected on the correct voc
 
 2. <cloze> cards which have <deletion> tags to specify what words to cloze delete.
 Example: <cloze>Es war <deletion>schön</deltion> mit zu <deletion>reden</deletion>.</cloze>
-Use a cloze sentence when the instructor gives a correct sentence to the pupil in order to remedy some mistakes. Do NOT use a cloze sentence on a direct comment / explanation made by the instructor. The sentence should be an example sentence around the conversation, not the actual feedback / grammatical / linguistic explanation.
-
+Use a cloze sentence when the instructor gives a correct sentence to the pupil in order to remedy some mistakes. Do NOT use the instructor's explanation as the cloze sentence, but rather the sentence should be an example sentence around the conversation.
+Any cloze sentence / cloze deletion should come directly from the instructor's feedback! It should bridge the gap between the pupil's statement and the instructor's example / explanation.
+Let me reiterate, only include cloze deletions which test improvements pointed out by the instructor.
 </instructions>
 
 <example>
@@ -90,6 +91,27 @@ Output:
 </cards>
 </example>
 
+<example>
+Pupil: Ein Herr hat mir in ein Flugstelle erzält: 'Es war schön mit dir zu reden.'
+Instructor: Das ist eine nette Phrase, die man am Ende eines Gesprächs verwendet! Lass mich deinen Satz ein wenig korrigieren:\n\n\"Ein Herr hat mir an einem Flughafen gesagt: 'Es war schön, mit dir zu reden.'\"\n\nEin paar Erklärungen:\n- \"Flugstelle\" ist kein deutsches Wort. Stattdessen verwendest du \"Flughafen\".\n- In deinem Satz fehlten ein paar Kommas. Man setzt Kommas vor und nach direkter Rede und vor \"zu\" mit Infinitiv.\n- \"Erzählen\" bedeutet normalerweise, eine längere Geschichte zu erzählen. Für kurze Phrasen passt \"sagen\" besser.\n\nSolche Phrasen sind toll, um eine freundliche Atmosphäre zu schaffen. Hier sind noch ein paar ähnliche Ausdrücke:\n- \"Es hat mich gefreut, dich kennenzulernen.\"\n- \"Ich hoffe, wir sehen uns bald wieder.\"\n- \"Bis zum nächsten Mal!\"\n\nHast du den Herrn am Flughafen nach dem Weg gefragt oder hattet ihr einfach ein nettes Gespräch?
+Output: 
+<cards>
+<vocab>Flughafen</vocab>
+<cloze>Ein Herr hat mir <deletion>an einem</deletion> <deletion>Flughafen</deletion> <deletion>gesagt</deletion>: 'Es war schön, mit dir zu reden.'</cloze>
+</cards>
+</example>
+
+<example>
+Pupil: Ich verwende Typescript, um "create" ein Projekt mit Artificial Intelligenz. Es gibt ein Robot, dass das kann mit dir reden und eine Lehrer sein.
+Instructor: Das klingt nach einem sehr interessanten Projekt! Lass uns deinen Text ein wenig verbessern:\n\nKorrekt wäre: \"Ich verwende TypeScript, um ein Projekt mit künstlicher Intelligenz zu erstellen. Es gibt einen Roboter, der mit dir reden und ein Lehrer sein kann.\"\n\nEin paar Anmerkungen:\n- \"create\" ist Englisch. Auf Deutsch sagt man \"erstellen\" oder \"entwickeln\".\n- \"dass\" ist ein Relativpronomen und wird verwendet, um Nebensätze einzuleiten, die nicht essenziell sind. Hier wäre \"der\" (oder \"die\"/\"das\", je nach Geschlecht) besser geeignet.\n- \"das kann mit dir reden\" sollte \"der mit dir reden kann\" heißen. Die Reihenfolge von Subjekt und Verb ist in Nebensätzen anders als in Hauptsätzen.\n- \"eine Lehrer\" sollte \"ein Lehrer\" heißen, da \"Lehrer\" maskulin ist.\n\nTypeScript ist eine gute Wahl für so ein Projekt. Wie weit bist du schon gekommen? Und was für eine Art von künstlicher Intelligenz planst du zu verwenden? Ich bin sehr gespannt, mehr darüber zu erfahren!
+Output: 
+<cards>
+<vocab>erstellen</vocab>
+<vocab>künstliche Intelligenz</vocab>
+<cloze>Ich verwende TypeScript, um ein Projekt mit <deletion>künstlicher Intelligenz</deletion> zu <deletion>erstellen</deletion>.</cloze>
+<cloze>Es gibt <deletion>einen Roboter<deletion/>, <deletion>der</deletion> mit dir reden und <deletion>ein</deletion> Lehrer <deletion>sein kann</deletion>.</cloze>
+</cards>
+</example>
 `;
 
 // experiment with alternative formatting for cloze cards. I'm following a process where I put the sentence down, and then go through and figure out what words should be clozed. Can have claude emulate this.

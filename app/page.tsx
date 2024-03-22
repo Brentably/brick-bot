@@ -282,7 +282,7 @@ export default function Home() {
         })
       }).then(resp => resp.json())
         .then(resp => createFlashcards(resp.unparsedFlashcards))
-        .then(flashcards => setFlashcards(flashcards))
+        .then(_flashcards => setFlashcards(pf => [...pf, ..._flashcards]))
     }
 
     if (messages.length) processLatestMessage(messages[messages.length - 1])
