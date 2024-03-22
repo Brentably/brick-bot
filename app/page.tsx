@@ -50,30 +50,42 @@ export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
-  const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
+  // index indicates order blobs should be played in
+  const [audioQueue, setAudioQueue] = useState<[number, Blob][]>([]);
   // lock to make sure only one audio plays at a time
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  // lock to make sure only one instance of adding to queue happens at once
-  const [isAddingToQueue, setIsAddingToQueue] = useState(false);
   const processedSentenceCount = useRef(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
 
-
   useEffect(() => {
-
     const playNextAudio = async (): Promise<void> => {
+
       // make sure not to call it if audio is currently playing
       if (isAudioPlaying) return;
-      if (audioQueue.length === 0) {
+      const audioQueueLength = Object.keys(audioQueue).length;
+      if (audioQueueLength === 0) {
         setIsAudioPlaying(false);
         return Promise.resolve();
       }
+      // do not run if we don't have a fully updated queue
+      if (audioQueueLength < processedSentenceCount.current) return;
 
       setIsAudioPlaying(true);
 
-      const blobURL = URL.createObjectURL(audioQueue[0]);
-      setAudioQueue((queue) => queue.slice(1));
+      // sort audio queue based on index
+      const sortedAudioQueue = audioQueue.sort((a, b) => a[0] - b[0]);
+      console.log("audio queue: " + audioQueue);
+      console.log("sorted audio queue: " + sortedAudioQueue);
+      console.log("processing sentence #" + sortedAudioQueue[0][0]);
+
+      // get the blob of the first index in the queue
+      const blobURL = URL.createObjectURL(sortedAudioQueue[0][1]);
+
+      // we want to remove the index that we just used to get the blob URL (sortedAudioQueue[0][0])
+      const indexToRemove = audioQueue.findIndex(i => i[0] === sortedAudioQueue[0][0])
+      setAudioQueue((queue) => queue.splice(indexToRemove, 1));
+
       const audio = new Audio(blobURL);
       await audio.play();
 
@@ -97,16 +109,12 @@ export default function Home() {
       const lastMessage = messages[messages.length - 1]
       if (lastMessage.role !== 'assistant') return
 
-      setIsAddingToQueue(true);
-
       const messageStr = lastMessage.content;
-      console.log('processing: ', messageStr)
       // const sentenceChunks = messageStr.split(/(?<=[.!?])\s+/);
       // const sentenceChunks = messageStr.split(/(?<=[.!?]|--?|\u2014|\u2013)\s+/);
       const sentencesChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
-      // 
+      // number of full sentences i.e. does not include sentence still streaming in
       const currSentenceCount = sentencesChunks.length - 1;
-      console.log('sentences chunks: ', sentencesChunks)
 
       // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
       // skip over first chunk because we don't want to add array[-1] chunk
@@ -117,10 +125,11 @@ export default function Home() {
         // we need to get the first sentence that hasn't been added to the queue yet
         // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
         const numMissedSentences = (currSentenceCount - processedSentenceCount.current)
-        console.log('missed sentences = ', numMissedSentences)
         
         processedSentenceCount.current += 1;
         const chunkIndex = (sentencesChunks.length - 1) - numMissedSentences
+
+        console.log("adding sentence #" + chunkIndex + " to queue: " + sentencesChunks[chunkIndex])
 
         // get audio blob from sentence
         const res = await fetch('/api/tts', {
@@ -130,18 +139,15 @@ export default function Home() {
           })
         });
         const blob = await res.blob();
-        console.log('adding sentence audio to queue for sentence: ', chunkIndex)
-
-        setAudioQueue(pq => [...pq, blob]);
+        setAudioQueue(pq => [...pq, [chunkIndex, blob]]);
       }
-
 
       // const isFinal = !isTextStreaming
       // console.log("final: " + isFinal)
-      // on final chunk, we add the last chunk though.
+
+      // once text streaming has ended, add last chunk
       if (!isTextStreaming) {
         // get audio blob from sentence
-
         const res = await fetch('/api/tts', {
           method: 'POST',
           body: JSON.stringify({
@@ -149,11 +155,11 @@ export default function Home() {
           })
         });
         const blob = await res.blob();
-        setAudioQueue(pq => [...pq, blob])
+        console.log("adding sentence #" + (sentencesChunks.length - 1) + " to queue: " + sentencesChunks[sentencesChunks.length - 1])
+        setAudioQueue(pq => [...pq, [sentencesChunks.length - 1, blob]]);
         processedSentenceCount.current = 0
+        console.log("done with this message. resetting sentence count.")
       }
-
-      setIsAddingToQueue(false);
     }
 
     addToAudioQueue();
