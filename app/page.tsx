@@ -345,7 +345,8 @@ export default function Home() {
                 <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">
                   Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
                 </p>
-                <div className='flex flex-col justify-between'>
+                <div className='flex flex-col md:flex-row justify-between'>
+                  <div className='flex flex-col flex-wrap'>
                   <div className="mt-1">
                     <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
                     <select
@@ -397,8 +398,16 @@ export default function Home() {
                   }}>
                     Download flashcards!
                   </button>
-                  <button onClick={playAudio}>play audio</button>
+                  </div>
+                  <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
+                    setZustandMessages([])
+                    setMessages(getInitMessages())
+                  }}>
+                    Reset chat
+                  </button>
+
                 </div>
+                  <button onClick={playAudio}>play audio</button>
               </>
             )}
           </header>
