@@ -110,10 +110,10 @@ export default function Home() {
         audio.play()
         return
       }
-      audio.onended = () => {
-        setIsAudioPlaying(false);
-      }
-      // audio.onended = playNextAudio
+      // audio.onended = () => {
+      //   setIsAudioPlaying(false);
+      // }
+      audio.onended = playNextAudio
       audio.play();
     }
     playNextAudio();
