@@ -27,7 +27,8 @@ const LANGUAGE_TO_HELLO = {
 // TODO: will add the rest later b/c want to make sure this is a good prompt now.
 const LANGUAGE_TO_INTRO = {
   "German": "Hallo! Ich bin Brick Bot, ein persönlicher Sprachlehrer! Ich werde mit dir auf Deutsch sprechen und deine Fehler korrigieren.  Wie viel Deutsch kannst du?",
-  "French": "Bonjour ! Je suis Brick Bot, un professeur de langue personnel ! Je te parlerai en français et je corrigerai tes erreurs.  Quel est ton niveau de français ?"
+  "French": "Bonjour ! Je suis Brick Bot, un professeur de langue personnel ! Je te parlerai en français et je corrigerai tes erreurs.  Quel est ton niveau de français ?",
+  "Chinese": "大家好，我是 Brick Bot，一名私人语言导师！我会用中文和你交流，纠正你的错误。 你会多少中文？"
 }
 
 export default function Home() {
@@ -82,18 +83,18 @@ export default function Home() {
   }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
-    console.log('audio use effect')
-    console.log('isAudioPlaying', isAudioPlaying)
-    console.log('audioQueue length:', audioQueue.length)
+    // console.log('audio use effect')
+    // console.log('isAudioPlaying', isAudioPlaying)
+    // console.log('audioQueue length:', audioQueue.length)
     if (isAudioPlaying) return;
-    
+
     const playNextAudio = async () => {
-      if(audioQueue.length === 0) return
-      console.log('playnextaudio called')
+      if (audioQueue.length === 0) return
+      // console.log('playnextaudio called')
       setIsAudioPlaying(true);
-      
-      console.log('awaiting blob')
-      console.log('current audio queue: ', audioQueue)
+
+      // console.log('awaiting blob')
+      // console.log('current audio queue: ', audioQueue)
       const currentTuple = audioQueue[0]
       const currentBlob = await currentTuple[0]
       const currentBlobURL = URL.createObjectURL(currentBlob)
@@ -144,7 +145,7 @@ export default function Home() {
 
         // console.log("sentence chunks: " + sentencesChunks);
         // console.log("adding sentence #" + chunkIndex + " to queue: " + sentencesChunks[chunkIndex])
-        console.log("adding sentence #" + chunkIndex )
+        // console.log("adding sentence #" + chunkIndex )
         // get promise of audio blob from sentence
         const blob = fetch('/api/tts', {
           method: 'POST',
@@ -171,7 +172,7 @@ export default function Home() {
         setAudioQueue(pq => [...pq, [blob, true]])
 
         processedSentenceCount.current = 0
-        console.log("done adding current message to queue. resetting processed sentence count.")
+        // console.log("done adding current message to queue. resetting processed sentence count.")
       }
 
     }
@@ -282,7 +283,11 @@ export default function Home() {
         })
       }).then(resp => resp.json())
         .then(resp => createFlashcards(resp.unparsedFlashcards))
-        .then(_flashcards => addFlashcards(_flashcards))
+        .then(_flashcards => {
+          console.log('flashcards: ')
+          console.log(_flashcards)
+          addFlashcards(_flashcards)
+        })
     }
 
     if (messages.length) processLatestMessage(messages[messages.length - 1])
@@ -353,8 +358,8 @@ export default function Home() {
                       Flashcards created: {flashcards.length}
                     </div>
                     <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-                      // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
-                      const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                      const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                      // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
                       fetch(url, {
                         method: "POST",
                         headers: {
