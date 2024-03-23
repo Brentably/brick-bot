@@ -55,7 +55,7 @@ export default function Home() {
   const processedSentenceCount = useRef(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
   // # sentences that have been played
-  const playedSentenceCount = useRef(0)
+
   const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
 
   const getInitMessages: () => Message[] = () => [
@@ -92,28 +92,21 @@ export default function Home() {
       console.log('playnextaudio called')
       setIsAudioPlaying(true);
       
-      console.log('awaiting blob', playedSentenceCount.current)
+      console.log('awaiting blob')
       console.log('current audio queue: ', audioQueue)
-      const currentTuple = audioQueue[playedSentenceCount.current]
+      const currentTuple = audioQueue[0]
       const currentBlob = await currentTuple[0]
       const currentBlobURL = URL.createObjectURL(currentBlob)
       const audio = new Audio(currentBlobURL);
       // if it's not the last sentence in the message, queue keeps going
       // else, we're at the end of the message and we reset playedSentenceCount for the next message
-      if (!currentTuple[1]) playedSentenceCount.current += 1;
-      else {
-        console.log("played all sentences. resetting playedSentenceCount to 0.")
-        playedSentenceCount.current = 0;
-        setAudioQueue([])
-        setIsAudioPlaying(false)
-        console.log('resetting audio queue')
-        audio.play()
-        return
-      }
+      const isFinalSentence = currentTuple[1]
+      setAudioQueue(pq => pq.slice(1))
+
       // audio.onended = () => {
       //   setIsAudioPlaying(false);
       // }
-      audio.onended = playNextAudio
+      audio.onended = () => setIsAudioPlaying(false)
       audio.play();
     }
     playNextAudio();
