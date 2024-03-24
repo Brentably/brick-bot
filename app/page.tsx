@@ -28,7 +28,8 @@ const LANGUAGE_TO_HELLO = {
 const LANGUAGE_TO_INTRO = {
   "German": "Hallo! Ich bin Brick Bot, ein persönlicher Sprachlehrer! Ich werde mit dir auf Deutsch sprechen und deine Fehler korrigieren.  Wie viel Deutsch kannst du?",
   "French": "Bonjour ! Je suis Brick Bot, un professeur de langue personnel ! Je te parlerai en français et je corrigerai tes erreurs.  Quel est ton niveau de français ?",
-  "Chinese": "大家好，我是 Brick Bot，一名私人语言导师！我会用中文和你交流，纠正你的错误。 你会多少中文？"
+  "Chinese": "大家好，我是 Brick Bot，一名私人语言导师！我会用中文和你交流，纠正你的错误。 你会多少中文？",
+  "Spanish": "¡Hola! Soy Brick Bot, un tutor personal de idiomas. Hablaré contigo en español y corregiré tus errores. ¿Cuánto español sabes?"
 }
 
 export default function Home() {
@@ -358,8 +359,9 @@ export default function Home() {
                       Flashcards created: {flashcards.length}
                     </div>
                     <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-                      const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                      // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
                       // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                      const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
                       fetch(url, {
                         method: "POST",
                         headers: {
