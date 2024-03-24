@@ -21,15 +21,33 @@ const LANGUAGE_TO_HELLO = {
   "Japanese": "こんにちは！",
   "Hindi": "नमस्ते!",
   "Bengali": "হ্যালো!",
-  "Italian": "Ciao!"
+  "Italian": "Ciao!",
+  "Dutch": "Hallo!",
+  "Greek": "Γειά σου!",
+  "Hebrew": "שלום!",
+  "Korean": "안녕하세요!",
+  "Swedish": "Hej!",
+  "Turkish": "Merhaba!"
 }
 
-// TODO: will add the rest later b/c want to make sure this is a good prompt now.
 const LANGUAGE_TO_INTRO = {
   "German": "Hallo! Ich bin Brick Bot, ein persönlicher Sprachlehrer! Ich werde mit dir auf Deutsch sprechen und deine Fehler korrigieren.  Wie viel Deutsch kannst du?",
   "French": "Bonjour ! Je suis Brick Bot, un professeur de langue personnel ! Je te parlerai en français et je corrigerai tes erreurs.  Quel est ton niveau de français ?",
   "Chinese": "大家好，我是 Brick Bot，一名私人语言导师！我会用中文和你交流，纠正你的错误。 你会多少中文？",
-  "Spanish": "¡Hola! Soy Brick Bot, un tutor personal de idiomas. Hablaré contigo en español y corregiré tus errores. ¿Cuánto español sabes?"
+  "Spanish": "¡Hola! Soy Brick Bot, un tutor personal de idiomas. Hablaré contigo en español y corregiré tus errores. ¿Cuánto español sabes?",
+  "Russian": "Привет! Я Brick Bot, твой личный языковой наставник! Я буду говорить с тобой по-русски и исправлять твои ошибки. Сколько русского ты знаешь?",
+  "Arabic": "مرحبا! أنا Brick Bot، مدرس اللغة الشخصي الخاص بك! سأتحدث معك بالعربية وأصحح أخطاءك. كم تعرف من العربية؟",
+  "Portuguese": "Olá! Eu sou o Brick Bot, um tutor de idiomas pessoal! Eu vou falar contigo em português e corrigir os teus erros. Quanto português sabes?",
+  "Japanese": "こんにちは！私はBrick Bot、個人の言語教師です！日本語で話し、間違いを修正します。 どのくらい日本語が話せますか？",
+  "Hindi": "नमस्ते! मैं ब्रिक बॉट हूँ, आपका निजी भाषा शिक्षक! मैं आपसे हिंदी में बात करूँगा और आपकी गलतियों को सुधारूँगा। आपको हिंदी कितनी आती है?",
+  "Bengali": "হ্যালো! আমি ব্রিক বট, আপনার ব্যক্তিগত ভাষা শিক্ষক! আমি আপনার সাথে বাংলায় কথা বলব এবং আপনার ভুল শুধরে দেব। আপনি কতটুকু বাংলা জানেন?",
+  "Italian": "Ciao! Sono Brick Bot, il tuo insegnante di lingua personale! Parlerò con te in italiano e correggerò i tuoi errori. Quanto italiano conosci?",
+  "Dutch": "Hallo! Ik ben Brick Bot, jouw persoonlijke taalleraar! Ik zal met je in het Nederlands spreken en je fouten corrigeren. Hoeveel Nederlands ken je?",
+  "Greek": "Γειά σου! Είμαι ο Brick Bot, ο προσωπικός σου δάσκαλος γλώσσας! Θα μιλήσω μαζί σου στα Ελληνικά και θα διορθώσω τα λάθη σου. Πόσα Ελληνικά ξέρεις;",
+  "Hebrew": "שלום! אני Brick Bot, המורה האישי שלך לשפות! אני אדבר איתך בעברית ואתקן את הטעויות שלך. כמה עברית אתה יודע?",
+  "Korean": "안녕하세요! 저는 Brick Bot, 개인 언어 교사입니다! 한국어로 대화하며 실수를 고쳐 드릴게요. 한국어를 얼마나 할 수 있나요?",
+  "Swedish": "Hej! Jag är Brick Bot, din personliga språklärare! Jag kommer att prata med dig på svenska och rätta dina fel. Hur mycket svenska kan du?",
+  "Turkish": "Merhaba! Ben Brick Bot, kişisel dil öğretmeniniz! Türkçe konuşacak ve hatalarınızı düzelteceğim. Türkçeniz ne kadar iyi?"
 }
 
 export default function Home() {
