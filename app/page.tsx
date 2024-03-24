@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from 'react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import Bubble from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
@@ -312,9 +312,12 @@ export default function Home() {
     if (messages.length) processLatestMessage(messages[messages.length - 1])
   }, [messages, isTextStreaming, targetLanguage]);
 
-  const handleSend = (e) => {
+  const handleSend:FormEventHandler<HTMLFormElement> = (e) => {
     if (isTextStreaming) {
+      e.preventDefault()
       stop()
+      setIsTextStreaming(false)
+      setAudioQueue([])
     } else handleSubmit(e)
   }
 
