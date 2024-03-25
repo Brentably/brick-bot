@@ -404,6 +404,7 @@ export default function Home() {
                       })
                         .then(response => response.blob())
                         .then(blob => {
+                          console.log('handling blob')
                           const url = window.URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.style.display = 'none';
