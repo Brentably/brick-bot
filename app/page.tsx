@@ -1,7 +1,7 @@
 "use client";
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import Bubble from '../components/Bubble'
-import { useChat, Message as aiMessage, CreateMessage, useCompletion } from 'ai/react';
+import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
 import Div100vh, { measureHeight } from 'react-div-100vh';
@@ -10,10 +10,6 @@ import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
 import { ClozeFlashcard, Flashcard } from '../lib/types';
 
-
-export interface Message extends aiMessage {
-  didMakeMistakes?: boolean,
-}
 
 
 const LANGUAGE_TO_HELLO = {
@@ -57,11 +53,17 @@ const LANGUAGE_TO_INTRO = {
 }
 
 export default function Home() {
-  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop } = useChat({
+  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
     onResponse: () => setIsTextStreaming(true),
     onFinish: () => setIsTextStreaming(false)
   });
 
+  const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction' })
+
+  type MessageData = {
+    didMakeMistakes?: boolean,
+  }
+  const [messagesData, setMessagesData] = useState<MessageData[]>([])
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
@@ -107,8 +109,8 @@ export default function Home() {
   }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
-    // console.log('audio use effect')
-    // console.log('isAudioPlaying', isAudioPlaying)
+    console.log('audio use effect')
+    console.log('isAudioPlaying', isAudioPlaying)
     // console.log('audioQueue length:', audioQueue.length)
     if (isAudioPlaying) return;
 
@@ -230,6 +232,10 @@ export default function Home() {
   }
 
 
+  useEffect(() => {
+    console.log('completion update: ', completion)
+  }, [completion])
+
 
   useEffect(() => {
     const createClozeCard = async (clozeCardXml: Element) => {
@@ -290,41 +296,51 @@ export default function Home() {
     scrollToBottom();
     if (isTextStreaming) return
 
-    const processLatestMessage = async (message: Message) => {
-      if (message.role !== 'assistant') return
+    const processLatestMessage = async (message: Message, index: number) => {
+      if (message.role !== 'user') return
       if (messages.length < 3) return // dont process first lil bit
 
-      const pupilMessage = messages.at(-2).content
+      const instructorMessage = messages.at(-2).content
 
-      fetch(`/api/didMakeMistakes`, {
+      const resp = await fetch(`/api/didMakeMistakes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           language: targetLanguage,
-          pupilMessage,
-          instructorMessage: message.content
+          instructorMessage,
+          pupilMessage: message.content,
         })
       }).then(resp => resp.json())
-        .then(resp => {
-          message.didMakeMistakes = resp.didMakeMistakes === 'YES' ? true : false
-          
-          if(resp.didMakeMistakes === "YES") fetch(`/api/getCorrectedSentenceAndFeedback`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            language: targetLanguage,
-            pupilMessage,
-            instructorMessage: message.content
-          })
-        })
 
+      const didMakeMistakes = resp.didMakeMistakes === 'YES' ? true : false
+      console.log('')
+      setMessagesData(pM => {
+        const newArr = [...pM]
+        newArr[index] = {didMakeMistakes}
+        return newArr
+      })
 
-       } )
-        .then()
+      // if (didMakeMistakes) await fetch(`/api/getCorrectedSentenceAndFeedback`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify({
+      //     language: targetLanguage,
+      //     pupilMessage,
+      //     instructorMessage: message.content
+      //   })
+      // })
+
+      if(didMakeMistakes) complete(``, {
+        body: {
+          language: targetLanguage,
+          pupilMessage: message.content,
+          instructorMessage
+        }
+      })
 
 
       // .then(resp => createFlashcardsFromXML(resp.unparsedFlashcards))
@@ -335,23 +351,17 @@ export default function Home() {
       // })
     }
 
-    if (messages.length) processLatestMessage(messages[messages.length - 1])
+    if (messages.length) processLatestMessage(messages[messages.length - 1], messages.length - 1)
   }, [messages, isTextStreaming, targetLanguage]);
 
   const handleSend: FormEventHandler<HTMLFormElement> = (e) => {
     if (isTextStreaming) {
       e.preventDefault()
-      stop()
+      stopChat()
       setIsTextStreaming(false)
       setAudioQueue([])
     } else handleSubmit(e)
   }
-
-  const handlePrompt = (promptText) => {
-    const msg: Message = { id: crypto.randomUUID(), content: promptText, role: 'user' };
-    append(msg);
-  };
-
 
 
   return (
@@ -448,7 +458,7 @@ export default function Home() {
                     </button>
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
-                    stop()
+                    stopChat()
                     setMessages([])
                     resetStore()
                   }}>
