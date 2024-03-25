@@ -52,18 +52,21 @@ const LANGUAGE_TO_INTRO = {
   "Turkish": "Merhaba! Ben Brick Bot, kişisel dil öğretmeniniz! Türkçe konuşacak ve hatalarınızı düzelteceğim. Türkçeniz ne kadar iyi?"
 }
 
+export type MessageData = {
+  didMakeMistakes: boolean | null,
+  mistakes?: string,
+  correctedResponse?: string,
+  explanation?: string
+}
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
     onResponse: () => setIsTextStreaming(true),
     onFinish: () => setIsTextStreaming(false)
   });
-
+  
   const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction' })
-
-  type MessageData = {
-    didMakeMistakes?: boolean,
-  }
-  const [messagesData, setMessagesData] = useState<MessageData[]>([])
+  
+  const [messagesData, setMessagesData] = useState<MessageData[]>([{didMakeMistakes: null}, {didMakeMistakes: null}])
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
@@ -109,8 +112,8 @@ export default function Home() {
   }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
-    console.log('audio use effect')
-    console.log('isAudioPlaying', isAudioPlaying)
+    // console.log('audio use effect')
+    // console.log('isAudioPlaying', isAudioPlaying)
     // console.log('audioQueue length:', audioQueue.length)
     if (isAudioPlaying) return;
 
@@ -231,9 +234,25 @@ export default function Home() {
     await new Audio(blobURL).play()
   }
 
+  function extractTextFromInsideTags(sourceText: string, tagName: string) {
+    const startTag = `<${tagName}>`
+    const endTag = `</${tagName}>`
+    if (!sourceText.includes(endTag)) return null
+    const startIndex = sourceText.indexOf(startTag) + startTag.length;
+    const endIndex = sourceText.indexOf(endTag);
+    return sourceText.slice(startIndex, endIndex);
+  }
 
   useEffect(() => {
     console.log('completion update: ', completion)
+    const processLatestCompletionFromStream = (completionStream: string) => {
+
+      const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
+      const correctedResponseText = extractTextFromInsideTags(completionStream, 'corrected-response')
+      const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
+      setMessagesData(pMD => [...pMD.slice(0, -1), {...pMD.at(-1), mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText}])
+    }
+    processLatestCompletionFromStream(completion)
   }, [completion])
 
 
@@ -318,7 +337,7 @@ export default function Home() {
       console.log('')
       setMessagesData(pM => {
         const newArr = [...pM]
-        newArr[index] = {didMakeMistakes}
+        newArr[index] = { didMakeMistakes }
         return newArr
       })
 
@@ -334,7 +353,7 @@ export default function Home() {
       //   })
       // })
 
-      if(didMakeMistakes) complete(``, {
+      if (didMakeMistakes) complete(``, {
         body: {
           language: targetLanguage,
           pupilMessage: message.content,
@@ -473,7 +492,7 @@ export default function Home() {
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
             <div className='absolute w-full overflow-x-hidden'>
-              {messages.slice(1).map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} />)}
+              {messages.slice(0).map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
             </div>
           </div>
           {hasStarted ?
