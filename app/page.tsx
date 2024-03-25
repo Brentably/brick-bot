@@ -390,9 +390,9 @@ export default function Home() {
                       Flashcards created: {flashcards.length}
                     </div>
                     <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-                      const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                      // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
                       // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                      // const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+                      const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
                       fetch(url, {
                         method: "POST",
                         headers: {
