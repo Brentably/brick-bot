@@ -1,7 +1,7 @@
 "use client";
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 import Bubble from '../components/Bubble'
-import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
+import { useChat, Message as aiMessage, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
 import Div100vh, { measureHeight } from 'react-div-100vh';
@@ -9,6 +9,12 @@ import Image from 'next/image'
 import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
 import { ClozeFlashcard, Flashcard } from '../lib/types';
+
+
+export interface Message extends aiMessage {
+  didMakeMistakes?: boolean,
+}
+
 
 const LANGUAGE_TO_HELLO = {
   "German": "Hallo!",
@@ -51,14 +57,13 @@ const LANGUAGE_TO_INTRO = {
 }
 
 export default function Home() {
-  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop} = useChat({
+  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop } = useChat({
     onResponse: () => setIsTextStreaming(true),
     onFinish: () => setIsTextStreaming(false)
   });
 
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
-
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
@@ -267,7 +272,7 @@ export default function Home() {
       return clozeFlashcard
     }
 
-    async function createFlashcards(unparsedFlashcards: string) {
+    async function createFlashcardsFromXML(unparsedFlashcards: string) {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(unparsedFlashcards, "text/xml");
       let flashcardsPromises: (Promise<Flashcard>)[] = []
@@ -284,13 +289,14 @@ export default function Home() {
 
     scrollToBottom();
     if (isTextStreaming) return
+
     const processLatestMessage = async (message: Message) => {
       if (message.role !== 'assistant') return
       if (messages.length < 3) return // dont process first lil bit
 
       const pupilMessage = messages.at(-2).content
 
-      fetch(`/api/unparsedFlashcardsFromMessage`, {
+      fetch(`/api/didMakeMistakes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -301,18 +307,38 @@ export default function Home() {
           instructorMessage: message.content
         })
       }).then(resp => resp.json())
-        .then(resp => createFlashcards(resp.unparsedFlashcards))
-        .then(_flashcards => {
-          console.log('flashcards: ')
-          console.log(_flashcards)
-          addFlashcards(_flashcards)
+        .then(resp => {
+          message.didMakeMistakes = resp.didMakeMistakes === 'YES' ? true : false
+          
+          if(resp.didMakeMistakes === "YES") fetch(`/api/getCorrectedSentenceAndFeedback`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            language: targetLanguage,
+            pupilMessage,
+            instructorMessage: message.content
+          })
         })
+
+
+       } )
+        .then()
+
+
+      // .then(resp => createFlashcardsFromXML(resp.unparsedFlashcards))
+      // .then(_flashcards => {
+      //   console.log('flashcards: ')
+      //   console.log(_flashcards)
+      //   addFlashcards(_flashcards)
+      // })
     }
 
     if (messages.length) processLatestMessage(messages[messages.length - 1])
   }, [messages, isTextStreaming, targetLanguage]);
 
-  const handleSend:FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSend: FormEventHandler<HTMLFormElement> = (e) => {
     if (isTextStreaming) {
       e.preventDefault()
       stop()

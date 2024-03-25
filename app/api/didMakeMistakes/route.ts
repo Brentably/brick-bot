@@ -9,7 +9,7 @@ const client = new Anthropic({
 export const runtime = "edge"; // 'nodejs' is the default
 
 // prompt chaining:
-// A. is there a flashcard or flashcards to be made
+// A. is there a flashcard or flashcards to be made. AKA were any mistakes made?
 const createSystemPromptA = (language: string) =>
   `<instructions>
 You are a ${language} language expert. You are well versed in creating excellent flashcards for language learners using spaced repetition software such as Anki and SuperMemo. You will be given a snippet of feedback from a language teacher and their pupil. Your task is simply to determine whether or not there is a flashcard, or several flashcard to be made from the teachers feedback, OR if the student performed well, and there's no flashcard to be made.
@@ -114,9 +114,6 @@ Output:
 </example>
 `;
 
-// experiment with alternative formatting for cloze cards. I'm following a process where I put the sentence down, and then go through and figure out what words should be clozed. Can have claude emulate this.
-
-
 export async function POST(req: Request) {
   try {
     const { pupilMessage, instructorMessage, language } = await req.json();
@@ -133,7 +130,7 @@ export async function POST(req: Request) {
           Output: `,
         },
       ],
-    });
+    })
 
     const yesOrNo = respA.content[0].text;
     console.log("flashcardsFromMessage prompt A resp: \n", yesOrNo);
@@ -141,7 +138,7 @@ export async function POST(req: Request) {
     if (yesOrNo !== "YES" && yesOrNo !== "NO")
       throw new Error(`yesOrNo was not YES or NO but it was: ${yesOrNo}`);
 
-    if (yesOrNo === "NO") return Response.json({ flashcards: [] });
+    return Response.json({didMakeMistakes: yesOrNo})
 
     const respB = await client.messages.create({
       model: "claude-3-opus-20240229",
