@@ -97,7 +97,8 @@ export default function Home() {
     // normally just want to be serializing to localstorage/zustand, 
     // BUT, if they refresh and messages is set back to 0, then want to make sure it's up to date with the messages that have been saved
     // whichever is longer should update the other!
-
+    if(isTextStreaming) return
+    console.log('serialize messages')
     // console.log('messages length: ', messages.length)
     // console.log('zustand messages length: ', zustandMessages.length)
 
@@ -386,7 +387,7 @@ export default function Home() {
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
-        <section className='chatbot-section flex flex-col origin:w-[800px] w-full h-full rounded-md p-2 md:p-6'>
+        <section className='chatbot-section flex flex-col max-w-[1200px] w-full h-full rounded-md p-2 md:p-6'>
           <header className='chatbot-header pb-6'>
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
@@ -492,7 +493,7 @@ export default function Home() {
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
             <div className='absolute w-full overflow-x-hidden'>
-              {messages.slice(0).map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
+              {messages.slice(0).map((message, index) => index > 0 && <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
             </div>
           </div>
           {hasStarted ?
