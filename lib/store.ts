@@ -37,8 +37,10 @@ export const useBrickStore = create<Store>()(
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),
       resetStore: () => set(() => ({ ...INIT_STORE })),
       setMessagesData: (newMessagesDataOrFunction) => {
-        if(typeof newMessagesDataOrFunction === 'object') set(ps => ({...ps, messagesData: newMessagesDataOrFunction}))
-        else set(ps => ({...ps, messagesData: newMessagesDataOrFunction(ps.messagesData)}))
+        const newMessagesData = typeof newMessagesDataOrFunction === 'object' ? newMessagesDataOrFunction : newMessagesDataOrFunction(get().messagesData)
+        console.log('setting messages DATA to', newMessagesData)
+        if(typeof newMessagesDataOrFunction === 'object') set(ps => ({...ps, messagesData: newMessagesData}))
+        else set(ps => ({...ps, messagesData: newMessagesData}))
       }
     }),
     {

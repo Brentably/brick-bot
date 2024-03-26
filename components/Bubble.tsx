@@ -20,6 +20,10 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   const { role } = content;
   const isUser = role === "user"
 
+  useEffect(() => {
+    console.log('messageData update on ')
+  }, [messageData])
+
   // useEffect(() => {
   //   if(content.content) console.log(JSON.stringify(content.content))
   // }, [content])
