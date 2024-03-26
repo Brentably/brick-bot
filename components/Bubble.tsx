@@ -25,7 +25,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
 
   const didMakeMistakes = typeof messageData === 'undefined' ? null :  messageData.didMakeMistakes
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-row justify-stretch items-stretch">
       <div ref={ref} className={`block mt-4 md:mt-6 pb-[7px] clear-both ${isUser ? 'float-right' : 'float-left'}`}>
         <div className="flex justify-end">
           <div className={`talk-bubble${isUser ? ' user' : ''} p-2 md:p-4 leading-[1.65] pr-9 grid grid-cols-1 gap-3 relative`}>

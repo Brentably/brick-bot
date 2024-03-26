@@ -110,7 +110,7 @@ export default function Home() {
       // console.log('setting messages from zustand messages')
       setMessages(zustandMessages)
     }
-  }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
+  }, [messages, zustandMessages, isTextStreaming]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
     // console.log('audio use effect')
@@ -245,7 +245,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    console.log('completion update: ', completion)
+    // console.log('completion update: ', completion)
     const processLatestCompletionFromStream = (completionStream: string) => {
 
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
