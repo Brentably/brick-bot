@@ -208,20 +208,6 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-
-
-  const playAudio = async () => {
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      body: JSON.stringify({
-        "input": messages[messages.length - 1].content
-      })
-    })
-    const blob = await res.blob()
-    const blobURL = URL.createObjectURL(blob)
-    await new Audio(blobURL).play()
-  }
-
   function extractTextFromInsideTags(sourceText: string, tagName: string) {
     const startTag = `<${tagName}>`
     const endTag = `</${tagName}>`
@@ -479,7 +465,6 @@ export default function Home() {
                   </button>
 
                 </div>
-                <button onClick={playAudio}>play audio</button>
               </>
             )}
           </header>

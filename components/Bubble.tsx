@@ -4,6 +4,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks"
 import { MessageData } from "../app/page";
+import soundIcon from "../public/assets/soundIcon.svg"
 
 interface BubbleProps {
   content: {
@@ -28,7 +29,9 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
     <div className={`flex flex-row `}>
       <div ref={ref} className={` pb-[7px] w-[60%] flex  mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
           {isUser ? (<div />) : (
-            <button><SoundIcon /></button>
+            <button>
+              <img src={soundIcon} alt="Sound Icon" />
+            </button>
           )}
         <div className={`talk-bubble${isUser ? ' user' : ''} p-2 md:p-4 leading-[1.65] pr-9 grid grid-cols-1 gap-3 relative`}>
           {content.processing ? (
@@ -74,23 +77,16 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   )
 })
 
-function SoundIcon() {
-  return (
-    <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g clip-path="url(#clip0_15_174)">
-        <rect width="24" height="24" fill="white" />
-        <path d="M3 16V8H6L11 4V20L6 16H3Z" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M13 9C13 9 15 9.5 15 12C15 14.5 13 15 13 15" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M15 7C15 7 18 7.83333 18 12C18 16.1667 15 17 15 17" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M17 5C17 5 21 6.16667 21 12C21 17.8333 17 19 17 19" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" />
-      </g>
-      <defs>
-        <clipPath id="clip0_15_174">
-          <rect width="24" height="24" fill="white" />
-        </clipPath>
-      </defs>
-    </svg>
-  );
-}
+// async function playAudio(message: Message) {
+//   const res = await fetch('/api/tts', {
+//     method: 'POST',
+//     body: JSON.stringify({
+//       "input": message.content
+//     })
+//   })
+//   const blob = await res.blob()
+//   const blobURL = URL.createObjectURL(blob)
+//   await new Audio(blobURL).play()
+// }
 
 export default Bubble;
