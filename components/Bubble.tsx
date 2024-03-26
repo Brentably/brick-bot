@@ -59,7 +59,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
       </div>
       {content.role === 'user' &&
         <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'}`}>
-          {didMakeMistakes === null ? 'yellow' : didMakeMistakes ? 'red' : 'green'}
+          {didMakeMistakes === null ? 'loading' : didMakeMistakes ? 'wrong' : 'right'}
       </div>}
     </div>
   )
