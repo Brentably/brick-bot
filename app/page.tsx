@@ -113,11 +113,15 @@ export default function Home() {
   }, [messages, zustandMessages, isTextStreaming]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
-    //if (isAudioPlaying) return;
+    if (isAudioPlaying) return;
 
     const playNextAudio = async () => {
       if (audioQueue.length === 0) return
-      if (audioStopped) return
+      if (audioStopped.current) {
+        console.log("audio stopped.")
+        setAudioQueue([])
+        return
+      }
       setIsAudioPlaying(true);
 
       const currentTuple = audioQueue[0]
@@ -356,12 +360,14 @@ export default function Home() {
 
   const handleSend: FormEventHandler<HTMLFormElement> = (e) => {
     if (isTextStreaming) {
+      console.log("stop form event")
       e.preventDefault()
       stopChat()
       setIsTextStreaming(false)
       setAudioQueue([])
       audioStopped.current = true
     } else {
+      console.log("send form event")
       audioStopped.current = false
       handleSubmit(e)
     }
