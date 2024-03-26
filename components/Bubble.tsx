@@ -24,7 +24,9 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   const audio = useRef(null)
 
   useEffect(() => {
+    if(!isUser) return
     console.log('messageData update on ')
+    console.log(messageData)
   }, [messageData])
 
   // useEffect(() => {
@@ -88,12 +90,12 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
               <strong>{messageData.correctedResponse}</strong>
             </div>
             <div>
-              {/* <Markdown
+              <Markdown
                 className="markdown grid grid-cols-1 gap-3"
                 remarkPlugins={[remarkGfm]}
-              > */}
+              >
                 {messageData.mistakes}
-              {/* </Markdown> */}
+              </Markdown>
             </div>
 
 

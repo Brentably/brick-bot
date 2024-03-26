@@ -8,7 +8,7 @@ const openai = new OpenAI();
 export async function POST(req: Request) {
     try {
         const { input } = await req.json()
-        console.log("tts input: " + input)
+        // console.log("tts input: " + input)
 
         const mp3 = await openai.audio.speech.create({
             model: "tts-1",

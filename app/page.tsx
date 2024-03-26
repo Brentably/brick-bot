@@ -10,6 +10,9 @@ import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
 import { ClozeFlashcard, Flashcard } from '../lib/types';
 
+function isEven(number: number): boolean {
+  return number % 2 === 0;
+}
 
 
 const LANGUAGE_TO_HELLO = {
@@ -85,6 +88,7 @@ const LANGUAGE_TO_EXAMPLE_PROMPTS = {
   ]
 }
 export type MessageData = {
+  role: "user" | "assistant"
   didMakeMistakes: boolean | null,
   mistakes?: string,
   correctedResponse?: string,
@@ -102,6 +106,12 @@ export default function Home() {
   const messagesData = useBrickStore(state => state.messagesData)
   const setMessagesData = useBrickStore(state => state.setMessagesData)
 
+  useEffect(() => {
+    console.log('messages change')
+    // always keep messages data length 1 above messages to prevent undefined errors.
+    if(messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, {didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant'}])
+  }, [messages])
+
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
@@ -112,6 +122,7 @@ export default function Home() {
   const zustandMessages = useBrickStore(state => state.zustandMessages)
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   const resetStore = useBrickStore(state => state.resetStore)
+  const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number|null>(null)
   // boolean is whether it is the last message
   const [audioQueue, setAudioQueue] = useState<[Promise<Blob>, boolean][]>([]);
   // lock to make sure only one audio plays at a time
@@ -244,13 +255,15 @@ export default function Home() {
   }
 
   useEffect(() => {
+    // prevents running on first render
+    if(messages.length < 1) return
     // console.log('completion update: ', completion)
     const processLatestCompletionFromStream = (completionStream: string) => {
 
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
       const correctedResponseText = extractTextFromInsideTags(completionStream, 'corrected-response')
       const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
-      setMessagesData(pMD => [...pMD.slice(0, -1), { ...pMD.at(-1), mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText }])
+      setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText })])
     }
     processLatestCompletionFromStream(completion)
   }, [completion])
@@ -317,9 +330,9 @@ export default function Home() {
 
     const processLatestMessage = async (message: Message, index: number) => {
       if (message.role !== 'user') return
-      if (messages.length < 3) return // dont process first lil bit
-
-      const instructorMessage = messages.at(-2).content
+      setIndexOfProcessingMessage(index)
+      // if no instructor message just make some shit up
+      const instructorMessage = messages.at(-2)?.content ?? LANGUAGE_TO_HELLO[targetLanguage]
 
       const resp = await fetch(`/api/didMakeMistakes`, {
         method: 'POST',
@@ -334,24 +347,12 @@ export default function Home() {
       }).then(resp => resp.json())
 
       const didMakeMistakes = resp.didMakeMistakes === 'YES' ? true : false
-      console.log('')
+
       setMessagesData(pM => {
         const newArr = [...pM]
-        newArr[index] = { didMakeMistakes }
+        newArr[index] = { ...pM[index], didMakeMistakes }
         return newArr
       })
-
-      // if (didMakeMistakes) await fetch(`/api/getCorrectedSentenceAndFeedback`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     language: targetLanguage,
-      //     pupilMessage,
-      //     instructorMessage: message.content
-      //   })
-      // })
 
       if (didMakeMistakes) complete(``, {
         body: {
@@ -361,13 +362,6 @@ export default function Home() {
         }
       })
 
-
-      // .then(resp => createFlashcardsFromXML(resp.unparsedFlashcards))
-      // .then(_flashcards => {
-      //   console.log('flashcards: ')
-      //   console.log(_flashcards)
-      //   addFlashcards(_flashcards)
-      // })
     }
 
     if (messages.length) processLatestMessage(messages[messages.length - 1], messages.length - 1)
@@ -451,7 +445,11 @@ export default function Home() {
 
           <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
             <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
-              {messages.map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
+              {messages.map((message, index) => {
+              
+              console.log('rendering bubble ', index)
+              console.log(`with messages data:`, messagesData)
+              return <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />})}
               {!hasStarted &&
                 <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>
                   Quick start by clicking one of these prompts!
