@@ -83,8 +83,8 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
         {content.role === 'user' ?
           <div className={`mt-4 md:mt-6 p-1`}>
 
-            {didMakeMistakes && (
-              <>
+       
+              
                 <div>
                   <div className="inline-block relative w-4 mr-1">
                     <span>&nbsp;</span>
@@ -100,8 +100,8 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
                     {messageData.mistakes}
                   </Markdown>
                 </div>
-              </>
-            )}
+              
+          
           </div>
           : null}
       </div>

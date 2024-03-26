@@ -421,40 +421,6 @@ export default function Home() {
                         <option value="Turkish">Turkish</option>
                       </select>
                     </div>
-                    <div className=''>
-                      Flashcards created: {flashcards.length}
-                    </div>
-                    <button className='self-start bg-gray-300 rounded-md p-1' onClick={() => {
-                      // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
-                      // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                      const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
-                      fetch(url, {
-                        method: "POST",
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          jsonFlashcards: flashcards
-                        })
-                      })
-                        .then(response => response.blob())
-                        .then(blob => {
-                          console.log('handling blob')
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.style.display = 'none';
-                          a.href = url;
-                          a.download = 'brick-bot-flashcards.apkg';
-                          document.body.appendChild(a);
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                        })
-                        .catch((error) => {
-                          console.error('Error:', error);
-                        });
-                    }}>
-                      Download flashcards!
-                    </button>
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stopChat()
@@ -499,8 +465,41 @@ export default function Home() {
                   )}
                 </form>
 
-                <div className='bg-red-50'>
-                  new download area
+                <div className='bg-red-50 flex justify-evenly flex-grow items-center'>
+                  <div className=''>
+                    Flashcards created: {flashcards.length}
+                  </div>
+                  <button className='bg-gray-300 rounded-md p-1' onClick={() => {
+                    // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                    // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                    const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+                    fetch(url, {
+                      method: "POST",
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        jsonFlashcards: flashcards
+                      })
+                    })
+                      .then(response => response.blob())
+                      .then(blob => {
+                        console.log('handling blob')
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = 'brick-bot-flashcards.apkg';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      })
+                      .catch((error) => {
+                        console.error('Error:', error);
+                      });
+                  }}>
+                    Download flashcards!
+                  </button>
                 </div>
               </div>
             </div>
