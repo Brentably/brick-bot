@@ -488,7 +488,7 @@ export default function Home() {
                 )}
               </form>
 
-              <div className='bg-red-50 flex justify-evenly flex-grow items-center'>
+              <div className='flex justify-evenly flex-grow items-center'>
                 <div className=''>
                   Flashcards created: {flashcards.length}
                 </div>
