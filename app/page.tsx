@@ -10,6 +10,8 @@ import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
 import { ClozeFlashcard, Flashcard } from '../lib/types';
 
+
+
 const LANGUAGE_TO_HELLO = {
   "German": "Hallo!",
   "French": "Bonjour!",
@@ -50,15 +52,23 @@ const LANGUAGE_TO_INTRO = {
   "Turkish": "Merhaba! Ben Brick Bot, kişisel dil öğretmeniniz! Türkçe konuşacak ve hatalarınızı düzelteceğim. Türkçeniz ne kadar iyi?"
 }
 
+export type MessageData = {
+  didMakeMistakes: boolean | null,
+  mistakes?: string,
+  correctedResponse?: string,
+  explanation?: string
+}
 export default function Home() {
-  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop} = useChat({
+  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
     onResponse: () => setIsTextStreaming(true),
     onFinish: () => setIsTextStreaming(false)
   });
-
+  
+  const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction' })
+  
+  const [messagesData, setMessagesData] = useState<MessageData[]>([{didMakeMistakes: null}, {didMakeMistakes: null}])
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
-
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
@@ -87,7 +97,8 @@ export default function Home() {
     // normally just want to be serializing to localstorage/zustand, 
     // BUT, if they refresh and messages is set back to 0, then want to make sure it's up to date with the messages that have been saved
     // whichever is longer should update the other!
-
+    if(isTextStreaming) return
+    console.log('serialize messages')
     // console.log('messages length: ', messages.length)
     // console.log('zustand messages length: ', zustandMessages.length)
 
@@ -99,7 +110,7 @@ export default function Home() {
       // console.log('setting messages from zustand messages')
       setMessages(zustandMessages)
     }
-  }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
+  }, [messages, zustandMessages, isTextStreaming]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
     //if (isAudioPlaying) return;
@@ -204,6 +215,26 @@ export default function Home() {
     await new Audio(blobURL).play()
   }
 
+  function extractTextFromInsideTags(sourceText: string, tagName: string) {
+    const startTag = `<${tagName}>`
+    const endTag = `</${tagName}>`
+    if (!sourceText.includes(endTag)) return null
+    const startIndex = sourceText.indexOf(startTag) + startTag.length;
+    const endIndex = sourceText.indexOf(endTag);
+    return sourceText.slice(startIndex, endIndex);
+  }
+
+  useEffect(() => {
+    // console.log('completion update: ', completion)
+    const processLatestCompletionFromStream = (completionStream: string) => {
+
+      const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
+      const correctedResponseText = extractTextFromInsideTags(completionStream, 'corrected-response')
+      const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
+      setMessagesData(pMD => [...pMD.slice(0, -1), {...pMD.at(-1), mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText}])
+    }
+    processLatestCompletionFromStream(completion)
+  }, [completion])
 
 
   useEffect(() => {
@@ -247,7 +278,7 @@ export default function Home() {
       return clozeFlashcard
     }
 
-    async function createFlashcards(unparsedFlashcards: string) {
+    async function createFlashcardsFromXML(unparsedFlashcards: string) {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(unparsedFlashcards, "text/xml");
       let flashcardsPromises: (Promise<Flashcard>)[] = []
@@ -264,38 +295,69 @@ export default function Home() {
 
     scrollToBottom();
     if (isTextStreaming) return
-    const processLatestMessage = async (message: Message) => {
-      if (message.role !== 'assistant') return
+
+    const processLatestMessage = async (message: Message, index: number) => {
+      if (message.role !== 'user') return
       if (messages.length < 3) return // dont process first lil bit
 
-      const pupilMessage = messages.at(-2).content
+      const instructorMessage = messages.at(-2).content
 
-      fetch(`/api/unparsedFlashcardsFromMessage`, {
+      const resp = await fetch(`/api/didMakeMistakes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           language: targetLanguage,
-          pupilMessage,
-          instructorMessage: message.content
+          instructorMessage,
+          pupilMessage: message.content,
         })
       }).then(resp => resp.json())
-        .then(resp => createFlashcards(resp.unparsedFlashcards))
-        .then(_flashcards => {
-          console.log('flashcards: ')
-          console.log(_flashcards)
-          addFlashcards(_flashcards)
-        })
+
+      const didMakeMistakes = resp.didMakeMistakes === 'YES' ? true : false
+      console.log('')
+      setMessagesData(pM => {
+        const newArr = [...pM]
+        newArr[index] = { didMakeMistakes }
+        return newArr
+      })
+
+      // if (didMakeMistakes) await fetch(`/api/getCorrectedSentenceAndFeedback`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify({
+      //     language: targetLanguage,
+      //     pupilMessage,
+      //     instructorMessage: message.content
+      //   })
+      // })
+
+      if (didMakeMistakes) complete(``, {
+        body: {
+          language: targetLanguage,
+          pupilMessage: message.content,
+          instructorMessage
+        }
+      })
+
+
+      // .then(resp => createFlashcardsFromXML(resp.unparsedFlashcards))
+      // .then(_flashcards => {
+      //   console.log('flashcards: ')
+      //   console.log(_flashcards)
+      //   addFlashcards(_flashcards)
+      // })
     }
 
-    if (messages.length) processLatestMessage(messages[messages.length - 1])
+    if (messages.length) processLatestMessage(messages[messages.length - 1], messages.length - 1)
   }, [messages, isTextStreaming, targetLanguage]);
 
-  const handleSend:FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSend: FormEventHandler<HTMLFormElement> = (e) => {
     if (isTextStreaming) {
       e.preventDefault()
-      stop()
+      stopChat()
       setIsTextStreaming(false)
       setAudioQueue([])
       audioStopped.current = true
@@ -305,17 +367,11 @@ export default function Home() {
     }
   }
 
-  const handlePrompt = (promptText) => {
-    const msg: Message = { id: crypto.randomUUID(), content: promptText, role: 'user' };
-    append(msg);
-  };
-
-
 
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
-        <section className='chatbot-section flex flex-col origin:w-[800px] w-full h-full rounded-md p-2 md:p-6'>
+        <section className='chatbot-section flex flex-col max-w-[1200px] w-full h-full rounded-md p-2 md:p-6'>
           <header className='chatbot-header pb-6'>
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
@@ -406,7 +462,7 @@ export default function Home() {
                     </button>
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
-                    stop()
+                    stopChat()
                     setMessages([])
                     resetStore()
                   }}>
@@ -421,7 +477,7 @@ export default function Home() {
 
           <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
             <div className='absolute w-full overflow-x-hidden'>
-              {messages.slice(1).map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} />)}
+              {messages.slice(0).map((message, index) => index > 0 && <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
             </div>
           </div>
           {hasStarted ?

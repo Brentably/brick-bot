@@ -8,4 +8,4 @@
     ii. Corrections needed
       - Completion B: Show corrected sentence
       - Completion B: render explanation below it.
-      - 
+      - Completion C: Generate flashcards.
