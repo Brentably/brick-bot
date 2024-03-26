@@ -25,15 +25,15 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   // }, [content])
 
   const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
-  
+
   return (
     <div className={`flex flex-row `}>
       <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex  mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
-          {isUser ? (<div />) : (
-            <button>
-              <img src={soundIcon} alt="Sound Icon" />
-            </button>
-          )}
+        {isUser ? (<div />) : (
+          <button>
+            <img src={soundIcon} alt="Sound Icon" />
+          </button>
+        )}
         <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative`}>
           <Markdown
             className="markdown grid grid-cols-1 gap-3"
@@ -48,18 +48,22 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
       <div className="flex-grow flex border-l-2 border-black">
         {content.role === 'user' ?
           <div className={`mt-4 md:mt-6 p-1`}>
-            <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full`} />
+
             {didMakeMistakes && (
               <>
                 <div>
-                  Corrected Response: <strong>{messageData.correctedResponse}</strong>
+                  <div className="inline-block relative w-4 mr-1">
+                    <span>&nbsp;</span>
+                    <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
+                  </div>
+                  <strong>{messageData.correctedResponse}</strong>
                 </div>
                 <div>
                   <Markdown
                     className="markdown grid grid-cols-1 gap-3"
                     remarkPlugins={[remarkGfm]}
                   >
-                  {messageData.mistakes}
+                    {messageData.mistakes}
                   </Markdown>
                 </div>
               </>
