@@ -60,10 +60,10 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
         {isUser ? null : (
           isAudioPlaying ? (
             <button onClick={pauseAudio} className='flex-shrink-0'>
-              <img src={soundIcon} alt="Sound Off Icon" />
+              <Image src={soundIcon} alt="Sound Off Icon" />
             </button> ) : (
             <button onClick={playAudio} className='flex-shrink-0'>
-              <img src={soundIcon} alt="Sound On Icon"/>
+              <Image src={soundIcon} alt="Sound On Icon"/>
             </button>
           )
         )}
