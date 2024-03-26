@@ -109,33 +109,22 @@ body {
   fill: var(--text-tertiary);
 }
 
-.talk-bubble {
-  /* text-align: left; */
-  /* display: inline-block; */
-  /* position: relative; */
-  color: var(--text-secondary-inverse);
-  background-color: var(--background-bubble-secondary);
-}
 
-.talk-bubble.user {
-  color: var(--text-primary);
-  background-color: var(--background-bubble-primary);
-}
 
 @layer components {
-  .talk-bubble p, .talk-bubble li {
+  .markdown p, .markdown li {
     @apply break-words
   }
-  .talk-bubble p {
+  .markdown p {
     @apply whitespace-pre-wrap
   }
-  .talk-bubble li {
+  .markdown li {
     @apply whitespace-normal
   }
-  .talk-bubble ol {
+  .markdown ol {
     @apply list-decimal pl-8 space-y-2
   }
-  .talk-bubble ul {
+  .markdown ul {
     @apply list-disc pl-8 space-y-2
   }
   

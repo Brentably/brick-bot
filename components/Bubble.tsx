@@ -25,6 +25,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   // }, [content])
 
   const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
+  
   return (
     <div className={`flex flex-row `}>
       <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex  mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
@@ -33,25 +34,13 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
               <img src={soundIcon} alt="Sound Icon" />
             </button>
           )}
-        <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 grid grid-cols-1 gap-3 relative`}>
-
-            <Markdown
-              className="contents"
-              remarkPlugins={[remarkGfm]}
-              components={{
-                code({ node, children, ...props }) {
-                  return (
-                    <code {...props}>
-                      {children}
-                    </code>
-                  )
-                }
-              }}
-            >
-              {content.content}
-            </Markdown>
-          
-
+        <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative`}>
+          <Markdown
+            className="markdown grid grid-cols-1 gap-3"
+            remarkPlugins={[remarkGfm]}
+          >
+            {content.content}
+          </Markdown>
         </div>
 
 
@@ -63,10 +52,15 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
             {didMakeMistakes && (
               <>
                 <div>
-                  Corrected Response: {messageData.correctedResponse}
+                  Corrected Response: <strong>{messageData.correctedResponse}</strong>
                 </div>
                 <div>
-                  Mistakes: {messageData.mistakes}
+                  <Markdown
+                    className="markdown grid grid-cols-1 gap-3"
+                    remarkPlugins={[remarkGfm]}
+                  >
+                  {messageData.mistakes}
+                  </Markdown>
                 </div>
               </>
             )}
