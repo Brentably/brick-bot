@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks"
 import { MessageData } from "../app/page";
 import soundIcon from "../public/assets/soundIcon.svg"
-
+import Image from 'next/image'
 interface BubbleProps {
   content: {
     role: string;
@@ -29,9 +29,9 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   return (
     <div className={`flex flex-row `}>
       <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex  mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
-        {isUser ? (<div />) : (
-          <button>
-            <img src={soundIcon} alt="Sound Icon" />
+        {isUser ? null : (
+          <button className='flex-shrink-0'>
+            <Image src={soundIcon} alt="Sound Icon" className="" />
           </button>
         )}
         <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative`}>
