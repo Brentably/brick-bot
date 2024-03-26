@@ -23,7 +23,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   //   if(content.content) console.log(JSON.stringify(content.content))
   // }, [content])
 
-  const didMakeMistakes = typeof messageData === 'undefined' ? null :  messageData.didMakeMistakes
+  const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null :  messageData.didMakeMistakes
   return (
     <div className={`flex flex-row`}>
       <div ref={ref} className={` mt-4 md:mt-6 pb-[7px] w-[60%] flex ${isUser ? 'justify-end' : ''} mr-2`}>

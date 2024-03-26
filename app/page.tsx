@@ -116,11 +116,15 @@ export default function Home() {
   }, [messages, zustandMessages, isTextStreaming]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
-    //if (isAudioPlaying) return;
+    if (isAudioPlaying) return;
 
     const playNextAudio = async () => {
       if (audioQueue.length === 0) return
-      if (audioStopped) return
+      if (audioStopped.current) {
+        console.log("audio stopped.")
+        setAudioQueue([])
+        return
+      }
       setIsAudioPlaying(true);
 
       const currentTuple = audioQueue[0]
@@ -359,12 +363,14 @@ export default function Home() {
 
   const handleSend: FormEventHandler<HTMLFormElement> = (e) => {
     if (isTextStreaming) {
+      console.log("stop form event")
       e.preventDefault()
       stopChat()
       setIsTextStreaming(false)
       setAudioQueue([])
       audioStopped.current = true
     } else {
+      console.log("send form event")
       audioStopped.current = false
       handleSubmit(e)
     }
@@ -490,7 +496,11 @@ export default function Home() {
               <div id='bottom bar' className='flex flex-row bg-transparent'>
 
                 <form className='flex h-[40px] gap-2 w-[60%] mr-2' onSubmit={handleSend}>
-                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' />
+                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
+                    if (e.key === 'Enter' && isTextStreaming) {
+                      e.preventDefault();
+                    }
+                  }} />
                   {!isTextStreaming ? (
                     <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
                       <SendIcon />
