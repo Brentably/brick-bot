@@ -146,21 +146,6 @@ body {
   
 }
 
-.talk-bubble svg {
-  position: absolute;
-  left: -1px;
-  bottom: 2px;
-  transform: translateY(100%) rotateY(180deg);
-  fill: var(--background-bubble-secondary);
-}
-
-.talk-bubble.user svg {
-  right: -1px;
-  left: auto;
-  bottom: 2px;
-  transform: translateY(100%);
-  fill: var(--background-bubble-primary);
-}
 
 .dot-flashing {
   position: relative;
