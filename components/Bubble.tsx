@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { forwardRef, JSXElementConstructor, useMemo, RefObject, useEffect } from "react";
+import { forwardRef, JSXElementConstructor, useMemo, RefObject, useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks"
@@ -19,19 +19,48 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const audio = useRef(null)
 
   // useEffect(() => {
   //   if(content.content) console.log(JSON.stringify(content.content))
   // }, [content])
+
+  // play audio for this message's content
+  const playAudio = async () => {
+    const res = await fetch('/api/tts', {
+    method: 'POST',
+    body: JSON.stringify({
+      "input": content.content
+      })
+    })
+    const blob = await res.blob()
+    const blobURL = URL.createObjectURL(blob)
+    const a = new Audio(blobURL)
+    audio.current = new Audio(blobURL)
+    audio.current.onended = () => setIsAudioPlaying(false);
+    audio.current.play()
+    setIsAudioPlaying(true)
+  }
+
+  const pauseAudio = () => {
+    audio.current.pause()
+    setIsAudioPlaying(false)
+  }
 
   const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
   return (
     <div className={`flex flex-row `}>
       <div ref={ref} className={` pb-[7px] w-[60%] flex  mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
           {isUser ? (<div />) : (
-            <button>
-              <img src={soundIcon} alt="Sound Icon" />
-            </button>
+            isAudioPlaying ? (
+              <button onClick={pauseAudio}>
+                <img src={soundIcon} alt="Sound Off Icon" />
+              </button> ) : (
+              <button onClick={playAudio}>
+                <img src={soundIcon} alt="Sound On Icon"/>
+              </button>
+            )
           )}
         <div className={`talk-bubble${isUser ? ' user' : ''} p-2 md:p-4 leading-[1.65] pr-9 grid grid-cols-1 gap-3 relative`}>
           {content.processing ? (
@@ -75,18 +104,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
       </div>
     </div>
   )
-})
 
-// async function playAudio(message: Message) {
-//   const res = await fetch('/api/tts', {
-//     method: 'POST',
-//     body: JSON.stringify({
-//       "input": message.content
-//     })
-//   })
-//   const blob = await res.blob()
-//   const blobURL = URL.createObjectURL(blob)
-//   await new Audio(blobURL).play()
-// }
+})
 
 export default Bubble;
