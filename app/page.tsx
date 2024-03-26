@@ -440,7 +440,7 @@ export default function Home() {
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.slice(0).map((message, index) => index > 0 && <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
               </div>
-              <div id='blue background' className='bg-blue-50 absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
+              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
               </div>
 
 

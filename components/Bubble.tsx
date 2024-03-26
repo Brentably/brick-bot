@@ -79,7 +79,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
 
 
       </div>
-      <div className="flex-grow flex border-l-2 border-black">
+      <div className="flex-grow flex">
         {content.role === 'user' ?
           <div className={`mt-4 md:mt-6 p-1`}>
 
