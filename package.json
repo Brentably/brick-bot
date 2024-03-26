@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.18.0",
     "@types/node": "^20.8.10",
     "ai": "^3.0.12",
+    "bun": "^1.0.35",
     "deepl-node": "^1.12.0",
     "geist": "^1.2.2",
     "genanki": "^0.1.1",

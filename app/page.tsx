@@ -491,7 +491,11 @@ export default function Home() {
           </div>
           {hasStarted ?
             <form className='flex h-[40px] gap-2' onSubmit={handleSend}>
-              <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' />
+              <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
+                  if (e.key === 'Enter' && isTextStreaming) {
+                    e.preventDefault();
+                  }
+                }}/>
               {!isTextStreaming ? (
                 <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
                   <SendIcon />
