@@ -34,9 +34,9 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   // play audio for this message's content
   const playAudio = async () => {
     const res = await fetch('/api/tts', {
-    method: 'POST',
-    body: JSON.stringify({
-      "input": content.content
+      method: 'POST',
+      body: JSON.stringify({
+        "input": content.content
       })
     })
     const blob = await res.blob()
@@ -57,18 +57,13 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
 
   return (
     <div className={`flex flex-row `}>
-      <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex items-start mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
-        {isUser ? null : (
-          isAudioPlaying ? (
-            <button onClick={pauseAudio} className='flex-shrink-0'>
-              <Image src={soundOffIcon} alt="Sound Off Icon" />
-            </button> ) : (
-            <button onClick={playAudio} className='flex-shrink-0'>
-              <Image src={soundOnIcon} alt="Sound On Icon"/>
-            </button>
-          )
-        )}
-        <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative`}>
+      <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
+        {!isUser ?
+          <button onClick={isAudioPlaying ? pauseAudio : playAudio} className='flex-shrink-0'>
+            <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
+          </button>
+          : null}
+        <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative self-start`}>
           <Markdown
             className="markdown grid grid-cols-1 gap-3"
             remarkPlugins={[remarkGfm]}
@@ -83,25 +78,25 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
         {content.role === 'user' ?
           <div className={`mt-4 md:mt-6 p-1`}>
 
-       
-              
-                <div>
-                  <div className="inline-block relative w-4 mr-1">
-                    <span>&nbsp;</span>
-                    <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
-                  </div>
-                  <strong>{messageData.correctedResponse}</strong>
-                </div>
-                <div>
-                  <Markdown
-                    className="markdown grid grid-cols-1 gap-3"
-                    remarkPlugins={[remarkGfm]}
-                  >
-                    {messageData.mistakes}
-                  </Markdown>
-                </div>
-              
-          
+
+
+            <div>
+              <div className="inline-block relative w-4 mr-1">
+                <span>&nbsp;</span>
+                <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
+              </div>
+              <strong>{messageData.correctedResponse}</strong>
+            </div>
+            <div>
+              {/* <Markdown
+                className="markdown grid grid-cols-1 gap-3"
+                remarkPlugins={[remarkGfm]}
+              > */}
+                {messageData.mistakes}
+              {/* </Markdown> */}
+            </div>
+
+
           </div>
           : null}
       </div>
