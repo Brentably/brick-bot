@@ -63,13 +63,13 @@ export default function Home() {
     onResponse: () => setIsTextStreaming(true),
     onFinish: () => setIsTextStreaming(false)
   });
-  
+
   const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction' })
 
   const messagesData = useBrickStore(state => state.messagesData)
   const setMessagesData = useBrickStore(state => state.setMessagesData)
   // const [messagesData, setMessagesData] = useState<MessageData[]>([{didMakeMistakes: null}, {didMakeMistakes: null}])
-  
+
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
@@ -100,7 +100,7 @@ export default function Home() {
     // normally just want to be serializing to localstorage/zustand, 
     // BUT, if they refresh and messages is set back to 0, then want to make sure it's up to date with the messages that have been saved
     // whichever is longer should update the other!
-    if(isTextStreaming) return
+    if (isTextStreaming) return
     console.log('serialize messages')
     // console.log('messages length: ', messages.length)
     // console.log('zustand messages length: ', zustandMessages.length)
@@ -127,7 +127,7 @@ export default function Home() {
       const currentBlob = await currentTuple[0]
       const currentBlobURL = URL.createObjectURL(currentBlob)
       const audio = new Audio(currentBlobURL);
-      
+
       // rm from audio queue
       setAudioQueue(pq => pq.slice(1))
 
@@ -234,7 +234,7 @@ export default function Home() {
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
       const correctedResponseText = extractTextFromInsideTags(completionStream, 'corrected-response')
       const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
-      setMessagesData(pMD => [...pMD.slice(0, -1), {...pMD.at(-1), mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText}])
+      setMessagesData(pMD => [...pMD.slice(0, -1), { ...pMD.at(-1), mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText }])
     }
     processLatestCompletionFromStream(completion)
   }, [completion])
@@ -478,27 +478,42 @@ export default function Home() {
             )}
           </header>
 
-          <div className='flex-1 relative overflow-y-auto my-4 md:my-6'>
-            <div className='absolute w-full overflow-x-hidden'>
-              {messages.slice(0).map((message, index) => index > 0 && <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
-            </div>
-          </div>
           {hasStarted ?
-            <form className='flex h-[40px] gap-2' onSubmit={handleSend}>
-              <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' />
-              {!isTextStreaming ? (
-                <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                  <SendIcon />
-                  <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
-                </button>
-              ) : (
-                <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                  <StopIcon />
-                  <span className='hidden origin:block font-semibold text-sm ml-2'>Stop</span>
-                </button>
-              )}
-            </form>
-            : <button onClick={beginChat} className='rounded-md p-2.5 justify-center items-center text-white bg-black'>Begin</button>
+            <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
+              <div id='messages parent' className=' w-full overflow-x-hidden flex-grow z-10'>
+                {messages.slice(0).map((message, index) => index > 0 && <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
+              </div>
+              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute w-[40%] right-0 top-0 bottom-0'>
+              </div>
+
+
+              <div id='bottom bar' className='flex flex-row bg-transparent'>
+
+                <form className='flex h-[40px] gap-2 w-[60%] mr-2' onSubmit={handleSend}>
+                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' />
+                  {!isTextStreaming ? (
+                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                      <SendIcon />
+                      <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
+                    </button>
+                  ) : (
+                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                      <StopIcon />
+                      <span className='hidden origin:block font-semibold text-sm ml-2'>Stop</span>
+                    </button>
+                  )}
+                </form>
+
+                <div className='bg-blue-50 border-l-2 border-black'>
+                  new download area
+                </div>
+              </div>
+            </div>
+            :
+            <div className='w-full h-full flex justify-center items-center'>
+              <button onClick={beginChat} className='rounded-md p-2.5 justify-center items-center text-white bg-black mr-2'>Begin</button>
+
+            </div>
           }
         </section>
       </main>
