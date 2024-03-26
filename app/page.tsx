@@ -74,9 +74,9 @@ export default function Home() {
   // # sentences that have been processed and put in queue
   const processedSentenceCount = useRef(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
-  // # sentences that have been played
-
-  const SENTENCE_ENDS = [".", "!", "?", ":", ")", "(", "[", "]"]
+  // lock for when audio execution is stopped using the stop button
+  // useRef so this doesn't change during execution of async func
+  const audioStopped = useRef(false)
 
   const getInitMessages: () => Message[] = () => [
     { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
@@ -102,30 +102,21 @@ export default function Home() {
   }, [messages, zustandMessages]) // becareful with deps here to avoid infinite loop.
 
   useEffect(() => {
-    // console.log('audio use effect')
-    // console.log('isAudioPlaying', isAudioPlaying)
-    // console.log('audioQueue length:', audioQueue.length)
-    if (isAudioPlaying) return;
+    //if (isAudioPlaying) return;
 
     const playNextAudio = async () => {
       if (audioQueue.length === 0) return
-      // console.log('playnextaudio called')
+      if (audioStopped) return
       setIsAudioPlaying(true);
 
-      // console.log('awaiting blob')
-      // console.log('current audio queue: ', audioQueue)
       const currentTuple = audioQueue[0]
       const currentBlob = await currentTuple[0]
       const currentBlobURL = URL.createObjectURL(currentBlob)
       const audio = new Audio(currentBlobURL);
-      // if it's not the last sentence in the message, queue keeps going
-      // else, we're at the end of the message and we reset playedSentenceCount for the next message
-      const isFinalSentence = currentTuple[1]
+      
+      // rm from audio queue
       setAudioQueue(pq => pq.slice(1))
 
-      // audio.onended = () => {
-      //   setIsAudioPlaying(false);
-      // }
       audio.onended = () => setIsAudioPlaying(false)
       audio.play();
     }
@@ -143,8 +134,6 @@ export default function Home() {
       if (lastMessage.role !== 'assistant') return
 
       const messageStr = lastMessage.content;
-      // const sentenceChunks = messageStr.split(/(?<=[.!?])\s+/);
-      // const sentenceChunks = messageStr.split(/(?<=[.!?]|--?|\u2014|\u2013)\s+/);
       const sentencesChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
       // number of full sentences i.e. does not include sentence still streaming in
       const currSentenceCount = sentencesChunks.length - 1;
@@ -162,9 +151,6 @@ export default function Home() {
         processedSentenceCount.current += 1;
         const chunkIndex = (sentencesChunks.length - 1) - numMissedSentences
 
-        // console.log("sentence chunks: " + sentencesChunks);
-        // console.log("adding sentence #" + chunkIndex + " to queue: " + sentencesChunks[chunkIndex])
-        // console.log("adding sentence #" + chunkIndex )
         // get promise of audio blob from sentence
         const blob = fetch('/api/tts', {
           method: 'POST',
@@ -175,9 +161,6 @@ export default function Home() {
 
         setAudioQueue(pq => [...pq, [blob, false]])
       }
-      // const isFinal = !isTextStreaming
-      // console.log("final: " + isFinal)
-
       // once text streaming has ended, add last chunk
       if (!isTextStreaming) {
         // get promise of audio blob from sentence
@@ -191,11 +174,8 @@ export default function Home() {
         setAudioQueue(pq => [...pq, [blob, true]])
 
         processedSentenceCount.current = 0
-        // console.log("done adding current message to queue. resetting processed sentence count.")
       }
-
     }
-
     addToAudioQueue();
 
   }, [messages, isTextStreaming]);
@@ -318,7 +298,11 @@ export default function Home() {
       stop()
       setIsTextStreaming(false)
       setAudioQueue([])
-    } else handleSubmit(e)
+      audioStopped.current = true
+    } else {
+      audioStopped.current = false
+      handleSubmit(e)
+    }
   }
 
   const handlePrompt = (promptText) => {
