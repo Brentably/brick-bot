@@ -12,7 +12,7 @@ export interface Store {
   hasStarted: boolean;
   setHasStarted: (hasStarted: boolean) => void;
   resetStore: () => void;
-  messagesData: MessageData[];
+  messagesData: (MessageData|undefined)[];
   setMessagesData: (messagesData: MessageData[] | ((previousMessagesData: MessageData[]) => MessageData[])) => void
 }
 
@@ -20,7 +20,7 @@ const INIT_STORE = {
   flashcards: [],
   zustandMessages: [],
   hasStarted: false,
-  messagesData: [{didMakeMistakes: null}, {didMakeMistakes: null}]
+  messagesData: []
 };
 
 export const useBrickStore = create<Store>()(
