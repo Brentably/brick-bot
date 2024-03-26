@@ -52,12 +52,45 @@ const LANGUAGE_TO_INTRO = {
   "Turkish": "Merhaba! Ben Brick Bot, kişisel dil öğretmeniniz! Türkçe konuşacak ve hatalarınızı düzelteceğim. Türkçeniz ne kadar iyi?"
 }
 
+const LANGUAGE_TO_EXAMPLE_PROMPTS = {
+  "German": [
+    'Hallo, ich bin ein Anfänger, aber ich bin aufgeregt zu lernen!',
+    'Guten Tag! Ich freue mich darauf, mein Deutsch zu verbessern.',
+    'Hallo! Ich bin gespannt, wie viel ich heute lernen werde.',
+    'Ich bin bereit, mehr über die deutsche Sprache zu lernen.',
+  ],
+  "French": [
+    "Bonjour, je suis débutant, mais je suis impatient d'apprendre !",
+    "Bonne journée ! J'ai hâte d'améliorer mon français.",
+    "Salut ! Je suis curieux de voir combien je vais apprendre aujourd'hui.",
+    "Je suis prêt à en savoir plus sur la langue française.",
+  ],
+  "Chinese": [
+    "你好，我是初学者，但我很兴奋要学习！",
+    "好日子！我期待提高我的中文。",
+    "你好！我很想知道我今天能学到多少。",
+    "我准备好了，想要更多了解中文。",
+  ],
+  "Spanish": [
+    "Hola, soy principiante, pero estoy emocionado de aprender!",
+    "¡Buen día! Estoy deseando mejorar mi español.",
+    "¡Hola! Estoy ansioso por ver cuánto aprenderé hoy.",
+    "Estoy listo para aprender más sobre el idioma español.",
+  ],
+  "Portuguese": [
+    "Olá, eu sou um iniciante, mas estou animado para aprender!",
+    "Bom dia! Estou ansioso para melhorar meu português.",
+    "Olá! Estou curioso para saber quanto vou aprender hoje.",
+    "Estoy pronto para aprender más sobre la língua portuguesa.",
+  ]
+}
 export type MessageData = {
   didMakeMistakes: boolean | null,
   mistakes?: string,
   correctedResponse?: string,
   explanation?: string
 }
+
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
     onResponse: () => setIsTextStreaming(true),
@@ -68,7 +101,6 @@ export default function Home() {
 
   const messagesData = useBrickStore(state => state.messagesData)
   const setMessagesData = useBrickStore(state => state.setMessagesData)
-  // const [messagesData, setMessagesData] = useState<MessageData[]>([{didMakeMistakes: null}, {didMakeMistakes: null}])
 
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
@@ -90,11 +122,6 @@ export default function Home() {
   // lock for when audio execution is stopped using the stop button
   // useRef so this doesn't change during execution of async func
   const audioStopped = useRef(false)
-
-  const getInitMessages: () => Message[] = () => [
-    { id: crypto.randomUUID(), content: LANGUAGE_TO_HELLO[targetLanguage], role: 'user' },
-    { id: crypto.randomUUID(), content: LANGUAGE_TO_INTRO[targetLanguage], role: 'assistant' }
-  ]
 
   useEffect(() => {
     // normally just want to be serializing to localstorage/zustand, 
@@ -200,7 +227,6 @@ export default function Home() {
 
   const beginChat = () => {
     setHasStarted(true)
-    setMessages(getInitMessages())
     if (typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
   }
 
@@ -407,18 +433,6 @@ export default function Home() {
                         <option value="French">French</option>
                         <option value="Chinese">Chinese</option>
                         <option value="Portuguese">Portuguese</option>
-                        <option value="Japanese">Japanese</option>
-                        <option value="Hindi">Hindi</option>
-                        <option value="Bengali">Bengali</option>
-                        <option value="Italian">Italian</option>
-                        <option value="Russian">Russian</option>
-                        <option value="Arabic">Arabic</option>
-                        <option value="Dutch">Dutch</option>
-                        <option value="Greek">Greek</option>
-                        <option value="Hebrew">Hebrew</option>
-                        <option value="Korean">Korean</option>
-                        <option value="Swedish">Swedish</option>
-                        <option value="Turkish">Turkish</option>
                       </select>
                     </div>
                   </div>
@@ -435,85 +449,104 @@ export default function Home() {
             )}
           </header>
 
-          {hasStarted ?
-            <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
-              <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
-                {messages.slice(0).map((message, index) => index > 0 && <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index] ?? {didMakeMistakes: null}} />)}
-              </div>
-              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
-              </div>
-
-
-              <div id='bottom bar' className='flex flex-row z-10'>
-
-                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
-                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
-                    if (e.key === 'Enter' && isTextStreaming) {
-                      e.preventDefault();
-                    }
-                  }} />
-                  {!isTextStreaming ? (
-                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                      <SendIcon />
-                      <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
-                    </button>
-                  ) : (
-                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                      <StopIcon />
-                      <span className='hidden origin:block font-semibold text-sm ml-2'>Stop</span>
-                    </button>
-                  )}
-                </form>
-
-                <div className='bg-red-50 flex justify-evenly flex-grow items-center'>
-                  <div className=''>
-                    Flashcards created: {flashcards.length}
+          <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
+            <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
+              {messages.map((message, index) => <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index] ?? { didMakeMistakes: null }} />)}
+              {!hasStarted &&
+                <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>
+                  Quick start by clicking one of these prompts!
+                  <div id='example prompts' className='flex flex-row flex-wrap'>
+                    {Array(4).fill(null).map((_, index) => (
+                      <ExamplePrompt key={index} text={LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index]} onClick={() => {
+                        setHasStarted(true)
+                        append({ content: LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index], role: 'user'})
+                      }} />
+                    ))}
                   </div>
-                  <button className='bg-gray-300 rounded-md p-1' onClick={() => {
-                    // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
-                    // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                    const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
-                    fetch(url, {
-                      method: "POST",
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        jsonFlashcards: flashcards
-                      })
-                    })
-                      .then(response => response.blob())
-                      .then(blob => {
-                        console.log('handling blob')
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = 'brick-bot-flashcards.apkg';
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                      })
-                      .catch((error) => {
-                        console.error('Error:', error);
-                      });
-                  }}>
-                    Download flashcards!
-                  </button>
                 </div>
+              }
+            </div>
+            <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
+            </div>
+
+
+            <div id='bottom bar' className='flex flex-row z-10'>
+
+              <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
+                <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
+                  if (e.key === 'Enter' && isTextStreaming) {
+                    e.preventDefault();
+                  }
+                }} />
+                {!isTextStreaming ? (
+                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                    <SendIcon />
+                    <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
+                  </button>
+                ) : (
+                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                    <StopIcon />
+                    <span className='hidden origin:block font-semibold text-sm ml-2'>Stop</span>
+                  </button>
+                )}
+              </form>
+
+              <div className='bg-red-50 flex justify-evenly flex-grow items-center'>
+                <div className=''>
+                  Flashcards created: {flashcards.length}
+                </div>
+                <button className='bg-gray-300 rounded-md p-1' onClick={() => {
+                  // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                  // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                  const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+                  fetch(url, {
+                    method: "POST",
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      jsonFlashcards: flashcards
+                    })
+                  })
+                    .then(response => response.blob())
+                    .then(blob => {
+                      console.log('handling blob')
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.style.display = 'none';
+                      a.href = url;
+                      a.download = 'brick-bot-flashcards.apkg';
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                    })
+                    .catch((error) => {
+                      console.error('Error:', error);
+                    });
+                }}>
+                  Download flashcards!
+                </button>
               </div>
             </div>
-            :
-            <div className='w-full h-full flex justify-center items-center'>
-              <button onClick={beginChat} className='rounded-md p-2.5 justify-center items-center text-white bg-black mr-2'>Begin</button>
+          </div>
 
-            </div>
-          }
+
+
         </section>
       </main>
     </Div100vh>
   )
 }
+
+function ExamplePrompt(props: { text: string, onClick: () => void }) {
+  return (
+    <button onClick={props.onClick} className='bg-[#F3E5F5] text-[#7724AA] rounded-md m-2 p-2'>
+      {props.text}
+    </button>
+  )
+}
+
+
 
 function SendIcon() {
   return <svg width="20" height="20" viewBox="0 0 20 20">
