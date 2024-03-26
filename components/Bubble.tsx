@@ -23,47 +23,54 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   //   if(content.content) console.log(JSON.stringify(content.content))
   // }, [content])
 
-  const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null :  messageData.didMakeMistakes
+  const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
   return (
-    <div className={`flex flex-row`}>
-      <div ref={ref} className={` mt-4 md:mt-6 pb-[7px] w-[60%] flex ${isUser ? 'justify-end' : ''} mr-2`}>
-          <div className={`talk-bubble${isUser ? ' user' : ''} p-2 md:p-4 leading-[1.65] pr-9 grid grid-cols-1 gap-3 relative`}>
-            {content.processing ? (
-              <div className="w-6 h-6 flex items-center justify-center">
-                <div className="dot-flashing" />
-              </div>
-            ) : (
-              <Markdown
-                className="contents"
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  code({ node, children, ...props }) {
-                    return (
-                      <code {...props}>
-                        {children}
-                      </code>
-                    )
-                  }
-                }}
-              >
-                {content.content}
-              </Markdown>
-            )}
-            {isUser ? (<div/>) : ( 
+    <div className={`flex flex-row `}>
+      <div ref={ref} className={` pb-[7px] w-[60%] flex  mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
+            {isUser ? (<div />) : (
               <button><SoundIcon /></button>
             )}
-            <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0.730278 0.921112C-3.49587 0.921112 12 0.921112 12 0.921112V5.67376C12 6.8181 9.9396 7.23093 9.31641 6.27116C6.83775 2.45382 3.72507 0.921112 0.730278 0.921112Z" />
-            </svg>
-          </div>
+        <div className={`talk-bubble${isUser ? ' user' : ''} p-2 md:p-4 leading-[1.65] pr-9 grid grid-cols-1 gap-3 relative`}>
+          {content.processing ? (
+            <div className="w-6 h-6 flex items-center justify-center">
+              <div className="dot-flashing" />
+            </div>
+          ) : (
+            <Markdown
+              className="contents"
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code({ node, children, ...props }) {
+                  return (
+                    <code {...props}>
+                      {children}
+                    </code>
+                  )
+                }
+              }}
+            >
+              {content.content}
+            </Markdown>
+          )}
+          <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0.730278 0.921112C-3.49587 0.921112 12 0.921112 12 0.921112V5.67376C12 6.8181 9.9396 7.23093 9.31641 6.27116C6.83775 2.45382 3.72507 0.921112 0.730278 0.921112Z" />
+          </svg>
+        </div>
 
 
       </div>
-      <div className="flex-grow flex items-center border-l-2 border-black">
-      {content.role === 'user' &&
-        <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'}`}>
-          {didMakeMistakes === null ? 'in review' : didMakeMistakes ? 'wrong' : 'right'}
-      </div>}
+      <div className="flex-grow flex border-l-2 border-black">
+        {content.role === 'user' ?
+          <div className={`mt-4 md:mt-6 p-1`}>
+            <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full`} />
+            {didMakeMistakes && (
+              <>
+                Corrected Response: {messageData.correctedResponse}
+                Mistakes: {messageData.mistakes}
+              </>
+            )}
+          </div>
+          : null}
       </div>
     </div>
   )
