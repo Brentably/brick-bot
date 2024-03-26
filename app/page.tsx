@@ -480,7 +480,7 @@ export default function Home() {
 
               <div id='bottom bar' className='flex flex-row z-10'>
 
-                <form className='flex h-[40px] gap-2 w-[60%] mr-2' onSubmit={handleSend}>
+                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
                   <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
                     if (e.key === 'Enter' && isTextStreaming) {
                       e.preventDefault();
