@@ -115,16 +115,11 @@ body {
   /* position: relative; */
   color: var(--text-secondary-inverse);
   background-color: var(--background-bubble-secondary);
-  border-radius: 10px;
-  border-bottom-left-radius: 0px;
 }
 
 .talk-bubble.user {
-  text-align: right;
   color: var(--text-primary);
   background-color: var(--background-bubble-primary);
-  border-radius: 10px;
-  border-bottom-right-radius: 0px;
 }
 
 @layer components {
