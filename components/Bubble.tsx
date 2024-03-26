@@ -28,7 +28,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
 
   return (
     <div className={`flex flex-row `}>
-      <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex  mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
+      <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex items-start mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
         {isUser ? null : (
           <button className='flex-shrink-0'>
             <Image src={soundIcon} alt="Sound Icon" className="" />
