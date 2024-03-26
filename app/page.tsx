@@ -65,8 +65,11 @@ export default function Home() {
   });
   
   const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction' })
+
+  const messagesData = useBrickStore(state => state.messagesData)
+  const setMessagesData = useBrickStore(state => state.setMessagesData)
+  // const [messagesData, setMessagesData] = useState<MessageData[]>([{didMakeMistakes: null}, {didMakeMistakes: null}])
   
-  const [messagesData, setMessagesData] = useState<MessageData[]>([{didMakeMistakes: null}, {didMakeMistakes: null}])
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
