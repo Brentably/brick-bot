@@ -486,14 +486,14 @@ export default function Home() {
 
           {hasStarted ?
             <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
-              <div id='messages parent' className=' w-full overflow-x-hidden flex-grow z-10'>
+              <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.slice(0).map((message, index) => index > 0 && <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />)}
               </div>
-              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute w-[40%] right-0 top-0 bottom-0'>
+              <div id='blue background' className='bg-blue-50 absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
               </div>
 
 
-              <div id='bottom bar' className='flex flex-row bg-transparent'>
+              <div id='bottom bar' className='flex flex-row z-10'>
 
                 <form className='flex h-[40px] gap-2 w-[60%] mr-2' onSubmit={handleSend}>
                   <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
@@ -514,7 +514,7 @@ export default function Home() {
                   )}
                 </form>
 
-                <div className='bg-blue-50 border-l-2 border-black'>
+                <div className='bg-red-50'>
                   new download area
                 </div>
               </div>
