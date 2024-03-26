@@ -1,6 +1,6 @@
 "use client";
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
-import Bubble from '../components/Bubble'
+import Bubble, { BubblePair } from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
 import { GSP_NO_RETURNED_VALUE } from 'next/dist/lib/constants';
@@ -445,11 +445,10 @@ export default function Home() {
 
           <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
             <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
-              {messages.map((message, index) => {
+              {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index] }} assistant={{ content: messages[index+1], messageData: messagesData[index+1] }} />) : null)}
               
-              console.log('rendering bubble ', index)
-              console.log(`with messages data:`, messagesData)
-              return <Bubble ref={messagesEndRef} key={`message-${index}`} content={message} messageData={messagesData[index]} />})}
+              
+              
               {!hasStarted &&
                 <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>
                   Quick start by clicking one of these prompts!

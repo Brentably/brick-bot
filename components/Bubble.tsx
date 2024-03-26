@@ -24,7 +24,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   const audio = useRef(null)
 
   useEffect(() => {
-    if(!isUser) return
+    if (!isUser) return
     console.log('messageData update on ')
     console.log(messageData)
   }, [messageData])
@@ -55,52 +55,20 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
     setIsAudioPlaying(false)
   }
 
-  const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
-
   return (
-    <div className={`flex flex-row `}>
-      <div ref={ref} className={` pb-[7px] w-[60%] min-w-[60%] flex mt-4 md:mt-6 ${isUser ? 'justify-end' : ''} mr-2`}>
-        {!isUser ?
-          <button onClick={isAudioPlaying ? pauseAudio : playAudio} className='flex-shrink-0'>
-            <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
-          </button>
-          : null}
-        <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative self-start`}>
-          <Markdown
-            className="markdown grid grid-cols-1 gap-3"
-            remarkPlugins={[remarkGfm]}
-          >
-            {content.content}
-          </Markdown>
-        </div>
-
-
-      </div>
-      <div className="flex-grow flex">
-        {content.role === 'user' ?
-          <div className={`mt-4 md:mt-6 p-1`}>
-
-
-
-            <div>
-              <div className="inline-block relative w-4 mr-1">
-                <span>&nbsp;</span>
-                <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
-              </div>
-              <strong>{messageData.correctedResponse}</strong>
-            </div>
-            <div>
-              <Markdown
-                className="markdown grid grid-cols-1 gap-3"
-                remarkPlugins={[remarkGfm]}
-              >
-                {messageData.mistakes}
-              </Markdown>
-            </div>
-
-
-          </div>
-          : null}
+    <div ref={ref} className={`pb-[7px] flex mt-4 md:mt-6 ${isUser ? 'justify-end' : ''}`}>
+      {!isUser ?
+        <button onClick={isAudioPlaying ? pauseAudio : playAudio} className='flex-shrink-0'>
+          <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
+        </button>
+        : null}
+      <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative self-start`}>
+        <Markdown
+          className="markdown grid grid-cols-1 gap-3"
+          remarkPlugins={[remarkGfm]}
+        >
+          {content.content}
+        </Markdown>
       </div>
     </div>
   )
@@ -108,3 +76,44 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
 })
 
 export default Bubble;
+
+export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assistant: BubbleProps | undefined }>(({ user, assistant }, ref) => {
+  BubblePair.displayName = 'BubblePair';
+  const didMakeMistakes = typeof user.messageData === 'undefined' || user.messageData === null ? null : user.messageData.didMakeMistakes
+
+  useEffect(() => {
+    console.log('rendering bubble pair with user', user)
+    console.log('and assistant', assistant)
+  }, [user, assistant])
+
+  return (<div className="flex flex-row">
+    <div className="flex flex-col max-w-[60%] w-[60%] min-w-[60%] mr-2">
+      <Bubble ref={ref} {...user}/>
+      {assistant?.content && <Bubble ref={ref} {...assistant}/>}
+    </div>
+
+    <div className="flex-grow flex">
+      <div className={`mt-4 md:mt-6 p-1`}>
+
+        <div className="p-2 md:p-4">
+          <div className="inline-block relative w-4 mr-1">
+            <span>&nbsp;</span>
+            <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
+          </div>
+          <strong>{user.messageData.correctedResponse}</strong>
+        </div>
+        <div>
+          <Markdown
+            className="markdown grid grid-cols-1 gap-3"
+            remarkPlugins={[remarkGfm]}
+          >
+            {user.messageData.mistakes}
+          </Markdown>
+        </div>
+
+
+      </div>
+
+    </div>
+  </div>)
+})
