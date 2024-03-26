@@ -4,7 +4,8 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks"
 import { MessageData } from "../app/page";
-import soundIcon from "../public/assets/soundIcon.svg"
+import soundOnIcon from "../public/assets/soundOnIcon.svg"
+import soundOffIcon from "../public/assets/soundOffIcon.svg"
 import Image from 'next/image'
 interface BubbleProps {
   content: {
@@ -60,10 +61,10 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
         {isUser ? null : (
           isAudioPlaying ? (
             <button onClick={pauseAudio} className='flex-shrink-0'>
-              <Image src={soundIcon} alt="Sound Off Icon" />
+              <Image src={soundOffIcon} alt="Sound Off Icon" />
             </button> ) : (
             <button onClick={playAudio} className='flex-shrink-0'>
-              <Image src={soundIcon} alt="Sound On Icon"/>
+              <Image src={soundOnIcon} alt="Sound On Icon"/>
             </button>
           )
         )}
