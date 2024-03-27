@@ -465,7 +465,7 @@ export default function Home() {
                   </div>
                 }
               </div>
-              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
+              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.6rem)' }}>
               </div>
 
 
@@ -490,7 +490,7 @@ export default function Home() {
                   )}
                 </form>
 
-                <div className='flex justify-evenly flex-grow items-center bg-[var(--text-primary)]'>
+                <div className='flex justify-evenly flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
                   <div className=''>
                     Flashcards created: {flashcards.length}
                   </div>
