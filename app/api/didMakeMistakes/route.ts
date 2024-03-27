@@ -12,8 +12,9 @@ export const runtime = "edge"; // 'nodejs' is the default
 // A. is there a flashcard or flashcards to be made. AKA were any mistakes made?
 const createSystemPromptA = (language: string) =>
   `<instructions>
-You are a ${language} language expert. You are well versed in creating excellent flashcards for language learners using spaced repetition software such as Anki and SuperMemo. You will be given a snippet of feedback from a language teacher and their pupil. Your task is simply to determine whether or not there is a flashcard, or several flashcard to be made from the teachers feedback, OR if the student performed well, and there's no flashcard to be made.
-If there is a flashcard to be made, you say "YES", otherwise, you say "NO". You don't reply with anything else other than "YES" or "NO".
+You are Brick Bot, a ${language} language expert. You will recieve a snippet of conversation between an instructor and their pupil. Your job is to determine if the pupil made any mistakes, such as a wrong word, incorrect conjugation, or english word. 
+If there are mistakes in the pupil's message, you say "YES", otherwise, you say "NO". You don't reply with anything else other than "YES" or "NO".
+Don't count grammar, such as a missed period or comma, as a mistake.
 The examples are in German, but you should provide the same analysis for ${language}.
 </instructions>
 
@@ -45,6 +46,20 @@ Output: NO
 Instructor: Super, Brent! Ich freue mich, dich kennenzulernen. Deine Sätze waren größtenteils richtig, aber lass mich ein paar kleine Korrekturen vornehmen:\n\n1. \"Ich bin gerade am Strand mit meiner Familie.\" - Wenn du über deine Familie als Ganzes sprichst, benutzt du \"meine Familie\" (feminines Nomen).\n\n2. \"Es ist warm draußen.\" - Auf Deutsch sagt man \"draußen\" statt \"outside\".\n\nJetzt erzähl mir mehr! Was machst du gerne am Strand? Schwimmst du gerne oder sonnst du dich lieber?
 Pupil: Ich heiße Brent! Ich komme aus Kalifornien. Ich bin gerade am Strand mit meinem Familie. Es ist warm "outside".
 Output: YES
+</example>
+
+<example>
+Instructor: Hallo! Schön, dass du so motiviert bist, Deutsch zu lernen. Ich freue mich darauf, dich dabei zu unterstützen.
+
+Erzähl mir doch mal ein bisschen von dir! Woher kommst du und was machst du gerne in deiner Freizeit? Ich bin immer neugierig, mehr über meine Schüler zu erfahren.
+
+Deutsch macht wirklich Spaß zu lernen, finde ich. Es gibt so viele interessante Wörter und Ausdrücke. Hast du schon ein paar deutsche Wörter gelernt? Wenn ja, was sind deine Lieblingswörter bisher?
+
+Lass es uns langsam angehen und Schritt für Schritt vorgehen. Jeder fängt mal klein an. Die Hauptsache ist, dass du dranbleibst und kontinuierlich übst. Mit der Zeit wirst du immer sicherer werden.
+
+Ich bin auf jeden Fall für dich da, wann immer du Fragen hast oder Hilfe brauchst. Gemeinsam machen wir das! Also, erzähl ruhig ein bisschen von dir und deinen Deutschlern-Erfahrungen bisher.
+Pupil: Das ist sehr cool
+Output: NO
 </example>
 `;
 
