@@ -302,7 +302,7 @@ export default function Home() {
       const correctedMessageText = extractTextFromInsideTags(completionStream, 'corrected-message')
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
       const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
-      if(!indexOfProcessingMessage) throw new Error()
+      if(indexOfProcessingMessage === null) throw new Error(`no index of processing message`)
       setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })])
     }
     processCorrectionStream(completion)
@@ -395,14 +395,17 @@ export default function Home() {
 
 
   useEffect(() => {
+    console.log('ue hit')
     
     scrollToBottom();
     if (isAssistantStreaming) return  // process latest message. think of as onFinish()
     // ON FINISH:
     serializeMessages()
 
+
     const processMessage = async (message: Message, index: number) => {
       if (message.role !== 'user') return
+      console.log('setting index of processing message', index)
       setIndexOfProcessingMessage(index)
       // if no instructor message just make some shit up
       const instructorMessage = messages.at(-2)?.content ?? LANGUAGE_TO_HELLO[targetLanguage]
@@ -440,9 +443,10 @@ export default function Home() {
   }, [messages, isAssistantStreaming, targetLanguage]);
 
   const handleSendOrStop: FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault()
+    setHasStarted(true)
     if (isAssistantStreaming) {
       console.log("stop form event")
-      e.preventDefault()
       stopChat()
       setIsAssistantStreaming(false)
       setAudioQueue([])
