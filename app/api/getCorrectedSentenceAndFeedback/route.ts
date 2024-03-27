@@ -18,7 +18,7 @@ const client = new Anthropic({
 
 export const runtime = "edge"; // 'nodejs' is the default
 
-const createSystemPrompt = (language: string) =>
+const createSystemPromptOld = (language: string) =>
   `<instructions>
 You are Brick Bot, an expert in ${language}. You will be given a snippet of a conversation between an instructor and a pupil. 
 The pupil made a mistake, or several mistakes. Your job is to correct the pupil's response. 
@@ -33,17 +33,24 @@ Reply in XML with the following format:
 
 </instructions>
 `;
+const createSystemPrompt = (language: string) =>
+  `<instructions>
+You are Brick Bot, an expert in ${language}. You will be given a sentence in ${language}.
+The sentence has a mistake, or several mistakes. Your job is to correct the sentence to what it is supposed to be, with correct grammar, spelling, vocabulary, and sentence structure.
+You give the correct version of what they were trying to say, identify mistakes, and then you should explain why their response was wrong.
+Mistakes should be unique. You shouldn't repeat the same mistake twice.
+
+Reply in XML with the following format:
+<response>
+<corrected-sentence>{{the corrected response, using perfect ${language}}}</corrected-sentence>
+<mistakes>{{a itemized list of mistakes with the sentence. sometimes just a single mistake.}}</mistakes>
+</response>
+
+</instructions>
+`;
+// <explanation>{{a detailed explanation to help bridge the gap between what the sentence was and what the correct way to say that is}}</explanation>
 
 
-// <example>
-// Instructor: "Du machst das gut. Was ist deine Lieblingsfarbe?"
-// Pupil: Danke! Mein lieblingsfarbe ist blue
-// <response>
-// <mistakes></mistakes>
-// <explanation></explanation>
-// <corrected-response>Meine Lieblingsfarbe ist blau.<corrected-response>
-// </response>
-// </example>
 export async function POST(req: Request) {
   console.log("get Corrected Sentence hit");
   try {
@@ -56,9 +63,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: `Pupil: ${pupilMessage}
-          Instructor: ${instructorMessage}
-          Output: `,
+          content: `<sentence>${pupilMessage}</sentence>`,
         },
       ],
     });

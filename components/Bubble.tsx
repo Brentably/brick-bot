@@ -111,7 +111,7 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
             className="markdown grid grid-cols-1 gap-3"
             remarkPlugins={[remarkGfm]}
           >
-            {user.messageData.mistakes}
+            {user.messageData.correctedResponse && user.messageData.mistakes}
           </Markdown>
         </div>
 

@@ -103,6 +103,7 @@ export default function Home() {
     onResponse: () => setIsAssistantStreaming(true),
     onFinish: () => setIsAssistantStreaming(false)
   });
+
   const zustandMessagesData = useBrickStore(state => state.zustandMessagesData)
   const setZustandMessagesData = useBrickStore(state => state.setZustandMessagesData)
   const [messagesData, setMessagesData] = useState<MessageData[]>([{ role: 'user', didMakeMistakes: null }])
@@ -112,7 +113,7 @@ export default function Home() {
 
   const serializeMessagesData = useCallback(() => {
     console.log('serializing messages data')
-    if(!hasHydrated) {
+    if (!hasHydrated) {
       setMessagesData(zustandMessagesData)
     } else if (messagesData.length >= zustandMessagesData.length && messagesData.length) {
       console.log('setting zustand from local')
@@ -122,7 +123,7 @@ export default function Home() {
       setMessagesData(zustandMessagesData)
     }
   }, [messagesData, zustandMessagesData, hasHydrated])
-  
+
   const serializeMessages = useCallback(() => {
     console.log('serializing messages')
     if (!hasHydrated) {
@@ -136,7 +137,16 @@ export default function Home() {
     }
   }, [messages, zustandMessages, hasHydrated])
 
-  const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction', onResponse: () => setIsCorrectionStreaming(true), onFinish: ()=>setIsCorrectionStreaming(false)  })
+  const { input: correctionInput, setInput: setCorrectionInput, complete: correctionComplete, stop: stopCorrection, completion } = useCompletion({
+    api: '/api/getCorrectedSentenceAndFeedback', id: 'correction',
+    onResponse: () => setIsCorrectionStreaming(true), onFinish: () => {
+      setIsCorrectionStreaming(false)
+    }
+  })
+
+  
+
+
 
 
 
@@ -149,7 +159,7 @@ export default function Home() {
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
   const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
   const messagesEndRef = useRef(null);
-  
+
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
@@ -173,12 +183,16 @@ export default function Home() {
     serializeMessages()
   }, [messages, zustandMessages, isAssistantStreaming]) // becareful with deps here to avoid infinite loop.
   useEffect(() => {
-    if(isCorrectionStreaming) return
+    if (isCorrectionStreaming) return
     serializeMessagesData()
   }, [messagesData, zustandMessagesData, isCorrectionStreaming]) // becareful with deps here to avoid infinite loop.
 
 
-  
+  useEffect(() => {
+    if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
+  }, [hasStarted])
+
+
 
   // load messagesData on initial render
   useEffect(() => {
@@ -188,9 +202,9 @@ export default function Home() {
       setHasHydrated(true)
     })
     useBrickStore.persist.rehydrate()
-    
+
   }, [])
-  
+
   useEffect(() => {
     if (isAudioPlaying) return;
 
@@ -274,10 +288,8 @@ export default function Home() {
 
   }, [messages, isAssistantStreaming]);
 
-  const beginChat = () => {
-    setHasStarted(true)
-    if (typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
-  }
+  
+  
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -288,8 +300,8 @@ export default function Home() {
     const endTag = `</${tagName}>`
     const startIndex = sourceText.indexOf(startTag) + startTag.length;
     if (sourceText.includes(endTag)) {
-    const endIndex = sourceText.indexOf(endTag);
-    return sourceText.slice(startIndex, endIndex);
+      const endIndex = sourceText.indexOf(endTag);
+      return sourceText.slice(startIndex, endIndex);
     } else return null
   }
 
@@ -299,8 +311,8 @@ export default function Home() {
     // console.log('completion update: ', completion)
     const processLatestCompletionFromStream = (completionStream: string) => {
 
+      const correctedResponseText = extractTextFromInsideTags(completionStream, 'corrected-sentence')
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
-      const correctedResponseText = extractTextFromInsideTags(completionStream, 'corrected-response')
       const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
       setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText })])
     }
@@ -365,9 +377,10 @@ export default function Home() {
     }
 
     scrollToBottom();
-    if (isAssistantStreaming) return
+    if (isAssistantStreaming) return // allows us to process completed messages because
 
-    const processLatestMessage = async (message: Message, index: number) => {
+    // checks if did makes mistakes
+    const processMessage = async (message: Message, index: number) => {
       if (message.role !== 'user') return
       setIndexOfProcessingMessage(index)
       // if no instructor message just make some shit up
@@ -393,7 +406,7 @@ export default function Home() {
         return newArr
       })
 
-      if (didMakeMistakes) complete(``, {
+      if (didMakeMistakes) correctionComplete(``, {
         body: {
           language: targetLanguage,
           pupilMessage: message.content,
@@ -402,11 +415,11 @@ export default function Home() {
       })
 
     }
-
-    if (messages.length) processLatestMessage(messages[messages.length - 1], messages.length - 1)
+    // process latest message
+    if (messages.length) processMessage(messages[messages.length - 1], messages.length - 1)
   }, [messages, isAssistantStreaming, targetLanguage]);
 
-  const handleSend: FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSendOrStop: FormEventHandler<HTMLFormElement> = (e) => {
     if (isAssistantStreaming) {
       console.log("stop form event")
       e.preventDefault()
@@ -453,21 +466,23 @@ export default function Home() {
                 </p>
                 <div className='flex flex-col lg:flex-row justify-between'>
                   <div className='flex flex-col flex-wrap'>
-                    <div className="mt-1">
-                      <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
-                      <select
-                        id="language-select"
-                        value={targetLanguage}
-                        onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
-                        className="chatbot-input ml-2"
-                      >
-                        <option value="German">German</option>
-                        <option value="Spanish">Spanish</option>
-                        <option value="French">French</option>
-                        <option value="Chinese">Chinese</option>
-                        <option value="Portuguese">Portuguese</option>
-                      </select>
-                    </div>
+                    {!hasStarted ?
+                      <div className="mt-1">
+                        <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
+                        <select
+                          id="language-select"
+                          value={targetLanguage}
+                          onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
+                          className="chatbot-input ml-2"
+                        >
+                          <option value="German">German</option>
+                          <option value="Spanish">Spanish</option>
+                          <option value="French">French</option>
+                          <option value="Chinese">Chinese</option>
+                          <option value="Portuguese">Portuguese</option>
+                        </select>
+                      </div>
+                      : null}
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stopChat()
@@ -509,11 +524,8 @@ export default function Home() {
 
               <div id='bottom bar' className='flex flex-row z-10'>
 
-                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
+                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSendOrStop}>
                   <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
-                    if (e.key === 'Enter' && isAssistantStreaming) {
-                      e.preventDefault();
-                    }
                   }} />
                   {!isAssistantStreaming ? (
                     <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
@@ -568,7 +580,7 @@ export default function Home() {
             </div>
             : <div className='h-full justify-center items-center text-center relative'>
               <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-              <LoadingBrick />
+                <LoadingBrick />
               </div>
             </div>
           }
