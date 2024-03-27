@@ -286,10 +286,11 @@ export default function Home() {
   function extractTextFromInsideTags(sourceText: string, tagName: string) {
     const startTag = `<${tagName}>`
     const endTag = `</${tagName}>`
-    if (!sourceText.includes(endTag)) return null
     const startIndex = sourceText.indexOf(startTag) + startTag.length;
+    if (sourceText.includes(endTag)) {
     const endIndex = sourceText.indexOf(endTag);
     return sourceText.slice(startIndex, endIndex);
+    } else return null
   }
 
   useEffect(() => {
@@ -471,6 +472,7 @@ export default function Home() {
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stopChat()
                     setMessages([])
+                    setMessagesData([])
                     resetStore()
                   }}>
                     Reset chat
@@ -501,7 +503,7 @@ export default function Home() {
                   </div>
                 }
               </div>
-              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.6rem)' }}>
+              <div id='blue background' className='border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.6rem)' }}>
               </div>
 
 

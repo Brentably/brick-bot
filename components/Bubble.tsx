@@ -82,9 +82,13 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
   const didMakeMistakes = typeof user.messageData === 'undefined' || user.messageData === null ? null : user.messageData.didMakeMistakes
 
   useEffect(() => {
+    console.log('user updated: ')
+    console.log(user.messageData)
     // console.log('rendering bubble pair with user', user)
     // console.log('and assistant', assistant)
-  }, [user, assistant])
+  }, [user])
+
+  
 
   return (<div className="flex flex-row">
     <div className="flex flex-col max-w-[60%] w-[60%] min-w-[60%] mr-2">
