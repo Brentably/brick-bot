@@ -367,7 +367,8 @@ export default function Home() {
 
 
   useEffect(() => {
-    if(isCorrectionStreaming || !indexOfProcessingMessage) return
+    console.log('ics ue')
+    if(isCorrectionStreaming || indexOfProcessingMessage === null) return
     // ON FINISH
     serializeMessagesData()
     const makeFlashcards = async () => {
@@ -395,8 +396,6 @@ export default function Home() {
 
 
   useEffect(() => {
-    console.log('ue hit')
-    
     scrollToBottom();
     if (isAssistantStreaming) return  // process latest message. think of as onFinish()
     // ON FINISH:
