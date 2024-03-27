@@ -62,7 +62,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
           <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
         </button>
         : null}
-      <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-white bg-[#611C9B]' : 'rounded-bl-none text-[#494A4D] bg-[#F7F7F7]'} p-2 md:p-4 leading-[1.65] pr-9 relative self-start`}>
+      <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-[var(--text-primary)] bg-[var(--background-bubble-primary)]' : 'rounded-bl-none text-[var(--text-secondary-inverse)] bg-[var(--background-bubble-secondary)]'} p-2 md:p-4 leading-[1.65] pr-9 relative self-start`}>
         <Markdown
           className="markdown grid grid-cols-1 gap-3"
           remarkPlugins={[remarkGfm]}

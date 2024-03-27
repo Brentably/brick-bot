@@ -9,6 +9,7 @@ import Image from 'next/image'
 import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
 import { ClozeFlashcard, Flashcard } from '../lib/types';
+import LoadingBrick from '../components/LoadingBrick';
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -93,7 +94,7 @@ export type MessageData = {
   mistakes?: string,
   correctedResponse?: string,
   explanation?: string
-} 
+}
 
 export default function Home() {
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
@@ -109,11 +110,12 @@ export default function Home() {
   useEffect(() => {
     console.log('messages change')
     // always keep messages data length 1 above messages to prevent undefined errors.
-    if(messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, {didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant'}])
+    if (messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, { didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant' }])
   }, [messages])
 
   const [isTextStreaming, setIsTextStreaming] = useState(false)
   const messagesEndRef = useRef(null);
+  const isRehydrated = useBrickStore(state => state.isRehydrated)
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
@@ -122,7 +124,7 @@ export default function Home() {
   const zustandMessages = useBrickStore(state => state.zustandMessages)
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   const resetStore = useBrickStore(state => state.resetStore)
-  const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number|null>(null)
+  const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number | null>(null)
   // boolean is whether it is the last message
   const [audioQueue, setAudioQueue] = useState<[Promise<Blob>, boolean][]>([]);
   // lock to make sure only one audio plays at a time
@@ -256,7 +258,7 @@ export default function Home() {
 
   useEffect(() => {
     // prevents running on first render
-    if(messages.length < 1) return
+    if (messages.length < 1) return
     // console.log('completion update: ', completion)
     const processLatestCompletionFromStream = (completionStream: string) => {
 
@@ -442,91 +444,96 @@ export default function Home() {
               </>
             )}
           </header>
+          {isRehydrated ?
+            <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
+              <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
+                {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index] }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1] }} />) : null)}
 
-          <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
-            <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
-              {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index] }} assistant={{ content: messages[index+1], messageData: messagesData[index+1] }} />) : null)}
-              
-              
-              
-              {!hasStarted &&
-                <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>
-                  Quick start by clicking one of these prompts!
-                  <div id='example prompts' className='flex flex-row flex-wrap'>
-                    {Array(4).fill(null).map((_, index) => (
-                      <ExamplePrompt key={index} text={LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index]} onClick={() => {
-                        setHasStarted(true)
-                        append({ content: LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index], role: 'user'})
-                      }} />
-                    ))}
+
+
+                {!hasStarted &&
+                  <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>
+                    Quick start by clicking one of these prompts!
+                    <div id='example prompts' className='flex flex-row flex-wrap'>
+                      {Array(4).fill(null).map((_, index) => (
+                        <ExamplePrompt key={index} text={LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index]} onClick={() => {
+                          setHasStarted(true)
+                          append({ content: LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index], role: 'user' })
+                        }} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              }
-            </div>
-            <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
-            </div>
+                }
+              </div>
+              <div id='blue background' className='bg-blue-50 border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.5rem)' }}>
+              </div>
 
 
-            <div id='bottom bar' className='flex flex-row z-10'>
+              <div id='bottom bar' className='flex flex-row z-10'>
 
-              <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
-                <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
-                  if (e.key === 'Enter' && isTextStreaming) {
-                    e.preventDefault();
-                  }
-                }} />
-                {!isTextStreaming ? (
-                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                    <SendIcon />
-                    <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
-                  </button>
-                ) : (
-                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                    <StopIcon />
-                    <span className='hidden origin:block font-semibold text-sm ml-2'>Stop</span>
-                  </button>
-                )}
-              </form>
+                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
+                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
+                    if (e.key === 'Enter' && isTextStreaming) {
+                      e.preventDefault();
+                    }
+                  }} />
+                  {!isTextStreaming ? (
+                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                      <SendIcon />
+                      <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
+                    </button>
+                  ) : (
+                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                      <StopIcon />
+                      <span className='hidden origin:block font-semibold text-sm ml-2'>Stop</span>
+                    </button>
+                  )}
+                </form>
 
-              <div className='flex justify-evenly flex-grow items-center'>
-                <div className=''>
-                  Flashcards created: {flashcards.length}
-                </div>
-                <button className='bg-gray-300 rounded-md p-1' onClick={() => {
-                  // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
-                  // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                  const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
-                  fetch(url, {
-                    method: "POST",
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                      jsonFlashcards: flashcards
+                <div className='flex justify-evenly flex-grow items-center bg-[var(--text-primary)]'>
+                  <div className=''>
+                    Flashcards created: {flashcards.length}
+                  </div>
+                  <button className='bg-gray-300 rounded-md p-1' onClick={() => {
+                    // const url = `http://localhost:8000/export-flashcards?language=${targetLanguage}`
+                    // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                    const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+                    fetch(url, {
+                      method: "POST",
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        jsonFlashcards: flashcards
+                      })
                     })
-                  })
-                    .then(response => response.blob())
-                    .then(blob => {
-                      console.log('handling blob')
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.style.display = 'none';
-                      a.href = url;
-                      a.download = 'brick-bot-flashcards.apkg';
-                      document.body.appendChild(a);
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                    })
-                    .catch((error) => {
-                      console.error('Error:', error);
-                    });
-                }}>
-                  Download flashcards!
-                </button>
+                      .then(response => response.blob())
+                      .then(blob => {
+                        console.log('handling blob')
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = 'brick-bot-flashcards.apkg';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      })
+                      .catch((error) => {
+                        console.error('Error:', error);
+                      });
+                  }}>
+                    Download flashcards!
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-
+            : <div className='h-full justify-center items-center text-center relative'>
+              <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+              <LoadingBrick />
+              </div>
+            </div>
+          }
 
 
         </section>
@@ -537,7 +544,7 @@ export default function Home() {
 
 function ExamplePrompt(props: { text: string, onClick: () => void }) {
   return (
-    <button onClick={props.onClick} className='bg-[#F3E5F5] text-[#7724AA] rounded-md m-2 p-2'>
+    <button onClick={props.onClick} className='bg-[var(--background-soft)] text-[var(--text-primary-main)] rounded-md m-2 p-2'>
       {props.text}
     </button>
   )

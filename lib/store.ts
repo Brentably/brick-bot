@@ -14,13 +14,16 @@ export interface Store {
   resetStore: () => void;
   messagesData: MessageData[];
   setMessagesData: (messagesData: MessageData[] | ((previousMessagesData: MessageData[]) => MessageData[])) => void
+  isRehydrated: boolean;
+  setIsRehydrated: (isRehydrated: boolean) => void
 }
 
 const INIT_STORE = {
   flashcards: [],
   zustandMessages: [],
   hasStarted: false,
-  messagesData: [{role: 'user', didMakeMistakes: null}] as MessageData[]
+  messagesData: [{role: 'user', didMakeMistakes: null}] as MessageData[],
+  isRehydrated: false,
 };
 
 export const useBrickStore = create<Store>()(
@@ -41,10 +44,14 @@ export const useBrickStore = create<Store>()(
         console.log('setting messages DATA to', newMessagesData)
         if(typeof newMessagesDataOrFunction === 'object') set(ps => ({...ps, messagesData: newMessagesData}))
         else set(ps => ({...ps, messagesData: newMessagesData}))
-      }
+      },
+      setIsRehydrated: (isRehydrated) => set(pS => ({...pS, isRehydrated}))
     }),
     {
       name: "brick-storage",
+      onRehydrateStorage: () => {
+        return (state) => state.setIsRehydrated(true)
+      }
     }
   )
 );
