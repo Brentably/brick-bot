@@ -425,15 +425,15 @@ export default function Home() {
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
-        <section className='chatbot-section flex flex-col max-w-[1200px] w-full h-full rounded-md p-2 md:p-6'>
+        <section className='chatbot-section flex flex-col max-w-[1200px] w-full h-full rounded-md p-2 lg:p-6 text-sm lg:text-base'>
           <header className='chatbot-header pb-6'>
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 <Image src={bricks} alt='' className='w-10' />
-                <h1 className='chatbot-text-primary text-xl md:text-2xl font-medium'>Brick Bot</h1>
+                <h1 className='chatbot-text-primary text-xl lg:text-2xl font-medium'>Brick Bot</h1>
               </div>
               <button
-                className='text-sm md:text-base'
+                className='text-sm lg:text-base'
                 onClick={() => setIsHeaderOpen(!isHeaderOpen)}
               >
                 {isHeaderOpen ? (
@@ -448,10 +448,10 @@ export default function Home() {
             </div>
             {isHeaderOpen && (
               <>
-                <p className="chatbot-text-secondary-inverse text-sm md:text-base mt-2 md:mt-4">
+                <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
                   Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
                 </p>
-                <div className='flex flex-col md:flex-row justify-between'>
+                <div className='flex flex-col lg:flex-row justify-between'>
                   <div className='flex flex-col flex-wrap'>
                     <div className="mt-1">
                       <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
@@ -483,7 +483,7 @@ export default function Home() {
             )}
           </header>
           {hasHydrated ?
-            <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
+            <div className='flex-1 flex-grow relative overflow-y-auto my-4 lg:my-6 flex flex-col justify-stretch'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index] }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1] }} />) : null)}
 
@@ -510,7 +510,7 @@ export default function Home() {
               <div id='bottom bar' className='flex flex-row z-10'>
 
                 <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
-                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
+                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
                     if (e.key === 'Enter' && isAssistantStreaming) {
                       e.preventDefault();
                     }

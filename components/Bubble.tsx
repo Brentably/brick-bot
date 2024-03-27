@@ -56,13 +56,13 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   }
 
   return (
-    <div ref={ref} className={`pb-[7px] flex mt-4 md:mt-6 ${isUser ? 'justify-end' : ''}`}>
+    <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
       {!isUser ?
         <button onClick={isAudioPlaying ? pauseAudio : playAudio} className='flex-shrink-0'>
           <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
         </button>
         : null}
-      <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-[var(--text-primary)] bg-[var(--background-bubble-primary)]' : 'rounded-bl-none text-[var(--text-secondary-inverse)] bg-[var(--background-bubble-secondary)]'} p-2 md:p-4 leading-[1.65] pr-9 relative self-start`}>
+      <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-[var(--text-primary)] bg-[var(--background-bubble-primary)]' : 'rounded-bl-none text-[var(--text-secondary-inverse)] bg-[var(--background-bubble-secondary)]'} p-2 lg:p-4 leading-[1.65] pr-9 relative self-start`}>
         <Markdown
           className="markdown grid grid-cols-1 gap-3"
           remarkPlugins={[remarkGfm]}
@@ -97,9 +97,9 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
     </div>
 
     <div className="flex-grow flex">
-      <div className={`mt-4 md:mt-6 p-1`}>
+      <div className={`mt-4 lg:mt-6 p-1`}>
 
-        <div className="p-2 md:p-4">
+        <div className="p-2 lg:p-4">
           <div className="inline-block relative w-4 mr-1">
             <span>&nbsp;</span>
             <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
