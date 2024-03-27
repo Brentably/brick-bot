@@ -92,15 +92,15 @@ export type MessageData = {
   role: "user" | "assistant"
   didMakeMistakes: boolean | null,
   mistakes?: string,
-  correctedResponse?: string,
+  correctedMessage?: string,
   explanation?: string
 }
 
 export default function Home() {
 
-
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
     onResponse: () => setIsAssistantStreaming(true),
+    // onFinish does not have access to the latest messages[], so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
     onFinish: () => setIsAssistantStreaming(false)
   });
 
@@ -138,16 +138,11 @@ export default function Home() {
   }, [messages, zustandMessages, hasHydrated])
 
   const { input: correctionInput, setInput: setCorrectionInput, complete: correctionComplete, stop: stopCorrection, completion } = useCompletion({
-    api: '/api/getCorrectedSentenceAndFeedback', id: 'correction',
-    onResponse: () => setIsCorrectionStreaming(true), onFinish: () => {
-      setIsCorrectionStreaming(false)
-    }
+    api: '/api/getCorrectedMessageAndFeedback', id: 'correction',
+    onResponse: () => setIsCorrectionStreaming(true), 
+    // onFinish does not have access to the latest data, so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
+    onFinish: () => setIsCorrectionStreaming(false)
   })
-
-  
-
-
-
 
 
   useEffect(() => {
@@ -158,9 +153,9 @@ export default function Home() {
 
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
   const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
+  const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_EXAMPLE_PROMPTS>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
   const hasStarted = useBrickStore(state => state.hasStarted)
@@ -177,15 +172,6 @@ export default function Home() {
   // lock for when audio execution is stopped using the stop button
   // useRef so this doesn't change during execution of async func
   const audioStopped = useRef(false)
-
-  useEffect(() => {
-    if (isAssistantStreaming) return
-    serializeMessages()
-  }, [messages, zustandMessages, isAssistantStreaming]) // becareful with deps here to avoid infinite loop.
-  useEffect(() => {
-    if (isCorrectionStreaming) return
-    serializeMessagesData()
-  }, [messagesData, zustandMessagesData, isCorrectionStreaming]) // becareful with deps here to avoid infinite loop.
 
 
   useEffect(() => {
@@ -302,29 +288,32 @@ export default function Home() {
     if (sourceText.includes(endTag)) {
       const endIndex = sourceText.indexOf(endTag);
       return sourceText.slice(startIndex, endIndex);
-    } else return null
+    } else return
   }
 
   useEffect(() => {
     // prevents running on first render
     if (messages.length < 1) return
     // console.log('completion update: ', completion)
-    const processLatestCompletionFromStream = (completionStream: string) => {
 
-      const correctedResponseText = extractTextFromInsideTags(completionStream, 'corrected-sentence')
+    // correction is streaming in so this gets called a bunch
+    const processCorrectionStream = (completionStream: string) => {
+
+      const correctedMessageText = extractTextFromInsideTags(completionStream, 'corrected-message')
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
       const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
-      setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedResponse: correctedResponseText, explanation: explanationText })])
+      if(!indexOfProcessingMessage) throw new Error()
+      setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })])
     }
-    processLatestCompletionFromStream(completion)
+    processCorrectionStream(completion)
   }, [completion])
 
-
-  useEffect(() => {
+  async function createFlashcardsFromXML(XMLFlashcards: string) {
     const createClozeCard = async (clozeCardXml: Element) => {
       console.dir(clozeCardXml)
       let foreignSentenceClozed = ''
       const foreignSentenceBase = clozeCardXml.textContent
+      if(!foreignSentenceBase) throw new Error(`couldnt get foreignSentenceBase from xml`)
       let counter = 1
       Array.from(clozeCardXml.childNodes).forEach((node, i) => {
         if (node.nodeType === 3) {
@@ -351,8 +340,8 @@ export default function Home() {
       const englishTranslation = englishTranslationJSON.englishTranslation
       const formattedCardText =
         `${foreignSentenceClozed}
-      <br/><br/>
-    ${englishTranslation}`
+        <br/><br/>
+      ${englishTranslation}`
       const clozeFlashcard: ClozeFlashcard = {
         text: formattedCardText,
         back_extra: '',
@@ -361,25 +350,56 @@ export default function Home() {
       return clozeFlashcard
     }
 
-    async function createFlashcardsFromXML(unparsedFlashcards: string) {
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(unparsedFlashcards, "text/xml");
-      let flashcardsPromises: (Promise<Flashcard>)[] = []
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(XMLFlashcards, "text/xml");
+    let flashcardsPromises: (Promise<Flashcard>)[] = []
 
-      xmlDoc.querySelectorAll('cloze').forEach(clozeCardXml => {
+    xmlDoc.querySelectorAll('cloze').forEach(clozeCardXml => {
 
-        flashcardsPromises.push(createClozeCard(clozeCardXml))
-      })
+      flashcardsPromises.push(createClozeCard(clozeCardXml))
+    })
 
-      const flashcards = await Promise.all(flashcardsPromises);
+    const flashcards = await Promise.all(flashcardsPromises);
 
-      return flashcards
+    return flashcards
+  }
+
+
+  useEffect(() => {
+    if(isCorrectionStreaming || !indexOfProcessingMessage) return
+    // ON FINISH
+    serializeMessagesData()
+    const makeFlashcards = async () => {
+      console.log('processing xml flashcards for ', indexOfProcessingMessage)
+
+      const resp = await fetch(`/api/getXMLFlashcards`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pupilMessage: messages[indexOfProcessingMessage].content,
+          correctedMessage: messagesData[indexOfProcessingMessage].correctedMessage,
+          mistakes: messagesData[indexOfProcessingMessage].mistakes,
+          language: targetLanguage
+        })
+      }).then(resp => resp.json())
+      const XMLFlashcards = resp.XMLFlashcards
+      const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
+      addFlashcards(_flashcards)
     }
+    makeFlashcards()
 
+  }, [isCorrectionStreaming])
+
+
+  useEffect(() => {
+    
     scrollToBottom();
-    if (isAssistantStreaming) return // allows us to process completed messages because
+    if (isAssistantStreaming) return  // process latest message. think of as onFinish()
+    // ON FINISH:
+    serializeMessages()
 
-    // checks if did makes mistakes
     const processMessage = async (message: Message, index: number) => {
       if (message.role !== 'user') return
       setIndexOfProcessingMessage(index)
@@ -415,7 +435,6 @@ export default function Home() {
       })
 
     }
-    // process latest message
     if (messages.length) processMessage(messages[messages.length - 1], messages.length - 1)
   }, [messages, isAssistantStreaming, targetLanguage]);
 
@@ -472,7 +491,7 @@ export default function Home() {
                         <select
                           id="language-select"
                           value={targetLanguage}
-                          onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_HELLO)}
+                          onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_EXAMPLE_PROMPTS)}
                           className="chatbot-input ml-2"
                         >
                           <option value="German">German</option>

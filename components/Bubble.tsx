@@ -21,7 +21,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   const { role } = content;
   const isUser = role === "user"
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
-  const audio = useRef(null)
+  const audio = useRef<HTMLAudioElement|null>(null)
 
   useEffect(() => {
     if (!isUser) return
@@ -51,7 +51,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
   }
 
   const pauseAudio = () => {
-    audio.current.pause()
+    audio.current?.pause()
     setIsAudioPlaying(false)
   }
 
@@ -82,18 +82,19 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
   const didMakeMistakes = typeof user.messageData === 'undefined' || user.messageData === null ? null : user.messageData.didMakeMistakes
 
   useEffect(() => {
-    console.log('user updated: ')
-    console.log(user.messageData)
+    // console.log('user updated: ')
+    // console.log(user.messageData)
+
     // console.log('rendering bubble pair with user', user)
     // console.log('and assistant', assistant)
   }, [user])
 
-  
+
 
   return (<div className="flex flex-row">
     <div className="flex flex-col max-w-[60%] w-[60%] min-w-[60%] mr-2">
-      <Bubble ref={ref} {...user}/>
-      {assistant?.content && <Bubble ref={ref} {...assistant}/>}
+      <Bubble ref={ref} {...user} />
+      {assistant?.content && <Bubble ref={ref} {...assistant} />}
     </div>
 
     <div className="flex-grow flex">
@@ -104,14 +105,14 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
             <span>&nbsp;</span>
             <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
           </div>
-          <strong>{user.messageData.correctedResponse}</strong>
+          <strong>{user.messageData.correctedMessage}</strong>
         </div>
         <div>
           <Markdown
             className="markdown grid grid-cols-1 gap-3"
             remarkPlugins={[remarkGfm]}
           >
-            {user.messageData.correctedResponse && user.messageData.mistakes}
+            {user.messageData.correctedMessage && user.messageData.mistakes}
           </Markdown>
         </div>
 

@@ -35,24 +35,24 @@ Reply in XML with the following format:
 `;
 const createSystemPrompt = (language: string) =>
   `<instructions>
-You are Brick Bot, an expert in ${language}. You will be given a sentence in ${language}.
-The sentence has a mistake, or several mistakes. Your job is to correct the sentence to what it is supposed to be, with correct grammar, spelling, vocabulary, and sentence structure.
+You are Brick Bot, an expert in ${language}. You will be given a message in ${language}.
+The message has a mistake, or several mistakes. Your job is to correct the message to what it is supposed to be, with correct grammar, spelling, vocabulary, and sentence structure.
 You give the correct version of what they were trying to say, identify mistakes, and then you should explain why their response was wrong.
 Mistakes should be unique. You shouldn't repeat the same mistake twice.
 
 Reply in XML with the following format:
 <response>
-<corrected-sentence>{{the corrected response, using perfect ${language}}}</corrected-sentence>
-<mistakes>{{a itemized list of mistakes with the sentence. sometimes just a single mistake.}}</mistakes>
+<corrected-message>{{the corrected response, using perfect ${language}}}</corrected-message>
+<mistakes>{{a itemized list of mistakes with the message. sometimes just a single mistake.}}</mistakes>
 </response>
 
 </instructions>
 `;
-// <explanation>{{a detailed explanation to help bridge the gap between what the sentence was and what the correct way to say that is}}</explanation>
+// <explanation>{{a detailed explanation to help bridge the gap between what the message was and what the correct way to say that is}}</explanation>
 
 
 export async function POST(req: Request) {
-  console.log("get Corrected Sentence hit");
+  console.log("get Corrected Message hit");
   try {
     const { pupilMessage, instructorMessage, language } = await req.json();
 
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: `<sentence>${pupilMessage}</sentence>`,
+          content: `<message>${pupilMessage}</message>`,
         },
       ],
     });
