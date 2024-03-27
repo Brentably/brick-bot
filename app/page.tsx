@@ -1,5 +1,5 @@
 "use client";
-import { FormEventHandler, useEffect, useRef, useState } from 'react';
+import { FormEventHandler, useCallback, useEffect, useRef, useState } from 'react';
 import Bubble, { BubblePair } from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
@@ -97,32 +97,64 @@ export type MessageData = {
 }
 
 export default function Home() {
+
+
   const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
-    onResponse: () => setIsTextStreaming(true),
-    onFinish: () => setIsTextStreaming(false)
+    onResponse: () => setIsAssistantStreaming(true),
+    onFinish: () => setIsAssistantStreaming(false)
   });
+  const zustandMessagesData = useBrickStore(state => state.zustandMessagesData)
+  const setZustandMessagesData = useBrickStore(state => state.setZustandMessagesData)
+  const [messagesData, setMessagesData] = useState<MessageData[]>([{ role: 'user', didMakeMistakes: null }])
+  const zustandMessages = useBrickStore(state => state.zustandMessages)
+  const setZustandMessages = useBrickStore(state => state.setZustandMessages)
+  const [hasHydrated, setHasHydrated] = useState(false)
 
-  const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction' })
+  const serializeMessagesData = useCallback(() => {
+    console.log('serializing messages data')
+    if(!hasHydrated) {
+      setMessagesData(zustandMessagesData)
+    } else if (messagesData.length >= zustandMessagesData.length && messagesData.length) {
+      console.log('setting zustand from local')
+      setZustandMessagesData(messagesData)
+    } else if (zustandMessagesData.length > messagesData.length) {
+      console.log('setting local from zustand')
+      setMessagesData(zustandMessagesData)
+    }
+  }, [messagesData, zustandMessagesData, hasHydrated])
+  
+  const serializeMessages = useCallback(() => {
+    console.log('serializing messages')
+    if (!hasHydrated) {
+      setMessages(zustandMessages)
+    } else if (messages.length >= zustandMessages.length && messages.length) {
+      // console.log('setting zustand messages from messages: ', messages)
+      setZustandMessages(messages)
+    } else if (zustandMessages.length > messages.length) {
+      // console.log('setting messages from zustand messages')
+      setMessages(zustandMessages)
+    }
+  }, [messages, zustandMessages, hasHydrated])
 
-  const messagesData = useBrickStore(state => state.messagesData)
-  const setMessagesData = useBrickStore(state => state.setMessagesData)
+  const { input: completionInput, setInput: setCompletionInput, complete, stop: stopCompletion, completion } = useCompletion({ api: '/api/getCorrectedSentenceAndFeedback', id: 'correction', onResponse: () => setIsCorrectionStreaming(true), onFinish: ()=>setIsCorrectionStreaming(false)  })
+
+
 
   useEffect(() => {
-    console.log('messages change')
+    // console.log('messages change')
     // always keep messages data length 1 above messages to prevent undefined errors.
     if (messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, { didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant' }])
   }, [messages])
 
-  const [isTextStreaming, setIsTextStreaming] = useState(false)
+  const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
+  const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
   const messagesEndRef = useRef(null);
-  const isRehydrated = useBrickStore(state => state.isRehydrated)
+  
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_HELLO>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
   const hasStarted = useBrickStore(state => state.hasStarted)
   const setHasStarted = useBrickStore(state => state.setHasStarted)
-  const zustandMessages = useBrickStore(state => state.zustandMessages)
-  const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   const resetStore = useBrickStore(state => state.resetStore)
   const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number | null>(null)
   // boolean is whether it is the last message
@@ -137,24 +169,28 @@ export default function Home() {
   const audioStopped = useRef(false)
 
   useEffect(() => {
-    // normally just want to be serializing to localstorage/zustand, 
-    // BUT, if they refresh and messages is set back to 0, then want to make sure it's up to date with the messages that have been saved
-    // whichever is longer should update the other!
-    if (isTextStreaming) return
-    console.log('serialize messages')
-    // console.log('messages length: ', messages.length)
-    // console.log('zustand messages length: ', zustandMessages.length)
+    if (isAssistantStreaming) return
+    serializeMessages()
+  }, [messages, zustandMessages, isAssistantStreaming]) // becareful with deps here to avoid infinite loop.
+  useEffect(() => {
+    if(isCorrectionStreaming) return
+    serializeMessagesData()
+  }, [messagesData, zustandMessagesData, isCorrectionStreaming]) // becareful with deps here to avoid infinite loop.
 
-    if (messages.length > zustandMessages.length && messages.length) {
-      // console.log('setting zustand messages from messages: ', messages)
-      setZustandMessages(messages)
-    }
-    else if (zustandMessages.length > messages.length) {
-      // console.log('setting messages from zustand messages')
-      setMessages(zustandMessages)
-    }
-  }, [messages, zustandMessages, isTextStreaming]) // becareful with deps here to avoid infinite loop.
 
+  
+
+  // load messagesData on initial render
+  useEffect(() => {
+    useBrickStore.persist.onFinishHydration((s) => {
+      serializeMessages()
+      serializeMessagesData()
+      setHasHydrated(true)
+    })
+    useBrickStore.persist.rehydrate()
+    
+  }, [])
+  
   useEffect(() => {
     if (isAudioPlaying) return;
 
@@ -220,7 +256,7 @@ export default function Home() {
         setAudioQueue(pq => [...pq, [blob, false]])
       }
       // once text streaming has ended, add last chunk
-      if (!isTextStreaming) {
+      if (!isAssistantStreaming) {
         // get promise of audio blob from sentence
         const blob = fetch('/api/tts', {
           method: 'POST',
@@ -236,7 +272,7 @@ export default function Home() {
     }
     addToAudioQueue();
 
-  }, [messages, isTextStreaming]);
+  }, [messages, isAssistantStreaming]);
 
   const beginChat = () => {
     setHasStarted(true)
@@ -328,7 +364,7 @@ export default function Home() {
     }
 
     scrollToBottom();
-    if (isTextStreaming) return
+    if (isAssistantStreaming) return
 
     const processLatestMessage = async (message: Message, index: number) => {
       if (message.role !== 'user') return
@@ -367,14 +403,14 @@ export default function Home() {
     }
 
     if (messages.length) processLatestMessage(messages[messages.length - 1], messages.length - 1)
-  }, [messages, isTextStreaming, targetLanguage]);
+  }, [messages, isAssistantStreaming, targetLanguage]);
 
   const handleSend: FormEventHandler<HTMLFormElement> = (e) => {
-    if (isTextStreaming) {
+    if (isAssistantStreaming) {
       console.log("stop form event")
       e.preventDefault()
       stopChat()
-      setIsTextStreaming(false)
+      setIsAssistantStreaming(false)
       setAudioQueue([])
       audioStopped.current = true
     } else {
@@ -444,7 +480,7 @@ export default function Home() {
               </>
             )}
           </header>
-          {isRehydrated ?
+          {hasHydrated ?
             <div className='flex-1 flex-grow relative overflow-y-auto my-4 md:my-6 flex flex-col justify-stretch'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index] }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1] }} />) : null)}
@@ -473,11 +509,11 @@ export default function Home() {
 
                 <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSend}>
                   <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 text-base outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
-                    if (e.key === 'Enter' && isTextStreaming) {
+                    if (e.key === 'Enter' && isAssistantStreaming) {
                       e.preventDefault();
                     }
                   }} />
-                  {!isTextStreaming ? (
+                  {!isAssistantStreaming ? (
                     <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
                       <SendIcon />
                       <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>

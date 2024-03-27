@@ -12,18 +12,15 @@ export interface Store {
   hasStarted: boolean;
   setHasStarted: (hasStarted: boolean) => void;
   resetStore: () => void;
-  messagesData: MessageData[];
-  setMessagesData: (messagesData: MessageData[] | ((previousMessagesData: MessageData[]) => MessageData[])) => void
-  isRehydrated: boolean;
-  setIsRehydrated: (isRehydrated: boolean) => void
+  zustandMessagesData: MessageData[];
+  setZustandMessagesData: (messagesData: MessageData[] | ((previousMessagesData: MessageData[]) => MessageData[])) => void
 }
 
 const INIT_STORE = {
   flashcards: [],
   zustandMessages: [],
   hasStarted: false,
-  messagesData: [{role: 'user', didMakeMistakes: null}] as MessageData[],
-  isRehydrated: false,
+  zustandMessagesData: [] as MessageData[],
 };
 
 export const useBrickStore = create<Store>()(
@@ -39,19 +36,16 @@ export const useBrickStore = create<Store>()(
         set((pS) => ({ ...pS, zustandMessages })),
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),
       resetStore: () => set(() => ({ ...INIT_STORE })),
-      setMessagesData: (newMessagesDataOrFunction) => {
-        const newMessagesData = typeof newMessagesDataOrFunction === 'object' ? newMessagesDataOrFunction : newMessagesDataOrFunction(get().messagesData)
+      setZustandMessagesData: (newMessagesDataOrFunction) => {
+        const newMessagesData = typeof newMessagesDataOrFunction === 'object' ? newMessagesDataOrFunction : newMessagesDataOrFunction(get().zustandMessagesData)
         console.log('setting messages DATA to', newMessagesData)
-        if(typeof newMessagesDataOrFunction === 'object') set(ps => ({...ps, messagesData: newMessagesData}))
-        else set(ps => ({...ps, messagesData: newMessagesData}))
-      },
-      setIsRehydrated: (isRehydrated) => set(pS => ({...pS, isRehydrated}))
+        if(typeof newMessagesDataOrFunction === 'object') set(ps => ({...ps, zustandMessagesData: newMessagesData}))
+        else set(ps => ({...ps, zustandMessagesData: newMessagesData}))
+      }
     }),
     {
       name: "brick-storage",
-      onRehydrateStorage: () => {
-        return (state) => state.setIsRehydrated(true)
-      }
+      skipHydration: true
     }
   )
 );
