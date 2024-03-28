@@ -1,5 +1,5 @@
 "use client";
-import { FormEventHandler, useCallback, useEffect, useRef, useState } from 'react';
+import { FormEvent, FormEventHandler, useCallback, useEffect, useRef, useState } from 'react';
 import Bubble, { BubblePair } from '../components/Bubble'
 import { useChat, Message, CreateMessage, useCompletion } from 'ai/react';
 import useConfiguration from './hooks/useConfiguration';
@@ -104,7 +104,7 @@ export type MessageData = {
 
 export default function Home() {
 
-  const { append, messages, input, handleInputChange, handleSubmit, setMessages, reload, stop: stopChat } = useChat({
+  const { append, messages, input, handleInputChange, setMessages, reload, stop: stopChat, setInput } = useChat({
     onResponse: () => setIsAssistantStreaming(true),
     // onFinish does not have access to the latest messages[], so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
     onFinish: () => setIsAssistantStreaming(false)
@@ -440,7 +440,7 @@ export default function Home() {
     if (messages.length) processMessage(messages[messages.length - 1], messages.length - 1)
   }, [messages, isAssistantStreaming, targetLanguage]);
 
-  const handleSendOrStop: FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSendOrStop = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault()
     setHasStarted(true)
     if (isAssistantStreaming) {
@@ -452,7 +452,8 @@ export default function Home() {
     } else {
       console.log("send form event")
       audioStopped.current = false
-      handleSubmit(e)
+      append({content: input, role: 'user'})
+      setInput('')
     }
   }
 
@@ -572,8 +573,11 @@ export default function Home() {
 
               <div id='bottom bar' className='flex flex-row z-10'>
 
-                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2' onSubmit={handleSendOrStop}>
-                  <input onChange={handleInputChange} value={input} className='chatbot-input flex-1 outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
+                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2'>
+                  <textarea onChange={handleInputChange} value={input} className='chatbot-input flex-1 outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && input !== '') {
+                      handleSendOrStop(e)
+                    }
                   }} />
                   {!isAssistantStreaming ? (
                     <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
