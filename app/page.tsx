@@ -457,7 +457,7 @@ export default function Home() {
       const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
       addFlashcards(_flashcards)
     }
-    if (messagesData[indexOfProcessingMessage].didMakeMistakes) makeFlashcards()
+    if (messagesData[indexOfProcessingMessage]?.didMakeMistakes) makeFlashcards()
 
   }, [isCorrectionStreaming, messagesData])
 
@@ -494,7 +494,7 @@ export default function Home() {
         })
       }).then(resp => resp.json())
 
-      const didMakeMistakes = resp.didMakeMistakes === 'YES' ? true : false
+      const didMakeMistakes = resp?.didMakeMistakes === 'YES' ? true : false
 
       setMessagesData(pM => {
         const newArr = [...pM]
