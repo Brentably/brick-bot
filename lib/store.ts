@@ -12,15 +12,15 @@ export interface Store {
   hasStarted: boolean;
   setHasStarted: (hasStarted: boolean) => void;
   resetStore: () => void;
-  zustandMessagesData: MessageData[];
-  setZustandMessagesData: (messagesData: MessageData[] | ((previousMessagesData: MessageData[]) => MessageData[])) => void
+  messagesData: MessageData[];
+  setMessagesData: (messagesData: MessageData[] | ((previousMessagesData: MessageData[]) => MessageData[])) => void
 }
 
 const INIT_STORE = {
   flashcards: [],
   zustandMessages: [],
   hasStarted: false,
-  zustandMessagesData: [] as MessageData[],
+  messagesData: [{ role: "user", didMakeMistakes: null }] as MessageData[],
 };
 
 export const useBrickStore = create<Store>()(
@@ -36,11 +36,11 @@ export const useBrickStore = create<Store>()(
         set((pS) => ({ ...pS, zustandMessages })),
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),
       resetStore: () => set(() => ({ ...INIT_STORE })),
-      setZustandMessagesData: (newMessagesDataOrFunction) => {
-        const newMessagesData = typeof newMessagesDataOrFunction === 'object' ? newMessagesDataOrFunction : newMessagesDataOrFunction(get().zustandMessagesData)
+      setMessagesData: (newMessagesDataOrFunction) => {
+        const newMessagesData = typeof newMessagesDataOrFunction === 'object' ? newMessagesDataOrFunction : newMessagesDataOrFunction(get().messagesData)
         console.log('setting messages DATA to', newMessagesData)
-        if(typeof newMessagesDataOrFunction === 'object') set(ps => ({...ps, zustandMessagesData: newMessagesData}))
-        else set(ps => ({...ps, zustandMessagesData: newMessagesData}))
+        if(typeof newMessagesDataOrFunction === 'object') set(ps => ({...ps, messagesData: newMessagesData}))
+        else set(ps => ({...ps, messagesData: newMessagesData}))
       }
     }),
     {
