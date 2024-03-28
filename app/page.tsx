@@ -86,6 +86,12 @@ const LANGUAGE_TO_EXAMPLE_PROMPTS = {
     "Bom dia! Estou ansioso para melhorar meu português.",
     "Olá! Estou curioso para saber quanto vou aprender hoje.",
     "Estoy pronto para aprender más sobre la língua portuguesa.",
+  ],
+  "Italian": [
+    "Ciao, sono un principiante, ma sono entusiasta di imparare!",
+    "Buongiorno! Non vedo l'ora di migliorare il mio italiano.",
+    "Ciao! Sono curioso di scoprire quanto imparerò oggi.",
+    "Sono pronto per saperne di più sulla lingua italiana.",
   ]
 }
 export type MessageData = {
@@ -522,6 +528,7 @@ export default function Home() {
                           <option value="French">French</option>
                           <option value="Chinese">Chinese</option>
                           <option value="Portuguese">Portuguese</option>
+                          <option value="Italian">Italian</option>
                         </select>
                       </div>
                       : null}
