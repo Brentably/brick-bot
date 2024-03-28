@@ -649,7 +649,7 @@ export default function Home() {
 
               <div id='bottom bar' className='flex flex-row z-10 relative'>
 
-                <form className='flex h-9 w-[60%] min-w-[60%] mr-2 relative gap-2'>
+                <form className='flex h-9 w-[60%] min-w-[60%] mr-2 relative gap-2' onSubmit={(e) => e.preventDefault()}>
                   <div ref={textareaContainerRef} className='relative flex flex-grow'>
                     <textarea ref={textareaRef}
                       onChange={(e) => {
@@ -665,6 +665,7 @@ export default function Home() {
                       className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 absolute bottom-0 left-0 right-0 overflow-auto bg-[var(--text-primary)]'
                       placeholder='Send a message...'
                       onKeyDown={(e) => {
+                        e.preventDefault()
                         if (e.key === 'Enter' && !e.shiftKey && input.trim() !== '') {
                           handleSendOrStop(e)
                         }
