@@ -14,14 +14,16 @@ interface BubbleProps {
     [key: string]: any;
   };
   messageData: MessageData;
+  playAudio: (message: string) => Promise<HTMLAudioElement>; 
+  pauseAudio: (audio: HTMLAudioElement) => void;
+  isAudioPlaying: boolean
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, playAudio, pauseAudio, isAudioPlaying }, ref) => {
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
-  const audio = useRef<HTMLAudioElement|null>(null)
+  const bubbleAudio = useRef<HTMLAudioElement|null>(null)
 
   useEffect(() => {
     if (!isUser) return
@@ -29,36 +31,19 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
     // console.log(messageData)
   }, [messageData])
 
-  // useEffect(() => {
-  //   if(content.content) console.log(JSON.stringify(content.content))
-  // }, [content])
-
-  // play audio for this message's content
-  const playAudio = async () => {
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      body: JSON.stringify({
-        "input": content.content
-      })
-    })
-    const blob = await res.blob()
-    const blobURL = URL.createObjectURL(blob)
-    const a = new Audio(blobURL)
-    audio.current = new Audio(blobURL)
-    audio.current.onended = () => setIsAudioPlaying(false);
-    audio.current.play()
-    setIsAudioPlaying(true)
-  }
-
-  const pauseAudio = () => {
-    audio.current?.pause()
-    setIsAudioPlaying(false)
-  }
+  const handleAudio = async () => {
+    if (isAudioPlaying) {
+      // need to make sure audio has been set
+      if (bubbleAudio.current) pauseAudio(bubbleAudio.current);
+    } else {
+      bubbleAudio.current = await playAudio(content.content);
+    }
+  };
 
   return (
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
       {!isUser ?
-        <button onClick={isAudioPlaying ? pauseAudio : playAudio} className='flex-shrink-0'>
+        <button onClick={handleAudio} className='flex-shrink-0'>
           <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
         </button>
         : null}

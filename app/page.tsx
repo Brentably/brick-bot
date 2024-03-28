@@ -457,6 +457,26 @@ export default function Home() {
     }
   }
 
+  const playAudio = async (message: string): Promise<HTMLAudioElement> => {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      body: JSON.stringify({
+        "input": message
+      })
+    })
+    const blob = await res.blob()
+    const blobURL = URL.createObjectURL(blob)
+    const a = new Audio(blobURL)
+    a.onended = () => setIsAudioPlaying(false);
+    a.play()
+    setIsAudioPlaying(true)
+    return a;
+  }
+
+  const pauseAudio = (audio: HTMLAudioElement) => {
+    audio.pause()
+    setIsAudioPlaying(false)
+  }
 
   return (
     <Div100vh>
@@ -523,7 +543,7 @@ export default function Home() {
           {hasHydrated ?
             <div className='flex-1 flex-grow relative overflow-y-auto my-4 lg:my-6 flex flex-col justify-stretch'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
-                {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index] }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1] }} />) : null)}
+                {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying }} />) : null)}
 
 
 
