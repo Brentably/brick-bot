@@ -559,8 +559,6 @@ export default function Home() {
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} />) : null)}
 
-
-
                 {!hasStarted &&
                   <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>
                     Quick start by clicking one of these prompts!
