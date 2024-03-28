@@ -115,6 +115,8 @@ export default function Home() {
   const zustandMessages = useBrickStore(state => state.zustandMessages)
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   const [hasHydrated, setHasHydrated] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textareaContainerRef = useRef<HTMLDivElement | null>(null);
 
 
   const serializeMessages = useCallback(() => {
@@ -452,7 +454,7 @@ export default function Home() {
     } else {
       console.log("send form event")
       audioStopped.current = false
-      append({content: input, role: 'user'})
+      append({ content: input, role: 'user' })
       setInput('')
     }
   }
@@ -483,6 +485,12 @@ export default function Home() {
       setIsAudioPlaying(false)
     }
   }
+  useEffect(()=> {
+    if(textareaRef.current == null) return
+    textareaRef.current.style.height = "auto";
+    textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+  }, [input])
+
 
   return (
     <Div100vh>
@@ -547,7 +555,7 @@ export default function Home() {
             )}
           </header>
           {hasHydrated ?
-            <div className='flex-1 flex-grow relative overflow-y-auto my-4 lg:my-6 flex flex-col justify-stretch'>
+            <div className='flex-1 flex-grow relative my-4 lg:my-6 flex flex-col justify-stretch overflow-y-auto'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} />) : null)}
 
@@ -571,25 +579,35 @@ export default function Home() {
               </div>
 
 
-              <div id='bottom bar' className='flex flex-row z-10'>
+              <div id='bottom bar' className='flex flex-row z-10 relative'>
 
-                <form className='flex h-[40px] gap-2 w-[60%] min-w-[60%] mr-2'>
-                  <textarea onChange={handleInputChange} value={input} className='chatbot-input flex-1 outline-none bg-transparent rounded-md p-2' placeholder='Send a message...' onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && input !== '') {
-                      handleSendOrStop(e)
-                    }
-                  }} />
-                  {!isAssistantStreaming ? (
-                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                      <SendIcon />
-                      <span className='hidden origin:block font-semibold text-sm ml-2'>Send</span>
-                    </button>
-                  ) : (
-                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                      <StopIcon />
-                      <span className='hidden origin:block font-semibold text-sm ml-2'>Stop</span>
-                    </button>
-                  )}
+                <form className='flex h-9 w-[60%] min-w-[60%] mr-2 relative gap-2'>
+                  <div ref={textareaContainerRef} className='relative flex flex-grow'>
+                    <textarea ref={textareaRef}
+                      onChange={(e) => {
+                        if (textareaRef.current === null || textareaContainerRef.current === null) return
+                        // textareaContainerRef.current.style.height = "auto";
+                        textareaRef.current.style.height = "auto";
+                        textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+                        handleInputChange(e)
+                      }
+                      }
+                      value={input}
+                      rows={1}
+                      className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 absolute bottom-0 left-0 right-0 overflow-auto bg-[var(--text-primary)]'
+                      placeholder='Send a message...'
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && input.trim() !== '') {
+                          handleSendOrStop(e)
+                        }
+                      }} />
+                  </div>
+
+                      <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                        {!isAssistantStreaming ? <SendIcon /> : <StopIcon />}
+                        <span className='hidden origin:block font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
+                      </button>
+                    
                 </form>
 
                 <div className='flex justify-evenly flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
