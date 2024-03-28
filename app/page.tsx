@@ -662,7 +662,7 @@ export default function Home() {
                       }
                       value={input}
                       rows={1}
-                      className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 absolute bottom-0 left-0 right-0 overflow-auto bg-[var(--text-primary)]'
+                      className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 absolute bottom-0 left-0 right-0 w-full overflow-auto bg-[var(--text-primary)]'
                       placeholder='Send a message...'
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey && input.trim() !== '') {

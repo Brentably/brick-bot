@@ -156,11 +156,12 @@ export async function POST(req: Request) {
       ],
     });
 
-    const yesOrNo = respA.content[0].text;
+    const yesOrNoText = respA.content[0].text;
+    const yesOrNo = yesOrNoText.includes("YES") ? 'YES' : yesOrNoText.includes("NO") ? "NO" : yesOrNoText
     console.log("was it concluded that mistakes were made?", yesOrNo)
 
     if (yesOrNo !== "YES" && yesOrNo !== "NO")
-      throw new Error(`yesOrNo was not YES or NO but it was: ${yesOrNo}`);
+      throw new Error(`yesOrNo did not include yes or not but YES or NO but it was: ${yesOrNo}`);
 
     return Response.json({didMakeMistakes: yesOrNo})
 
