@@ -8,9 +8,11 @@ import Div100vh, { measureHeight } from 'react-div-100vh';
 import Image from 'next/image'
 import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
-import { ClozeFlashcard, Flashcard } from '../lib/types';
+import { BasicFlashcard, ClozeFlashcard, Flashcard } from '../lib/types';
 import LoadingBrick from '../components/LoadingBrick';
 import { debounce } from "lodash"
+import { Tooltip as ReactTooltip } from "react-tooltip";
+
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -225,6 +227,14 @@ export default function Home() {
     const english = resp.englishTranslation
     setSelectionTranslation(english)
     setIsSelectionTranslationLoading(false)
+  }
+
+  const addSelectionFlashcard = () => {
+    const flashcard: BasicFlashcard = {
+      front: document.getSelection()?.toString() ?? '',
+      back: selectionTranslation
+    }
+    addFlashcards([flashcard])
   }
 
   useEffect(() => console.log('selection Translation', selectionTranslation), [selectionTranslation])
@@ -674,9 +684,9 @@ export default function Home() {
                     Flashcards created: {flashcards.length}
                   </div>
                   <button className='bg-gray-300 rounded-md p-1' onClick={() => {
-                    const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
+                    // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
                     // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                    // const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+                    const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
                     fetch(url, {
                       method: "POST",
                       headers: {
@@ -721,12 +731,18 @@ export default function Home() {
         {!isSelectionTranslationLoading ?
           <div className='select-none flex justify-between items-center'> 
             {selectionTranslation} 
-            <button>
-            <PlusIcon className='w-6 h-6' />
+            <button onClick={addSelectionFlashcard} data-tooltip-id="add-flashcard" className='hover:bg-gray-300 text-[var(--text-primary-main)] rounded-full ml-2 p-1.5 transition duration-300 ease-in-out transform hover:scale-110 hover:shadow-xl'>
+              <svg className={`w-5 h-5`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
           </div>
           : <LoadingBrick className='w-10 h-10 animate-spin' />}
       </div>
+      <ReactTooltip
+        id="add-flashcard"
+        place="top"
+        content="create flashcard"
+        className='z-50'
+      />
     </Div100vh>
   )
 }
