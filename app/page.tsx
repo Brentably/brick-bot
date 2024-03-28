@@ -368,10 +368,7 @@ export default function Home() {
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
       const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
       if (indexOfProcessingMessage === null) throw new Error(`no index of processing message`)
-      setMessagesData(pMD => {
-        console.log('pMD', pMD)
-        return [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })]
-      })
+      setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })])
     }
     processCorrectionStream(completion)
   }, [completion])
@@ -435,23 +432,24 @@ export default function Home() {
 
 
   useEffect(() => {
-    console.log('ics ue')
     if (isCorrectionStreaming || indexOfProcessingMessage === null) return
     // ON FINISH
     const makeFlashcards = async () => {
+      // FIXME TODO! this is called multiple times for the same indexOfProcessingMessage, even when the body data is not ready, causing errors on both frontend and backend, which expects that data to be ready
       console.log('processing xml flashcards for ', indexOfProcessingMessage)
-
+      const body = {
+        pupilMessage: messages[indexOfProcessingMessage].content,
+        correctedMessage: messagesData[indexOfProcessingMessage].correctedMessage,
+        mistakes: messagesData[indexOfProcessingMessage].mistakes,
+        language: targetLanguage
+      }
+      console.log('full body: ', body)
       const resp = await fetch(`/api/getXMLFlashcards`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          pupilMessage: messages[indexOfProcessingMessage].content,
-          correctedMessage: messagesData[indexOfProcessingMessage].correctedMessage,
-          mistakes: messagesData[indexOfProcessingMessage].mistakes,
-          language: targetLanguage
-        })
+        body: JSON.stringify(body)
       }).then(resp => resp.json())
       const XMLFlashcards = resp.XMLFlashcards
       const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
