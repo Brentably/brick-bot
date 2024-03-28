@@ -614,7 +614,7 @@ export default function Home() {
                           <option value="Chinese">Chinese</option>
                           <option value="Portuguese">Portuguese</option>
                           <option value="Italian">Italian</option>
-                          <option value="Italian">Russian</option>
+                          <option value="Russian">Russian</option>
                         </select>
                       </div>
                       : null}
