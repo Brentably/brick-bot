@@ -95,6 +95,12 @@ const LANGUAGE_TO_EXAMPLE_PROMPTS = {
     "Buongiorno! Non vedo l'ora di migliorare il mio italiano.",
     "Ciao! Sono curioso di scoprire quanto imparerò oggi.",
     "Sono pronto per saperne di più sulla lingua italiana.",
+  ],
+  "Russian": [
+    "Привет, я начинающий, но очень рад учиться!",
+    "Добрый день! С нетерпением жду, когда смогу улучшить свой русский.",
+    "Привет! Интересно, сколько я сегодня узнаю.",
+    "Я готов узнать больше о русском языке.",
   ]
 }
 export type MessageData = {
@@ -608,6 +614,7 @@ export default function Home() {
                           <option value="Chinese">Chinese</option>
                           <option value="Portuguese">Portuguese</option>
                           <option value="Italian">Italian</option>
+                          <option value="Italian">Russian</option>
                         </select>
                       </div>
                       : null}
