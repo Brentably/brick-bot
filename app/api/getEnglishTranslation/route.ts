@@ -11,7 +11,7 @@ const translator = new deepl.Translator(process.env.DEEPL_API_KEY!);
 
 export async function POST(req: Request) {
   try {
-    console.log('getClozeEnglish translation hit')
+    console.log('getEnglish translation hit')
     const { sentence, language } = await req.json();
 
     console.log('translating ', sentence, ' to english')

@@ -17,6 +17,7 @@
     "geist": "^1.2.2",
     "genanki": "^0.1.1",
     "langchain": "^0.0.179",
+    "lodash": "^4.17.21",
     "next": "^14.1.4",
     "openai": "^4.14.2",
     "random": "^4.1.0",
@@ -33,6 +34,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.0",
     "@types/react": "^18.2.37",
     "autoprefixer": "^10",
     "dotenv": "^16.3.1",

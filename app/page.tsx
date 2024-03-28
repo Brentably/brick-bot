@@ -10,6 +10,7 @@ import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
 import { ClozeFlashcard, Flashcard } from '../lib/types';
 import LoadingBrick from '../components/LoadingBrick';
+import { debounce } from "lodash"
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -173,6 +174,61 @@ export default function Home() {
   }, [hasStarted])
 
 
+  const selectionBoxRef = useRef<HTMLDivElement>(null)
+  const [selectionBoxActive, setSelectionBoxActive] = useState(false)
+  const [isSelectionTranslationLoading, setIsSelectionTranslationLoading] = useState(false)
+  const [selectionTranslation, setSelectionTranslation] = useState('')
+
+  const repositionSelectionBox = () => {
+    console.log('reposition selection Box')
+    const selection = document.getSelection()
+    if (selection && selection.rangeCount > 0) {
+      const selectionBox = selectionBoxRef.current
+      if (!selectionBox) return
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      // Get the coordinates of the selected text
+      const x = rect.left + window.scrollX;
+      const y = rect.top + window.scrollY;
+      selectionBox.style.top = `${y}px`
+      selectionBox.style.left = `${x}px`
+    }
+  }
+
+  const handleSelectionChange = async () => {
+    // Your logic here
+    console.log('Selection changed');
+    const selection = document.getSelection()
+    const selectionString = selection?.toString()
+    console.log(selection, selectionString)
+    if (!Boolean(selectionString)) {
+      setSelectionBoxActive(false)
+      setSelectionTranslation('')
+      return
+    }
+
+
+    setSelectionBoxActive(true)
+    repositionSelectionBox()
+    setIsSelectionTranslationLoading(true)
+    const resp = await fetch(`/api/getEnglishTranslation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        language: targetLanguage,
+        sentence: selectionString
+      })
+    }).then(resp => resp.json())
+    const english = resp.englishTranslation
+    setSelectionTranslation(english)
+    setIsSelectionTranslationLoading(false)
+  }
+
+  useEffect(() => console.log('selection Translation', selectionTranslation), [selectionTranslation])
+  useEffect(() => console.log('isSelectionTranslationLoading', isSelectionTranslationLoading), [isSelectionTranslationLoading])
 
   // load messagesData on initial render
   useEffect(() => {
@@ -182,6 +238,11 @@ export default function Home() {
     })
     useBrickStore.persist.rehydrate()
 
+    const debouncedSelectionChange = debounce(handleSelectionChange, 300)
+
+    if (typeof window !== 'undefined') document.addEventListener("selectionchange", debouncedSelectionChange);
+
+    return () => document.removeEventListener('selectionchange', debouncedSelectionChange)
   }, [])
 
   useEffect(() => {
@@ -323,7 +384,7 @@ export default function Home() {
         else throw new Error(`uncovered type of node: ${node.nodeName}`)
       })
 
-      const resp = await fetch(`/api/getClozeEnglishTranslation`, {
+      const resp = await fetch(`/api/getEnglishTranslation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -332,9 +393,9 @@ export default function Home() {
           language: targetLanguage,
           sentence: foreignSentenceBase
         })
-      })
-      const englishTranslationJSON = await resp.json()
-      const englishTranslation = englishTranslationJSON.englishTranslation
+      }).then(resp => resp.json())
+
+      const englishTranslation = resp.englishTranslation
       const formattedCardText =
         `${foreignSentenceClozed}
         <br/><br/>
@@ -390,9 +451,9 @@ export default function Home() {
   }, [isCorrectionStreaming, messagesData])
 
   useEffect(() => {
-    console.log('messages / messagesData')
-    console.log(messages)
-    console.log(messagesData)
+    // console.log('messages / messagesData')
+    // console.log(messages)
+    // console.log(messagesData)
   }, [messages, messagesData])
 
 
@@ -485,8 +546,8 @@ export default function Home() {
       setIsAudioPlaying(false)
     }
   }
-  useEffect(()=> {
-    if(textareaRef.current == null) return
+  useEffect(() => {
+    if (textareaRef.current == null) return
     textareaRef.current.style.height = "auto";
     textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
   }, [input])
@@ -556,7 +617,7 @@ export default function Home() {
           </header>
           {hasHydrated ?
             <div className='flex-1 flex-grow relative my-4 lg:my-6 flex flex-col justify-stretch overflow-y-auto'>
-              <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
+              <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
                 {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} />) : null)}
 
                 {!hasStarted &&
@@ -601,11 +662,11 @@ export default function Home() {
                       }} />
                   </div>
 
-                      <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
-                        {!isAssistantStreaming ? <SendIcon /> : <StopIcon />}
-                        <span className='hidden origin:block font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
-                      </button>
-                    
+                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                    {!isAssistantStreaming ? <SendIcon /> : <StopIcon />}
+                    <span className='hidden origin:block font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
+                  </button>
+
                 </form>
 
                 <div className='flex justify-evenly flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
@@ -656,6 +717,16 @@ export default function Home() {
 
         </section>
       </main>
+      <div ref={selectionBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${selectionBoxActive ? '' : 'invisible'}`}>
+        {!isSelectionTranslationLoading ?
+          <div className='select-none flex justify-between items-center'> 
+            {selectionTranslation} 
+            <button>
+            <PlusIcon className='w-6 h-6' />
+            </button>
+          </div>
+          : <LoadingBrick className='w-10 h-10 animate-spin' />}
+      </div>
     </Div100vh>
   )
 }
@@ -681,5 +752,10 @@ function StopIcon() {
     <svg width="20" height="20" viewBox="0 0 20 20">
       <rect x="5" y="5" width="10" height="10" />
     </svg>
+  );
+}
+function PlusIcon({className = ''}) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
   );
 }
