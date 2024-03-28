@@ -463,7 +463,7 @@ export default function Home() {
     }
     if (messagesData[indexOfProcessingMessage]?.didMakeMistakes) makeFlashcards()
 
-  }, [isCorrectionStreaming, messagesData])
+  }, [isCorrectionStreaming, completion])
 
   useEffect(() => {
     // console.log('messages / messagesData')
