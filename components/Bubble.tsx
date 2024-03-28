@@ -17,9 +17,10 @@ interface BubbleProps {
   playAudio: (message: string) => Promise<HTMLAudioElement>; 
   pauseAudio: (audio: HTMLAudioElement) => void;
   isAudioPlaying: boolean
+  setIsAudioPlaying: (bool: boolean) => void;
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, playAudio, pauseAudio, isAudioPlaying }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }, ref) => {
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
@@ -36,6 +37,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
       // need to make sure audio has been set
       if (bubbleAudio.current) pauseAudio(bubbleAudio.current);
     } else {
+      setIsAudioPlaying(true)
       bubbleAudio.current = await playAudio(content.content);
     }
   };

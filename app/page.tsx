@@ -160,7 +160,6 @@ export default function Home() {
   // useRef so this doesn't change during execution of async func
   const audioStopped = useRef(false)
 
-
   useEffect(() => {
     if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
   }, [hasStarted])
@@ -468,8 +467,14 @@ export default function Home() {
   }
 
   const pauseAudio = (audio: HTMLAudioElement) => {
-    audio.pause()
-    setIsAudioPlaying(false)
+    // if audio is streaming in, stop it
+    if (audioStopped.current === false) {
+      setAudioQueue([])
+      audioStopped.current = true
+    } else {
+      audio.pause()
+      setIsAudioPlaying(false)
+    }
   }
 
   return (
@@ -536,7 +541,7 @@ export default function Home() {
           {hasHydrated ?
             <div className='flex-1 flex-grow relative overflow-y-auto my-4 lg:my-6 flex flex-col justify-stretch'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
-                {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying }} />) : null)}
+                {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} />) : null)}
 
 
 
