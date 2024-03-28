@@ -104,25 +104,12 @@ export default function Home() {
     onFinish: () => setIsAssistantStreaming(false)
   });
 
-  const zustandMessagesData = useBrickStore(state => state.zustandMessagesData)
-  const setZustandMessagesData = useBrickStore(state => state.setZustandMessagesData)
-  const [messagesData, setMessagesData] = useState<MessageData[]>([{ role: 'user', didMakeMistakes: null }])
+  const messagesData = useBrickStore(state => state.messagesData)
+  const setMessagesData = useBrickStore(state => state.setMessagesData)
   const zustandMessages = useBrickStore(state => state.zustandMessages)
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   const [hasHydrated, setHasHydrated] = useState(false)
 
-  const serializeMessagesData = useCallback(() => {
-    console.log('serializing messages data')
-    if (!hasHydrated) {
-      setMessagesData(zustandMessagesData)
-    } else if (messagesData.length >= zustandMessagesData.length && messagesData.length) {
-      console.log('setting zustand from local')
-      setZustandMessagesData(messagesData)
-    } else if (zustandMessagesData.length > messagesData.length) {
-      console.log('setting local from zustand')
-      setMessagesData(zustandMessagesData)
-    }
-  }, [messagesData, zustandMessagesData, hasHydrated])
 
   const serializeMessages = useCallback(() => {
     console.log('serializing messages')
@@ -139,7 +126,7 @@ export default function Home() {
 
   const { input: correctionInput, setInput: setCorrectionInput, complete: correctionComplete, stop: stopCorrection, completion } = useCompletion({
     api: '/api/getCorrectedMessageAndFeedback', id: 'correction',
-    onResponse: () => setIsCorrectionStreaming(true), 
+    onResponse: () => setIsCorrectionStreaming(true),
     // onFinish does not have access to the latest data, so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
     onFinish: () => setIsCorrectionStreaming(false)
   })
@@ -184,7 +171,6 @@ export default function Home() {
   useEffect(() => {
     useBrickStore.persist.onFinishHydration((s) => {
       serializeMessages()
-      serializeMessagesData()
       setHasHydrated(true)
     })
     useBrickStore.persist.rehydrate()
@@ -274,8 +260,8 @@ export default function Home() {
 
   }, [messages, isAssistantStreaming]);
 
-  
-  
+
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -302,8 +288,11 @@ export default function Home() {
       const correctedMessageText = extractTextFromInsideTags(completionStream, 'corrected-message')
       const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
       const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
-      if(indexOfProcessingMessage === null) throw new Error(`no index of processing message`)
-      setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })])
+      if (indexOfProcessingMessage === null) throw new Error(`no index of processing message`)
+      setMessagesData(pMD => {
+        console.log('pMD', pMD)
+        return [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })]
+      })
     }
     processCorrectionStream(completion)
   }, [completion])
@@ -314,7 +303,7 @@ export default function Home() {
       console.dir(clozeCardXml)
       let foreignSentenceClozed = ''
       const foreignSentenceBase = clozeCardXml.textContent
-      if(!foreignSentenceBase) throw new Error(`couldnt get foreignSentenceBase from xml`)
+      if (!foreignSentenceBase) throw new Error(`couldnt get foreignSentenceBase from xml`)
       let counter = 1
       Array.from(clozeCardXml.childNodes).forEach((node, i) => {
         if (node.nodeType === 3) {
@@ -368,9 +357,8 @@ export default function Home() {
 
   useEffect(() => {
     console.log('ics ue')
-    if(isCorrectionStreaming || indexOfProcessingMessage === null) return
+    if (isCorrectionStreaming || indexOfProcessingMessage === null) return
     // ON FINISH
-    serializeMessagesData()
     const makeFlashcards = async () => {
       console.log('processing xml flashcards for ', indexOfProcessingMessage)
 
@@ -390,9 +378,15 @@ export default function Home() {
       const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
       addFlashcards(_flashcards)
     }
-    makeFlashcards()
+    if (messagesData[indexOfProcessingMessage].didMakeMistakes) makeFlashcards()
 
-  }, [isCorrectionStreaming])
+  }, [isCorrectionStreaming, messagesData])
+
+  useEffect(() => {
+    console.log('messages / messagesData')
+    console.log(messages)
+    console.log(messagesData)
+  }, [messages, messagesData])
 
 
   useEffect(() => {
@@ -530,7 +524,6 @@ export default function Home() {
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stopChat()
                     setMessages([])
-                    setMessagesData([])
                     resetStore()
                   }}>
                     Reset chat

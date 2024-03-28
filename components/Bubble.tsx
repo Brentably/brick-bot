@@ -90,14 +90,14 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
             <span>&nbsp;</span>
             <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
           </div>
-          <strong>{user.messageData.correctedMessage}</strong>
+          <strong>{user.messageData?.correctedMessage}</strong>
         </div>
         <div>
           <Markdown
             className="markdown grid grid-cols-1 gap-3"
             remarkPlugins={[remarkGfm]}
           >
-            {user.messageData.correctedMessage && user.messageData.mistakes}
+            {user.messageData?.correctedMessage && user.messageData.mistakes}
           </Markdown>
         </div>
 
