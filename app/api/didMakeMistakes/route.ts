@@ -141,7 +141,7 @@ export async function POST(req: Request) {
     const { pupilMessage, instructorMessage, language } = await req.json();
 
     const respA = await client.messages.create({
-      model: "claude-3-opus-20240229",
+      model: "claude-3-sonnet-20240229",
       max_tokens: 100,
       system: createSystemPromptA(language),
       messages: [
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
           Output: `,
         },
       ],
-    })
+    });
 
     const yesOrNo = respA.content[0].text;
     console.log("was it concluded that mistakes were made?", yesOrNo)
