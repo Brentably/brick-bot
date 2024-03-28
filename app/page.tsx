@@ -118,6 +118,7 @@ export default function Home() {
   const zustandMessages = useBrickStore(state => state.zustandMessages)
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   const [hasHydrated, setHasHydrated] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const textareaContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -679,41 +680,48 @@ export default function Home() {
 
                 </form>
 
-                <div className='flex justify-evenly flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
-                  <div className=''>
+                <div className='flex justify-evenly ml-1 flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
+                  <div className='w-[50%] text-center'>
                     Flashcards created: {flashcards.length}
                   </div>
-                  <button className='bg-gray-300 rounded-md p-1' onClick={() => {
-                    // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
-                    // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                    const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
-                    fetch(url, {
-                      method: "POST",
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        jsonFlashcards: flashcards
+                  {isDownloading ? (
+                    <div className='w-[50%] flex justify-center'><LoadingBrick className='w-10 h-10 animate-spin' /></div>
+                  ) : flashcards.length > 0 ? (
+                    <button className='bg-gray-300 rounded-md p-1 w-[50%]' onClick={() => {
+                      setIsDownloading(true);
+                      // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
+                      // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                      const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+                      fetch(url, {
+                        method: "POST",
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          jsonFlashcards: flashcards
+                        })
                       })
-                    })
-                      .then(response => response.blob())
-                      .then(blob => {
-                        console.log('handling blob')
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = 'brick-bot-flashcards.apkg';
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                      })
-                      .catch((error) => {
-                        console.error('Error:', error);
-                      });
-                  }}>
-                    Download flashcards!
-                  </button>
+                        .then(response => response.blob())
+                        .then(blob => {
+                          console.log('handling blob')
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.style.display = 'none';
+                          a.href = url;
+                          a.download = 'brick-bot-flashcards.apkg';
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          setIsDownloading(false);
+                        })
+                        .catch((error) => {
+                          console.error('Error:', error);
+                          setIsDownloading(false);
+                        });
+                    }}>
+                      Download flashcards!
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -729,8 +737,8 @@ export default function Home() {
       </main>
       <div ref={selectionBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${selectionBoxActive ? '' : 'invisible'}`}>
         {!isSelectionTranslationLoading ?
-          <div className='select-none flex justify-between items-center'> 
-            {selectionTranslation} 
+          <div className='select-none flex justify-between items-center'>
+            {selectionTranslation}
             <button onClick={addSelectionFlashcard} data-tooltip-id="add-flashcard" className='hover:bg-gray-300 text-[var(--text-primary-main)] rounded-full ml-2 p-1.5 transition duration-300 ease-in-out transform hover:scale-110 hover:shadow-xl'>
               <svg className={`w-5 h-5`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
@@ -770,7 +778,7 @@ function StopIcon() {
     </svg>
   );
 }
-function PlusIcon({className = ''}) {
+function PlusIcon({ className = '' }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
   );
