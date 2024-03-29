@@ -166,6 +166,9 @@ export default function Home() {
   // useRef so this doesn't change during execution of async func
   const audioStopped = useRef(false)
 
+  // keep track of the index of the bubble whose audio is currently playing
+  const [currentlyPlayingBubbleIndex, setCurrentlyPlayingBubbleIndex] = useState<number | null>(null);
+
   useEffect(() => {
     if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
   }, [hasStarted])
@@ -194,6 +197,8 @@ export default function Home() {
       }
       setIsAudioPlaying(true);
 
+      console.log("playing next audio")
+
       const currentTuple = audioQueue[0]
       const currentBlob = await currentTuple[0]
       const currentBlobURL = URL.createObjectURL(currentBlob)
@@ -211,7 +216,7 @@ export default function Home() {
 
   useEffect(() => {
 
-    const addToAudioQueue = async () => {
+    const addTextStreamToAudioQueue = async () => {
       // build the queue of sentences as they come in. 
       // no duplication.
       if (messages.length < 1) return
@@ -261,12 +266,22 @@ export default function Home() {
         processedSentenceCount.current = 0
       }
     }
-    addToAudioQueue();
+    addTextStreamToAudioQueue();
 
   }, [messages, isAssistantStreaming]);
 
+  const addMessageToAudioQueue = (message: string) => {
+    console.log("adding message to audio queue")
+    audioStopped.current = false
+    const blob = fetch('/api/tts', {
+      method: 'POST',
+      body: JSON.stringify({
+        "input": message
+      })
+    }).then(res => res.blob())
 
-
+    setAudioQueue(pq => [...pq, [blob, true]])
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -447,8 +462,7 @@ export default function Home() {
       console.log("stop form event")
       stopChat()
       setIsAssistantStreaming(false)
-      setAudioQueue([])
-      audioStopped.current = true
+      stopAudioStreaming()
     } else {
       console.log("send form event")
       audioStopped.current = false
@@ -456,31 +470,10 @@ export default function Home() {
     }
   }
 
-  const playAudio = async (message: string): Promise<HTMLAudioElement> => {
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      body: JSON.stringify({
-        "input": message
-      })
-    })
-    const blob = await res.blob()
-    const blobURL = URL.createObjectURL(blob)
-    const a = new Audio(blobURL)
-    a.onended = () => setIsAudioPlaying(false);
-    a.play()
-    setIsAudioPlaying(true)
-    return a;
-  }
-
-  const pauseAudio = (audio: HTMLAudioElement) => {
-    // if audio is streaming in, stop it
-    if (audioStopped.current === false) {
-      setAudioQueue([])
-      audioStopped.current = true
-    } else {
-      audio.pause()
-      setIsAudioPlaying(false)
-    }
+  const stopAudioStreaming = () => {
+    setAudioQueue([])
+    audioStopped.current = true
+    setIsAudioPlaying(false)
   }
 
   return (
@@ -536,6 +529,7 @@ export default function Home() {
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stopChat()
                     setMessages([])
+                    setAudioQueue([])
                     resetStore()
                   }}>
                     Reset chat
@@ -548,9 +542,15 @@ export default function Home() {
           {hasHydrated ?
             <div className='flex-1 flex-grow relative overflow-y-auto my-4 lg:my-6 flex flex-col justify-stretch'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
-                {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} />) : null)}
-
-
+                {messages.map(
+                  (message, index, messages) => isEven(index) ? 
+                    (<BubblePair ref={messagesEndRef} 
+                    key={`message-pair-${index}`} 
+                    user={{ content: message, messageData: messagesData[index], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index), isCurrentlyPlaying: Boolean(isAudioPlaying && (index == currentlyPlayingBubbleIndex || index == messages.length - 1)), stopAudioStreaming, setAudioQueue }} 
+                    assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index+1), isCurrentlyPlaying: Boolean(isAudioPlaying && (index+1 == currentlyPlayingBubbleIndex || index == messages.length - 1)), stopAudioStreaming, setAudioQueue }} />
+                    ) : null
+                )
+                }
 
                 {!hasStarted &&
                   <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>

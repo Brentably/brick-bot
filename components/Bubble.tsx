@@ -14,17 +14,17 @@ interface BubbleProps {
     [key: string]: any;
   };
   messageData: MessageData;
-  playAudio: (message: string) => Promise<HTMLAudioElement>; 
-  pauseAudio: (audio: HTMLAudioElement) => void;
-  isAudioPlaying: boolean
-  setIsAudioPlaying: (bool: boolean) => void;
+  addMessageToAudioQueue: (message: string) => void;
+  setBubbleIndex: () => void
+  isCurrentlyPlaying: boolean
+  stopAudioStreaming: () => void
+  setAudioQueue: (queue: [Promise<Blob>, boolean][]) => void
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, addMessageToAudioQueue, setBubbleIndex, isCurrentlyPlaying, stopAudioStreaming, setAudioQueue }, ref) => {
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
-  const bubbleAudio = useRef<HTMLAudioElement|null>(null)
 
   useEffect(() => {
     if (!isUser) return
@@ -33,12 +33,11 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
   }, [messageData])
 
   const handleAudio = async () => {
-    if (isAudioPlaying) {
-      // need to make sure audio has been set
-      if (bubbleAudio.current) pauseAudio(bubbleAudio.current);
-    } else {
-      setIsAudioPlaying(true)
-      bubbleAudio.current = await playAudio(content.content);
+    if (isCurrentlyPlaying) stopAudioStreaming()
+    else {
+      setAudioQueue([])
+      addMessageToAudioQueue(content.content)
+      setBubbleIndex()
     }
   };
 
@@ -46,7 +45,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
       {!isUser ?
         <button onClick={handleAudio} className='flex-shrink-0'>
-          <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
+          <Image src={(isCurrentlyPlaying) ? soundOffIcon : soundOnIcon} alt="Sound On/Off Icon" />
         </button>
         : null}
       <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-[var(--text-primary)] bg-[var(--background-bubble-primary)]' : 'rounded-bl-none text-[var(--text-secondary-inverse)] bg-[var(--background-bubble-secondary)]'} p-2 lg:p-4 leading-[1.65] pr-9 relative self-start`}>
