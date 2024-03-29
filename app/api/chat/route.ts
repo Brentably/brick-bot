@@ -19,23 +19,27 @@ const client = new Anthropic({
 export const runtime = 'edge'; // 'nodejs' is the default
 
 const createSystemPrompt = (language: string) =>
-  `Your name is Brick Bot! You are an expert ${language} tutor mentoring a pupil. Start at a really easy, basic level, and practice speaking with the pupil. Make sure to adjust to their level! Try to keep the conversation interesting. Ask them about their lives / their day and engage with them as much as possible. Ignore any mistakes they make and just keep the conversation going. Let me reiterate, DO NOT correct their mistakes. Make sure to speak in ${language} instead of English.`;
+`Your name is Brick Bot! You are an expert ${language} tutor mentoring a pupil. Start at a really easy, basic level, and practice speaking with the pupil. Make sure to adjust to their level! Try to keep the conversation interesting. Ask them about their lives / their day and engage with them as much as possible. Ignore any mistakes they make and just keep the conversation going. Let me reiterate, DO NOT correct their mistakes. Make sure to speak in ${language} instead of English.`;
 
 export async function POST(req: Request) {
-  console.log('chat hit')
   try {
     const { messages, language } = await req.json();
-
+    
     const latestMessage = messages[messages?.length - 1]?.content;
+    
+    
+    const system = createSystemPrompt(language)
+    console.log('chat hit')
+    console.log('w/ system: ', system)
+    console.log('and messages: ', messages)
 
-   
     let fullMessage = "";
     const res = client.messages
       .stream({
         model: "claude-3-opus-20240229",
         messages: [...messages],
         max_tokens: 4096,
-        system: createSystemPrompt(language),
+        system,
       })
       .on("text", (text) => {
         fullMessage += text;

@@ -12,7 +12,7 @@ import { BasicFlashcard, ClozeFlashcard, Flashcard } from '../lib/types';
 import LoadingBrick from '../components/LoadingBrick';
 import { debounce } from "lodash"
 import { Tooltip as ReactTooltip } from "react-tooltip";
-
+import {toast} from 'react-toastify'
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -207,10 +207,10 @@ export default function Home() {
 
   const handleSelectionChange = async () => {
     // Your logic here
-    console.log('Selection changed');
+    // console.log('Selection changed');
     const selection = document.getSelection()
     const selectionString = selection?.toString()
-    console.log(selection, selectionString)
+    // console.log(selection, selectionString)
     if (!Boolean(selectionString)) {
       setSelectionBoxActive(false)
       setSelectionTranslation('')
@@ -242,6 +242,7 @@ export default function Home() {
       back: selectionTranslation
     }
     addFlashcards([flashcard])
+    toast(`Flashcard added!`, {position: 'top-center', type: 'success'})
   }
 
   useEffect(() => console.log('selection Translation', selectionTranslation), [selectionTranslation])
@@ -617,7 +618,7 @@ export default function Home() {
                           <option value="Russian">Russian</option>
                         </select>
                       </div>
-                      : null}
+                      : <div className='mt-1'>Target language: {targetLanguage}</div>}
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stopChat()
