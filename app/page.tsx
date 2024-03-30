@@ -156,13 +156,16 @@ export default function Home() {
   const resetStore = useBrickStore(state => state.resetStore)
   const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number | null>(null)
   // boolean is whether it is the last message
-  const [audioQueue, setAudioQueue] = useState<[Promise<Blob>, boolean][]>([]);
+  const [audioQueue, setAudioQueue] = useState<Promise<Blob>[]>([]);
   // lock to make sure only one audio plays at a time
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  // currently playing audio ref
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   // # sentences that have been processed and put in queue
   const processedSentenceCount = useRef(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
   // lock for when audio execution is stopped using the stop button
+
   // useRef so this doesn't change during execution of async func
   const audioStopped = useRef(false)
 
@@ -186,31 +189,36 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    console.log('play next audio use effect hit')
     if (isAudioPlaying) return;
 
     const playNextAudio = async () => {
+      console.log('pNA hit')
       if (audioQueue.length === 0) return
-      setIsAudioPlaying(true);
 
       console.log("playing next audio")
 
-      const currentTuple = audioQueue[0]
-      const currentBlob = await currentTuple[0]
+      const currentBlob = await audioQueue[0]
+      if (audioStopped.current === true) {
+        console.log('audio stopped true so returning')
+        return
+      }
+
       const currentBlobURL = URL.createObjectURL(currentBlob)
-      const audio = new Audio(currentBlobURL);
+
+      audioRef.current = new Audio(currentBlobURL);
+      const audio = audioRef.current
 
       // rm from audio queue
       setAudioQueue(pq => pq.slice(1))
 
+      audio.onplaying = () => setIsAudioPlaying(true)
+
       audio.onended = () => setIsAudioPlaying(false)
+
       audio.play();
 
-      if (audioStopped.current === true) {
-        audio.pause()
-        console.log("audio stopped.")
-        setAudioQueue([])
-        return
-      }
+
     }
     playNextAudio();
 
@@ -234,6 +242,7 @@ export default function Home() {
       // skip over first chunk because we don't want to add array[-1] chunk
       if (currSentenceCount < 1) return
 
+      setCurrentlyPlayingBubbleIndex(messages.length - 1)
       // iterate until we have added all new sentences to queue
       while (currSentenceCount > processedSentenceCount.current) {
         // we need to get the first sentence that hasn't been added to the queue yet
@@ -243,27 +252,15 @@ export default function Home() {
         processedSentenceCount.current += 1;
         const chunkIndex = (sentencesChunks.length - 1) - numMissedSentences
 
-        // get promise of audio blob from sentence
-        const blob = fetch('/api/tts', {
-          method: 'POST',
-          body: JSON.stringify({
-            "input": sentencesChunks[chunkIndex]
-          })
-        }).then(res => res.blob())
-
-        setAudioQueue(pq => [...pq, [blob, false]])
+        if (!audioStopped.current) addMessageToAudioQueue(sentencesChunks[chunkIndex])
       }
+
+
       // once text streaming has ended, add last chunk
       if (!isAssistantStreaming) {
         // get promise of audio blob from sentence
-        const blob = fetch('/api/tts', {
-          method: 'POST',
-          body: JSON.stringify({
-            "input": sentencesChunks[sentencesChunks.length - 1]
-          })
-        }).then(res => res.blob())
 
-        setAudioQueue(pq => [...pq, [blob, true]])
+        if (!audioStopped.current) addMessageToAudioQueue(sentencesChunks[sentencesChunks.length - 1])
 
         processedSentenceCount.current = 0
       }
@@ -274,7 +271,6 @@ export default function Home() {
 
   const addMessageToAudioQueue = (message: string) => {
     console.log("adding message to audio queue")
-    setIsAudioPlaying(true)
     audioStopped.current = false
     const blob = fetch('/api/tts', {
       method: 'POST',
@@ -283,7 +279,7 @@ export default function Home() {
       })
     }).then(res => res.blob())
 
-    setAudioQueue(pq => [...pq, [blob, true]])
+    setAudioQueue(pq => [...pq, blob])
   }
 
   const scrollToBottom = () => {
@@ -405,11 +401,6 @@ export default function Home() {
 
   }, [isCorrectionStreaming, messagesData])
 
-  useEffect(() => {
-    console.log('messages / messagesData')
-    console.log(messages)
-    console.log(messagesData)
-  }, [messages, messagesData])
 
   useEffect(() => {
     console.log("currently playing bubble index #" + currentlyPlayingBubbleIndex)
@@ -482,6 +473,8 @@ export default function Home() {
     setAudioQueue([])
     audioStopped.current = true
     setIsAudioPlaying(false)
+    audioRef.current?.pause()
+    setCurrentlyPlayingBubbleIndex(null)
   }
 
   return (
@@ -553,11 +546,23 @@ export default function Home() {
                 {messages.map(
                   (message, index, messages) => {
                     if (isEven(index)) {
-                      return (<BubblePair ref={messagesEndRef} 
-                      key={`message-pair-${index}`} 
-                      user={{ content: message, messageData: messagesData[index], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index), isCurrentlyPlaying: Boolean(isAudioPlaying && (index == currentlyPlayingBubbleIndex || index == messages.length - 2)), stopAudioStreaming, setAudioQueue }} 
-                      assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index+1), isCurrentlyPlaying: Boolean((isAudioPlaying && (index+1 == currentlyPlayingBubbleIndex || index+1 == (messages.length - 1)))), stopAudioStreaming, setAudioQueue }} />
-                    )} return null
+                      return (<BubblePair ref={messagesEndRef}
+                        key={`message-pair-${index}`}
+                        user={{
+                          content: message,
+                          messageData: messagesData[index],
+                        }}
+                        assistant={{
+                          content: messages[index + 1],
+                          messageData: messagesData[index + 1],
+                          addMessageToAudioQueue,
+                          setThisBubbleIsTheCurrentlyPlayingBubble: () => setCurrentlyPlayingBubbleIndex(index + 1),
+                          isCurrentlyPlaying: isAudioPlaying && (index + 1 == currentlyPlayingBubbleIndex),
+                          stopAudioStreaming,
+                          setAudioQueue
+                        }} />
+                      )
+                    } return null
                   }
                 )
                 }

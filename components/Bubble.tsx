@@ -14,14 +14,15 @@ interface BubbleProps {
     [key: string]: any;
   };
   messageData: MessageData;
-  addMessageToAudioQueue: (message: string) => void;
-  setBubbleIndex: () => void
-  isCurrentlyPlaying: boolean
-  stopAudioStreaming: () => void
-  setAudioQueue: (queue: [Promise<Blob>, boolean][]) => void
+  addMessageToAudioQueue?: (message: string) => void;
+  setThisBubbleIsTheCurrentlyPlayingBubble?: () => void
+  isCurrentlyPlaying?: boolean
+  stopAudioStreaming?: () => void
+  setAudioQueue?: (queue: Promise<Blob>[]) => void
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, addMessageToAudioQueue, setBubbleIndex, isCurrentlyPlaying, stopAudioStreaming, setAudioQueue }, ref) => {
+
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, addMessageToAudioQueue, setThisBubbleIsTheCurrentlyPlayingBubble, isCurrentlyPlaying, stopAudioStreaming, setAudioQueue }, ref) => {
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
@@ -34,11 +35,11 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
 
   const handleAudio = async () => {
     console.log("bubble currently playing: " + isCurrentlyPlaying)
-    if (isCurrentlyPlaying) stopAudioStreaming()
+    if (isCurrentlyPlaying) stopAudioStreaming?.()
     else {
-      setAudioQueue([])
-      addMessageToAudioQueue(content.content)
-      setBubbleIndex()
+      setAudioQueue?.([])
+      addMessageToAudioQueue?.(content.content)
+      setThisBubbleIsTheCurrentlyPlayingBubble?.()
     }
   };
 

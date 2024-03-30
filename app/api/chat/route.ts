@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         system: createSystemPrompt(language),
       })
       .on("text", (text) => {
-        fullMessage += text;
+      fullMessage += text;
       })
       .on("end", () => console.log(JSON.stringify(fullMessage)));
 
