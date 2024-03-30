@@ -669,44 +669,27 @@ export default function Home() {
                       </button>
                     )}
 
-                    {flashcards.length > 0 && (
-                      <button
-                        className='mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform hover:scale-105'
-                        onClick={handleDownloadFlashcards}
-                        disabled={isDownloading}
-                      >
-                        {isDownloading ? (
-                          <>
-                            <LoadingBrick className='w-6 h-6 animate-spin' />
-                            <span>Preparing...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>Download Flashcards!</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                    {showResetConfirmationModal && (
-                      <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
-                        <div className=" rounded-lg z-50 bg-gray-50 bg-opacity-90 border border-gray-300 shadow-lg p-6 relative">
-                          <p>Are you sure you want to reset the chat?</p>
-                          <div className="flex space-x-2 mt-4">
-                            <button className="flex-grow bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded" onClick={() => setShowResetConfirmationModal(false)}>Cancel</button>
-                            <button className="flex-grow bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
-                              stopChat()
-                              setMessages([])
-                              resetStore()
-                              setShowResetConfirmationModal(false)
-                            }}>Reset</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <button
+                      className={`mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform ${flashcards.length === 0 || isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+                      onClick={handleDownloadFlashcards}
+                      disabled={flashcards.length === 0 || isDownloading}
+                    >
+                      {isDownloading ? (
+                        <>
+                          <LoadingBrick className='w-6 h-6 animate-spin' />
+                          <span>Preparing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span>Download Flashcards!</span>
+                        </>
+                      )}
+                    </button>
 
+ 
                   </div>
                 </>
               )}
@@ -714,8 +697,25 @@ export default function Home() {
                 <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%` }}></div>
                 <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
               </div>
+              {showResetConfirmationModal && (
+                <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
+                  <div className=" rounded-lg z-50 bg-gray-50 bg-opacity-90 border border-gray-300 shadow-lg p-6 relative">
+                    <p>Are you sure you want to reset the chat?</p>
+                    <div className="flex space-x-2 mt-4">
+                      <button className="flex-grow bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded" onClick={() => setShowResetConfirmationModal(false)}>Cancel</button>
+                      <button className="flex-grow bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
+                        stopChat()
+                        setMessages([])
+                        resetStore()
+                        setShowResetConfirmationModal(false)
+                      }}>Reset</button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </header>
             {hasStarted ?
+            
               <div className='flex-1 flex-grow relative flex flex-col justify-stretch overflow-y-auto'>
                 <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
                   {messages.map((message, index) => (index > 0) ?
