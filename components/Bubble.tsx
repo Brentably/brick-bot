@@ -60,7 +60,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
             {/*  */}
             {isDropdownOpen && didMakeMistakes && (
               <div className="fixed inset-0 z-50 flex justify-center items-center" onClick={() => setIsDropdownOpen(false)}>
-                <div className="bg-gray-100 bg-opacity-90 border border-gray-300 rounded shadow-lg p-6 relative" style={{ width: 'calc(100% - 2rem)', maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
+                <div className="bg-gray-100 bg-opacity-90 border border-gray-300 rounded-lg shadow-lg p-6 relative" style={{ width: 'calc(100% - 2rem)', maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
                   <button onClick={() => setIsDropdownOpen(false)} className="absolute top-0 right-0 mt-4 mr-4 text-gray-600 hover:text-gray-800">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

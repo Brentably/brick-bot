@@ -213,7 +213,7 @@ export default function Home() {
     }
   }
 
-  useEffect(()=>console.log('has Started', hasStarted), [hasStarted])
+  useEffect(() => console.log('has Started', hasStarted), [hasStarted])
 
 
   const handleSelectionChange = async () => {
@@ -224,7 +224,7 @@ export default function Home() {
     const selectionString = selection?.toString()
     console.log(selection, selectionString)
     console.log(!Boolean(selectionString))
-    const _hasStarted =  useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
+    const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
     if (!Boolean(selectionString) || !_hasStarted) {
       setSelectionBoxActive(false)
       setSelectionTranslation('')
@@ -589,151 +589,181 @@ export default function Home() {
     setTopic(_topic)
   }
 
+  const handleDownloadFlashcards = () => {
+    setIsDownloading(true);
+    // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
+    // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+    const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+    fetch(url, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        jsonFlashcards: flashcards
+      })
+    })
+      .then(response => response.blob())
+      .then(blob => {
+        console.log('handling blob')
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'brick-bot-flashcards.apkg';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setIsDownloading(false);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        setIsDownloading(false);
+      });
+  }
+  const [showResetConfirmationModal, setShowResetConfirmationModal] = useState(false)
+
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
         <section className='chatbot-section flex flex-col max-w-[800px] w-full h-full rounded-md p-2 lg:p-6 text-sm lg:text-base'>
-          <header className='chatbot-header'>
-            <div className='flex justify-between items-center'>
-              <div className='flex items-center gap-2'>
-                <Image src={bricks} alt='' className='w-10' />
-                <h1 className='chatbot-text-primary text-xl lg:text-2xl font-medium'>Brick Bot</h1>
-              </div>
-              <button
-                className='text-sm lg:text-base'
-                onClick={() => setIsHeaderOpen(!isHeaderOpen)}
-              >
-                {isHeaderOpen ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                )}
-              </button>
-            </div>
-            {isHeaderOpen && (
-              <>
-                <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
-                  Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
-                </p>
-                <div className='flex flex-col lg:flex-row justify-between'>
-                  <div className='flex flex-col flex-wrap'>
-                  </div>
-                  {hasStarted && (
-                    <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
-                      stopChat()
-                      setMessages([])
-                      resetStore()
-                    }}>
-                      Reset chat
-                    </button>
+          {hasHydrated ? <>
+            <header className='chatbot-header'>
+              <div className='flex justify-between items-center'>
+                <div className='flex items-center gap-2'>
+                  <Image src={bricks} alt='' className='w-10' />
+                  <h1 className='chatbot-text-primary text-xl lg:text-2xl font-medium'>Brick Bot</h1>
+                </div>
+                <button
+                  className='text-sm lg:text-base'
+                  onClick={() => setIsHeaderOpen(!isHeaderOpen)}
+                >
+                  {isHeaderOpen ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   )}
-                  <div className='flex justify-evenly ml-1 flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
-                    {isDownloading ? (
-                      <div className='w-[50%] flex justify-center'><LoadingBrick className='w-10 h-10 animate-spin' /></div>
-                    ) : flashcards.length > 0 ? (
-                      <button className='bg-gray-300 rounded-md p-1 w-[50%]' onClick={() => {
-                        setIsDownloading(true);
-                        // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
-                        // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                        const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
-                        fetch(url, {
-                          method: "POST",
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            jsonFlashcards: flashcards
-                          })
-                        })
-                          .then(response => response.blob())
-                          .then(blob => {
-                            console.log('handling blob')
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.style.display = 'none';
-                            a.href = url;
-                            a.download = 'brick-bot-flashcards.apkg';
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            setIsDownloading(false);
-                          })
-                          .catch((error) => {
-                            console.error('Error:', error);
-                            setIsDownloading(false);
-                          });
+                </button>
+              </div>
+              {isHeaderOpen && (
+                <>
+                  <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
+                    Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
+                  </p>
+                  <div className='flex flex-col lg:flex-row justify-between mt-4'>
+
+                    {hasStarted && (
+                      <button className='mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded' onClick={() => {
+                        setShowResetConfirmationModal(true)
                       }}>
-                        Download flashcards!
+                        Reset Chat
                       </button>
-                    ) : null}
+                    )}
+
+                    {flashcards.length > 0 && (
+                      <button
+                        className='mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform hover:scale-105'
+                        onClick={handleDownloadFlashcards}
+                        disabled={isDownloading}
+                      >
+                        {isDownloading ? (
+                          <>
+                            <LoadingBrick className='w-6 h-6 animate-spin' />
+                            <span>Preparing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Download Flashcards!</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {showResetConfirmationModal && (
+                      <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
+                        <div className=" rounded-lg z-50 bg-gray-50 bg-opacity-90 border border-gray-300 shadow-lg p-6 relative">
+                          <p>Are you sure you want to reset the chat?</p>
+                          <div className="flex space-x-2 mt-4">
+                            <button className="flex-grow bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded" onClick={() => setShowResetConfirmationModal(false)}>Cancel</button>
+                            <button className="flex-grow bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
+                              stopChat()
+                              setMessages([])
+                              resetStore()
+                              setShowResetConfirmationModal(false)
+                            }}>Reset</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                   </div>
+                </>
+              )}
+              <div className="relative w-full bg-gray-200 h-6 mt-4 flex items-center">
+                <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%` }}></div>
+                <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
+              </div>
+            </header>
+            {hasStarted ?
+              <div className='flex-1 flex-grow relative flex flex-col justify-stretch overflow-y-auto'>
+                <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
+                  {messages.map((message, index) => (index > 0) ?
+                    <Bubble
+                      ref={messagesEndRef}
+                      key={`message-${index}`}
+                      content={message}
+                      messageData={messagesData[index]}
+                      playAudio={playAudio}
+                      pauseAudio={pauseAudio}
+                      isAudioPlaying={isAudioPlaying}
+                      setIsAudioPlaying={setIsAudioPlaying}
+                    /> : null
+                  )}
+                </div>
+
+
+
+                <div id='bottom bar' className='flex flex-row z-10 relative w-full'>
+
+                  <form className='flex items-end mr-2 relative gap-2 w-full' onSubmit={(e) => e.preventDefault()}>
+                    <div ref={textareaContainerRef} className='relative flex flex-grow items-end'>
+                      <textarea ref={textareaRef}
+                        onChange={(e) => {
+                          if (textareaRef.current === null || textareaContainerRef.current === null) return
+                          textareaRef.current.style.height = "auto";
+                          textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+                          handleInputChange(e)
+                        }}
+                        value={input}
+                        rows={1}
+                        className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 w-full overflow-hidden bg-[var(--text-primary)]'
+                        placeholder='Send a message...'
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey && input.trim() !== '') {
+                            handleSendOrStop(e)
+                          }
+                        }}
+                        style={{ height: '2.5rem' }}
+                      />
+                    </div>
+
+                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 h-10'>
+                      {!isAssistantStreaming ? <SendIcon /> : <StopIcon />}
+                      <span className='hidden font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
+                    </button>
+
+                  </form>
+
 
                 </div>
-              </>
-            )}
-          <div className="relative w-full bg-gray-200 h-6 mt-6 flex items-center">
-            <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%` }}></div>
-            <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
-          </div>
-          </header>
-          {hasHydrated && hasStarted ?
-            <div className='flex-1 flex-grow relative flex flex-col justify-stretch overflow-y-auto'>
-              <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
-                {messages.map((message, index) => (index > 0) ?
-                  <Bubble
-                    ref={messagesEndRef}
-                    key={`message-${index}`}
-                    content={message}
-                    messageData={messagesData[index]}
-                    playAudio={playAudio}
-                    pauseAudio={pauseAudio}
-                    isAudioPlaying={isAudioPlaying}
-                    setIsAudioPlaying={setIsAudioPlaying}
-                  /> : null
-                )}
               </div>
-
-
-
-              <div id='bottom bar' className='flex flex-row z-10 relative w-full'>
-
-                <form className='flex items-end mr-2 relative gap-2 w-full' onSubmit={(e) => e.preventDefault()}>
-                  <div ref={textareaContainerRef} className='relative flex flex-grow items-end'>
-                    <textarea ref={textareaRef}
-                      onChange={(e) => {
-                        if (textareaRef.current === null || textareaContainerRef.current === null) return
-                        textareaRef.current.style.height = "auto";
-                        textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
-                        handleInputChange(e)
-                      }}
-                      value={input}
-                      rows={1}
-                      className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 w-full overflow-hidden bg-[var(--text-primary)]'
-                      placeholder='Send a message...'
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && input.trim() !== '') {
-                          handleSendOrStop(e)
-                        }
-                      }} 
-                      style={{height: '2.5rem'}}
-                      />
-                  </div>
-
-                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 h-10'>
-                    {!isAssistantStreaming ? <SendIcon /> : <StopIcon />}
-                    <span className='hidden font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
-                  </button>
-
-                </form>
-
-
-              </div>
-            </div>
-            : hasHydrated && !hasStarted ?
+              :
               <div id='start screen' className='flex-1 flex-grow flex flex-col items-center justify-center'>
                 <div className='rounded-lg shadow-md p-4 bg-gray-100 max-w-md'>
                   <div className="flex flex-row justify-between items-center mt-3">
@@ -785,14 +815,14 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              :
-              <div className='h-full justify-center items-center text-center relative'>
-                <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-                  <LoadingBrick />
-                </div>
+            }
+          </> :
+            <div className='h-full justify-center items-center text-center relative'>
+              <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+                <LoadingBrick />
               </div>
+            </div>
           }
-
 
         </section>
       </main>

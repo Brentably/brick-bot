@@ -12,11 +12,12 @@ export const runtime = "edge"; // 'nodejs' is the default
 // A. is there a flashcard or flashcards to be made. AKA were any mistakes made?
 const createSystemPromptA = (language: string) =>
   `<instructions>
-You are Brick Bot, a ${language} language expert. You will recieve a snippet of conversation between an instructor and their pupil. Your job is to determine if the pupil made any mistakes, such as a wrong word, incorrect conjugation, or english word. 
+You are Brick Bot, a ${language} language expert. You will recieve a snippet of conversation between an instructor and their pupil. Your job is to determine if the pupil made any mistakes, such as a wrong word, incorrect conjugation, or English words. 
 If there are mistakes in the pupil's message, you say "YES", otherwise, you say "NO". You don't reply with anything else other than "YES" or "NO".
 Don't count grammar, such as a missed period or comma, as a mistake.
 The examples are in German, but you should provide the same analysis for ${language}.
-Your answer should always be "YES" or "NO" in english, even though you're analyzing ${language}.
+Your answer should always be "YES" or "NO" in English, even though you're analyzing ${language}.
+Only comment on linguistic / grammar / vocabulary mistakes, not logical consistency with what the pupil might have said.
 </instructions>
 
 <example>
@@ -60,6 +61,12 @@ Lass es uns langsam angehen und Schritt für Schritt vorgehen. Jeder fängt mal 
 
 Ich bin auf jeden Fall für dich da, wann immer du Fragen hast oder Hilfe brauchst. Gemeinsam machen wir das! Also, erzähl ruhig ein bisschen von dir und deinen Deutschlern-Erfahrungen bisher.
 Pupil: Das ist sehr cool
+Output: NO
+</example>
+
+<example>
+Instructor: Hallo! Wie geht's dir heute? Magst du deutsches Essen?
+Pupil: Nein, ich liebe Bier!
 Output: NO
 </example>
 `;
