@@ -57,47 +57,54 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
         {
           isUser ? <>
 
-              {/*  */}
-              {isDropdownOpen && didMakeMistakes && (
-                <div className="fixed inset-0 z-50 flex justify-center items-center" onClick={() => setIsDropdownOpen(false)}>
-                  <div className="bg-gray-100 bg-opacity-90 border border-gray-300 rounded shadow-lg p-6 relative" style={{ width: 'calc(100% - 2rem)', maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
-                    <button onClick={() => setIsDropdownOpen(false)} className="absolute top-0 right-0 mt-4 mr-4 text-gray-600 hover:text-gray-800">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                    <strong className="text-lg">Corrected Message:</strong>
-                    <p className="text-md mt-2">{messageData?.correctedMessage}</p>
-                    <strong className="text-lg mt-4">Mistakes:</strong>
+            {/*  */}
+            {isDropdownOpen && didMakeMistakes && (
+              <div className="fixed inset-0 z-50 flex justify-center items-center" onClick={() => setIsDropdownOpen(false)}>
+                <div className="bg-gray-100 bg-opacity-90 border border-gray-300 rounded shadow-lg p-6 relative" style={{ width: 'calc(100% - 2rem)', maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
+                  <button onClick={() => setIsDropdownOpen(false)} className="absolute top-0 right-0 mt-4 mr-4 text-gray-600 hover:text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <strong className="text-lg">Corrected Message:</strong>
+                  <p className="text-md mt-2">{messageData?.correctedMessage ? <>{messageData.correctedMessage}</> : <LoadingIndicator />}</p>
+                  <strong className="text-lg mt-4">Mistakes:</strong>
+                  {messageData?.mistakes ?
                     <Markdown
                       className="markdown text-md grid grid-cols-1 gap-2 mt-2"
                       remarkPlugins={[remarkGfm]}
                     >
-                      {messageData?.correctedMessage && messageData.mistakes}
-                    </Markdown>
-                  </div>
+                      {messageData.mistakes}
+                    </Markdown> : <LoadingIndicator />}
                 </div>
-              )}
+              </div>
+            )}
 
 
 
 
-              {/*  */}
+            {/*  */}
 
 
-                <button
-                  className={`${didMakeMistakes === null
-                    ? 'bg-yellow-500'
-                    : didMakeMistakes
-                      ? 'bg-red-500'
-                      : 'bg-green-500'
-                    } h-6 w-6 rounded-full focus:outline-none hover:opacity-80 transition duration-200 flex items-center justify-center mr-2`}
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                >
-                  {didMakeMistakes ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <line x1="12" y1="17" x2="12.01" y2="17" /> </svg>
-                  ) : null}
-                </button>
+            {didMakeMistakes === null ? (
+              <div className="h-6 w-6 rounded-full flex items-center justify-center mr-2 animate-spin">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m16.92 6.92l-1.41-1.41M6.49 6.49L5.07 5.07M22 12a10 10 0 11-20 0 10 10 0 0120 0z" />
+                </svg>
+              </div>
+            ) : (
+              <button
+                className={`${didMakeMistakes
+                    ? 'bg-red-500'
+                    : 'bg-green-500'
+                  } h-6 w-6 rounded-full focus:outline-none hover:opacity-80 transition duration-200 flex items-center justify-center mr-2`}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                {didMakeMistakes ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <line x1="12" y1="17" x2="12.01" y2="17" /> </svg>
+                ) : null}
+              </button>
+            )}
 
 
           </> : null}
@@ -162,3 +169,5 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
     </div>
   </div>)
 })
+
+const LoadingIndicator = () => <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>;
