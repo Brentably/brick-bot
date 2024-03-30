@@ -269,9 +269,15 @@ export default function Home() {
 
     const debouncedSelectionChange = debounce(handleSelectionChange, 300)
 
-    if (typeof window !== 'undefined') document.addEventListener("selectionchange", debouncedSelectionChange);
+    if (typeof window !== 'undefined') {
+        document.addEventListener("selectionchange", debouncedSelectionChange);
+        window.addEventListener("resize", repositionSelectionBox);
+    }
 
-    return () => document.removeEventListener('selectionchange', debouncedSelectionChange)
+    return () => {
+        document.removeEventListener('selectionchange', debouncedSelectionChange);
+        window.removeEventListener("resize", repositionSelectionBox);
+    }
   }, [])
 
   useEffect(() => {
@@ -653,7 +659,7 @@ export default function Home() {
                   <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
                     Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
                   </p>
-                  <div className='flex flex-col lg:flex-row justify-between mt-4'>
+                  <div className='flex flex-col lg:flex-row justify-between'>
 
                     {hasStarted && (
                       <button className='mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded' onClick={() => {
