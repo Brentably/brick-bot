@@ -156,9 +156,19 @@ export default function Home() {
   const resetStore = useBrickStore(state => state.resetStore)
   const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number | null>(null)
   // boolean is whether it is the last message
-  const [audioQueue, setAudioQueue] = useState<Promise<Blob>[]>([]);
+  const audioQueueRef = useRef<Promise<Blob>[]>([])
+  const setAudioQueue = useCallback((updateFunctionOrQueue: Promise<Blob>[] | ((currentQueue: Promise<Blob>[]) => Promise<Blob>[])) => {
+    if (typeof updateFunctionOrQueue === 'function') {
+      audioQueueRef.current = updateFunctionOrQueue(audioQueueRef.current);
+    } else {
+      audioQueueRef.current = updateFunctionOrQueue;
+    }
+  }, []);
   // lock to make sure only one audio plays at a time
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const isAudioPlayingRef = useRef(false)
+  const setIsAudioPlaying = (isAudioPlaying: boolean) => {
+    console.log('set is audio playing to ', isAudioPlaying)
+    isAudioPlayingRef.current = isAudioPlaying}
   // currently playing audio ref
   const audioRef = useRef<HTMLAudioElement | null>(null)
   // # sentences that have been processed and put in queue
@@ -188,41 +198,55 @@ export default function Home() {
 
   }, [])
 
-  useEffect(() => {
-    console.log('play next audio use effect hit')
-    if (isAudioPlaying) return;
-
-    const playNextAudio = async () => {
-      console.log('pNA hit')
-      if (audioQueue.length === 0) return
-
-      console.log("playing next audio")
-
-      const currentBlob = await audioQueue[0]
-      if (audioStopped.current === true) {
-        console.log('audio stopped true so returning')
-        return
-      }
-
-      const currentBlobURL = URL.createObjectURL(currentBlob)
-
-      audioRef.current = new Audio(currentBlobURL);
-      const audio = audioRef.current
-
-      // rm from audio queue
-      setAudioQueue(pq => pq.slice(1))
-
-      audio.onplaying = () => setIsAudioPlaying(true)
-
-      audio.onended = () => setIsAudioPlaying(false)
-
-      audio.play();
 
 
+  const playNextAudio = async () => {
+    const audioQueue = audioQueueRef.current
+    const isAudioPlaying = isAudioPlayingRef.current
+    console.log('pNA called with aq:', audioQueue)
+    console.log('and isAudioPlaying', isAudioPlaying)
+    if (audioQueue.length === 0) {
+      setIsAudioPlaying(false)
+      return
     }
-    playNextAudio();
+    if (isAudioPlaying) return
+    setIsAudioPlaying(true)
+    console.log('pNA hit')
 
-  }, [audioQueue, isAudioPlaying]);
+    console.log("playing next audio")
+    console.log(audioQueue)
+
+    const currentBlob = await audioQueue[0]
+    console.log('playing next audio current blob awaited')
+    if (audioStopped.current === true) {
+      console.log('audio stopped true so returning')
+      return
+    }
+
+    const currentBlobURL = URL.createObjectURL(currentBlob)
+
+    audioRef.current = new Audio(currentBlobURL);
+    const audio = audioRef.current
+
+    // rm from audio queue
+    setAudioQueue(pq => pq.slice(1))
+
+    audio.onplay = () => console.log('onPlay')
+    audio.onplaying = () => console.log('onPlaying')
+    audio.onended = () => {
+      setIsAudioPlaying(false)
+      playNextAudio()
+    }
+    audio.onpause = () => setIsAudioPlaying(false)
+    audio.onerror = () => setIsAudioPlaying(false)
+    audio.onabort = () => setIsAudioPlaying(false)
+    audio.oncancel = () => setIsAudioPlaying(false)
+
+    console.log('bout to play that shit')
+    audio.play().catch(() => setIsAudioPlaying(false))
+
+
+  }
 
   useEffect(() => {
 
@@ -233,6 +257,7 @@ export default function Home() {
       const lastMessage = messages[messages.length - 1]
       if (lastMessage.role !== 'assistant') return
 
+      setCurrentlyPlayingBubbleIndex(messages.length - 1)
       const messageStr = lastMessage.content;
       const sentencesChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
       // number of full sentences i.e. does not include sentence still streaming in
@@ -242,7 +267,6 @@ export default function Home() {
       // skip over first chunk because we don't want to add array[-1] chunk
       if (currSentenceCount < 1) return
 
-      setCurrentlyPlayingBubbleIndex(messages.length - 1)
       // iterate until we have added all new sentences to queue
       while (currSentenceCount > processedSentenceCount.current) {
         // we need to get the first sentence that hasn't been added to the queue yet
@@ -280,6 +304,7 @@ export default function Home() {
     }).then(res => res.blob())
 
     setAudioQueue(pq => [...pq, blob])
+    playNextAudio()
   }
 
   const scrollToBottom = () => {
@@ -545,6 +570,7 @@ export default function Home() {
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.map(
                   (message, index, messages) => {
+                    if (isEven(index)) console.log(index, 'bubblepair rerender with isCurrentlyPlaying', isAudioPlayingRef.current)
                     if (isEven(index)) {
                       return (<BubblePair ref={messagesEndRef}
                         key={`message-pair-${index}`}
@@ -557,7 +583,7 @@ export default function Home() {
                           messageData: messagesData[index + 1],
                           addMessageToAudioQueue,
                           setThisBubbleIsTheCurrentlyPlayingBubble: () => setCurrentlyPlayingBubbleIndex(index + 1),
-                          isCurrentlyPlaying: isAudioPlaying && (index + 1 == currentlyPlayingBubbleIndex),
+                          isCurrentlyPlaying: isAudioPlayingRef.current && (index + 1 == currentlyPlayingBubbleIndex),
                           stopAudioStreaming,
                           setAudioQueue
                         }} />
