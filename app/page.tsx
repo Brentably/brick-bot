@@ -245,8 +245,6 @@ export default function Home() {
     toast(`Flashcard added!`, {position: 'top-center', type: 'success'})
   }
 
-  useEffect(() => console.log('selection Translation', selectionTranslation), [selectionTranslation])
-  useEffect(() => console.log('isSelectionTranslationLoading', isSelectionTranslationLoading), [isSelectionTranslationLoading])
 
   // load messagesData on initial render
   useEffect(() => {
@@ -741,7 +739,7 @@ export default function Home() {
 
         </section>
       </main>
-      <div ref={selectionBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${selectionBoxActive ? '' : 'invisible'}`}>
+      <div ref={selectionBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] max-w-[50%] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${selectionBoxActive ? '' : 'invisible'}`}>
         {!isSelectionTranslationLoading ?
           <div className='select-none flex justify-between items-center'>
             {selectionTranslation}
