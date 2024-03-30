@@ -571,6 +571,12 @@ export default function Home() {
   }, [input])
 
 
+  const beginChat = (topic: string) => {
+    setHasStarted(true)
+  if (window.innerWidth < 600) setIsHeaderOpen(false);
+  
+  }
+
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
@@ -603,13 +609,15 @@ export default function Home() {
                 <div className='flex flex-col lg:flex-row justify-between'>
                   <div className='flex flex-col flex-wrap'>
                   </div>
-                  <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
-                    stopChat()
-                    setMessages([])
-                    resetStore()
-                  }}>
-                    Reset chat
-                  </button>
+                  {hasStarted && (
+                    <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
+                      stopChat()
+                      setMessages([])
+                      resetStore()
+                    }}>
+                      Reset chat
+                    </button>
+                  )}
 
                 </div>
               </>
@@ -703,7 +711,7 @@ export default function Home() {
             : hasHydrated && !hasStarted ?
               <div id='start screen' className='flex-1 flex-grow flex flex-col items-center justify-center'>
                 <div className='rounded-lg shadow-md p-4 bg-gray-100 max-w-md'>
-                  <div className="flex flex-row justify-between items-center">
+                  <div className="flex flex-row justify-between items-center mt-3">
                     <label htmlFor="language-select" className="block text-lg font-medium text-gray-700">Choose a language:</label>
                     <select
                       id="language-select"
@@ -721,24 +729,33 @@ export default function Home() {
                     </select>
                   </div>
 
-                  <div className="flex flex-row justify-between items-center mt-2">
+                  <div className="flex flex-row justify-between items-center mt-3">
                     <label htmlFor="number-select" className="block text-lg font-medium text-gray-700"># of flashcards</label>
                     <input id='number-select' type='number' defaultValue={20} className='px-3 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md max-w-[147px]' />
                   </div>
 
 
 
-                  <div className='flex flex-row flex-wrap justify-between items-center mt-2'>
-                    <label htmlFor="topic-select" className="block text-lg font-medium text-gray-700">Select a topic or enter your own!</label>
+                  <div className='flex flex-row flex-wrap justify-between items-center mt-3'>
+                    <label htmlFor="topic-select" className="text-lg font-medium text-gray-700">Select a topic or enter your own!</label>
 
-                   
-                    <div id='example prompts' className='flex flex-row flex-wrap'>
+
+                    <div id='example prompts' className='flex flex-row flex-wrap justify-around'>
                       {Array(4).fill(null).map((_, index) => (
-                        <ExamplePrompt key={index} text={EXAMPLE_TOPICS[index]} onClick={() => {
-                          setHasStarted(true)
-                          append({ content: LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index], role: 'user' })
-                        }} />
+                        <ExamplePrompt key={index} text={EXAMPLE_TOPICS[index]} onClick={() => beginChat(EXAMPLE_TOPICS[index])} />
                       ))}
+                    </div>
+                    <div className="flex flex-row justify-between items-center mt-3 w-full">
+                      <input id='custom-topic-input' type='text' placeholder='Enter your own topic' className='px-3 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md flex-grow' />
+                      <button onClick={() => {
+                        const inputElement = document.getElementById('custom-topic-input') as HTMLInputElement;
+                        if (inputElement && inputElement.value) {
+                          beginChat(inputElement.value)
+                          inputElement.value = ''; // Clear the input after sending
+                        }
+                      }} className='ml-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md'>
+                        <SendIcon color='#374151' />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -784,8 +801,8 @@ function ExamplePrompt(props: { text: string, onClick: () => void }) {
 
 
 
-function SendIcon() {
-  return <svg width="20" height="20" viewBox="0 0 20 20">
+function SendIcon({ color = "#000" }) { // A better default color (blue)
+  return <svg width="20" height="20" viewBox="0 0 20 20" fill={color}>
     <path d="M2.925 5.025L9.18333 7.70833L2.91667 6.875L2.925 5.025ZM9.175 12.2917L2.91667 14.975V13.125L9.175 12.2917ZM1.25833 2.5L1.25 8.33333L13.75 10L1.25 11.6667L1.25833 17.5L18.75 10L1.25833 2.5Z" />
   </svg>
 }
