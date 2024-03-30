@@ -168,6 +168,7 @@ export default function Home() {
   const isAudioPlayingRef = useRef(false)
   const setIsAudioPlaying = (isAudioPlaying: boolean) => {
     console.log('set is audio playing to ', isAudioPlaying)
+
     isAudioPlayingRef.current = isAudioPlaying}
   // currently playing audio ref
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -181,6 +182,8 @@ export default function Home() {
 
   // keep track of the index of the bubble whose audio is currently playing
   const [currentlyPlayingBubbleIndex, setCurrentlyPlayingBubbleIndex] = useState<number | null>(null);
+
+  useEffect(() => console.log('cPBI', currentlyPlayingBubbleIndex), [currentlyPlayingBubbleIndex])
 
   useEffect(() => {
     if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
@@ -206,7 +209,7 @@ export default function Home() {
     console.log('pNA called with aq:', audioQueue)
     console.log('and isAudioPlaying', isAudioPlaying)
     if (audioQueue.length === 0) {
-      setIsAudioPlaying(false)
+      stopAudioStreaming()
       return
     }
     if (isAudioPlaying) return
@@ -237,13 +240,19 @@ export default function Home() {
       setIsAudioPlaying(false)
       playNextAudio()
     }
-    audio.onpause = () => setIsAudioPlaying(false)
-    audio.onerror = () => setIsAudioPlaying(false)
-    audio.onabort = () => setIsAudioPlaying(false)
-    audio.oncancel = () => setIsAudioPlaying(false)
 
+    function onStop() {
+      setIsAudioPlaying(false)
+
+    }
+
+
+    audio.onpause = onStop
+    audio.onerror = onStop
+    audio.onabort = onStop
+    audio.oncancel = onStop
     console.log('bout to play that shit')
-    audio.play().catch(() => setIsAudioPlaying(false))
+    audio.play().catch(onStop)
 
 
   }
@@ -499,7 +508,7 @@ export default function Home() {
     audioStopped.current = true
     setIsAudioPlaying(false)
     audioRef.current?.pause()
-    setCurrentlyPlayingBubbleIndex(null)
+    
   }
 
   return (
@@ -583,7 +592,7 @@ export default function Home() {
                           messageData: messagesData[index + 1],
                           addMessageToAudioQueue,
                           setThisBubbleIsTheCurrentlyPlayingBubble: () => setCurrentlyPlayingBubbleIndex(index + 1),
-                          isCurrentlyPlaying: isAudioPlayingRef.current && (index + 1 == currentlyPlayingBubbleIndex),
+                          isCurrentlyPlaying: index + 1 == currentlyPlayingBubbleIndex,
                           stopAudioStreaming,
                           setAudioQueue
                         }} />
