@@ -593,7 +593,7 @@ export default function Home() {
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
         <section className='chatbot-section flex flex-col max-w-[800px] w-full h-full rounded-md p-2 lg:p-6 text-sm lg:text-base'>
-          <header className='chatbot-header pb-6'>
+          <header className='chatbot-header'>
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
                 <Image src={bricks} alt='' className='w-10' />
@@ -632,9 +632,6 @@ export default function Home() {
                     </button>
                   )}
                   <div className='flex justify-evenly ml-1 flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
-                    <div className='w-[50%] text-center'>
-                      Flashcards created: {flashcards.length}
-                    </div>
                     {isDownloading ? (
                       <div className='w-[50%] flex justify-center'><LoadingBrick className='w-10 h-10 animate-spin' /></div>
                     ) : flashcards.length > 0 ? (
@@ -678,9 +675,13 @@ export default function Home() {
                 </div>
               </>
             )}
+          <div className="relative w-full bg-gray-200 h-6 mt-6 flex items-center">
+            <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%` }}></div>
+            <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
+          </div>
           </header>
           {hasHydrated && hasStarted ?
-            <div className='flex-1 flex-grow relative my-4 lg:my-6 flex flex-col justify-stretch overflow-y-auto'>
+            <div className='flex-1 flex-grow relative flex flex-col justify-stretch overflow-y-auto'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
                 {messages.map((message, index) => (index > 0) ?
                   <Bubble
