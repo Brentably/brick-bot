@@ -33,6 +33,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
   }, [messageData])
 
   const handleAudio = async () => {
+    console.log("bubble currently playing: " + isCurrentlyPlaying)
     if (isCurrentlyPlaying) stopAudioStreaming()
     else {
       setAudioQueue([])

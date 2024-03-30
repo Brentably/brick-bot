@@ -190,11 +190,6 @@ export default function Home() {
 
     const playNextAudio = async () => {
       if (audioQueue.length === 0) return
-      if (audioStopped.current) {
-        console.log("audio stopped.")
-        setAudioQueue([])
-        return
-      }
       setIsAudioPlaying(true);
 
       console.log("playing next audio")
@@ -209,6 +204,13 @@ export default function Home() {
 
       audio.onended = () => setIsAudioPlaying(false)
       audio.play();
+
+      if (audioStopped.current === true) {
+        audio.pause()
+        console.log("audio stopped.")
+        setAudioQueue([])
+        return
+      }
     }
     playNextAudio();
 
@@ -272,6 +274,7 @@ export default function Home() {
 
   const addMessageToAudioQueue = (message: string) => {
     console.log("adding message to audio queue")
+    setIsAudioPlaying(true)
     audioStopped.current = false
     const blob = fetch('/api/tts', {
       method: 'POST',
@@ -408,6 +411,10 @@ export default function Home() {
     console.log(messagesData)
   }, [messages, messagesData])
 
+  useEffect(() => {
+    console.log("currently playing bubble index #" + currentlyPlayingBubbleIndex)
+  }, [currentlyPlayingBubbleIndex])
+
 
   useEffect(() => {
     scrollToBottom();
@@ -471,6 +478,7 @@ export default function Home() {
   }
 
   const stopAudioStreaming = () => {
+    console.log("stop audio streaming")
     setAudioQueue([])
     audioStopped.current = true
     setIsAudioPlaying(false)
@@ -543,12 +551,14 @@ export default function Home() {
             <div className='flex-1 flex-grow relative overflow-y-auto my-4 lg:my-6 flex flex-col justify-stretch'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative'>
                 {messages.map(
-                  (message, index, messages) => isEven(index) ? 
-                    (<BubblePair ref={messagesEndRef} 
-                    key={`message-pair-${index}`} 
-                    user={{ content: message, messageData: messagesData[index], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index), isCurrentlyPlaying: Boolean(isAudioPlaying && (index == currentlyPlayingBubbleIndex || index == messages.length - 1)), stopAudioStreaming, setAudioQueue }} 
-                    assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index+1), isCurrentlyPlaying: Boolean(isAudioPlaying && (index+1 == currentlyPlayingBubbleIndex || index == messages.length - 1)), stopAudioStreaming, setAudioQueue }} />
-                    ) : null
+                  (message, index, messages) => {
+                    if (isEven(index)) {
+                      return (<BubblePair ref={messagesEndRef} 
+                      key={`message-pair-${index}`} 
+                      user={{ content: message, messageData: messagesData[index], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index), isCurrentlyPlaying: Boolean(isAudioPlaying && (index == currentlyPlayingBubbleIndex || index == messages.length - 2)), stopAudioStreaming, setAudioQueue }} 
+                      assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], addMessageToAudioQueue, setBubbleIndex: () => setCurrentlyPlayingBubbleIndex(index+1), isCurrentlyPlaying: Boolean((isAudioPlaying && (index+1 == currentlyPlayingBubbleIndex || index+1 == (messages.length - 1)))), stopAudioStreaming, setAudioQueue }} />
+                    )} return null
+                  }
                 )
                 }
 
