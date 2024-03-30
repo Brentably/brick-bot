@@ -213,13 +213,19 @@ export default function Home() {
     }
   }
 
+  useEffect(()=>console.log('has Started', hasStarted), [hasStarted])
+
+
   const handleSelectionChange = async () => {
+    console.log('handle selection change')
     // Your logic here
     // console.log('Selection changed');
     const selection = document.getSelection()
     const selectionString = selection?.toString()
-    // console.log(selection, selectionString)
-    if (!Boolean(selectionString) || !hasStarted) {
+    console.log(selection, selectionString)
+    console.log(!Boolean(selectionString))
+    const _hasStarted =  useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
+    if (!Boolean(selectionString) || !_hasStarted) {
       setSelectionBoxActive(false)
       setSelectionTranslation('')
       return
@@ -586,7 +592,7 @@ export default function Home() {
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
-        <section className='chatbot-section flex flex-col max-w-[1200px] w-full h-full rounded-md p-2 lg:p-6 text-sm lg:text-base'>
+        <section className='chatbot-section flex flex-col max-w-[800px] w-full h-full rounded-md p-2 lg:p-6 text-sm lg:text-base'>
           <header className='chatbot-header pb-6'>
             <div className='flex justify-between items-center'>
               <div className='flex items-center gap-2'>
@@ -625,6 +631,49 @@ export default function Home() {
                       Reset chat
                     </button>
                   )}
+                  <div className='flex justify-evenly ml-1 flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
+                    <div className='w-[50%] text-center'>
+                      Flashcards created: {flashcards.length}
+                    </div>
+                    {isDownloading ? (
+                      <div className='w-[50%] flex justify-center'><LoadingBrick className='w-10 h-10 animate-spin' /></div>
+                    ) : flashcards.length > 0 ? (
+                      <button className='bg-gray-300 rounded-md p-1 w-[50%]' onClick={() => {
+                        setIsDownloading(true);
+                        // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
+                        // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
+                        const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
+                        fetch(url, {
+                          method: "POST",
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            jsonFlashcards: flashcards
+                          })
+                        })
+                          .then(response => response.blob())
+                          .then(blob => {
+                            console.log('handling blob')
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = 'brick-bot-flashcards.apkg';
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            setIsDownloading(false);
+                          })
+                          .catch((error) => {
+                            console.error('Error:', error);
+                            setIsDownloading(false);
+                          });
+                      }}>
+                        Download flashcards!
+                      </button>
+                    ) : null}
+                  </div>
 
                 </div>
               </>
@@ -649,80 +698,38 @@ export default function Home() {
 
 
 
-              <div id='bottom bar' className='flex flex-row z-10 relative'>
+              <div id='bottom bar' className='flex flex-row z-10 relative w-full'>
 
-                <form className='flex h-9 w-[60%] min-w-[60%] mr-2 relative gap-2' onSubmit={(e) => e.preventDefault()}>
-                  <div ref={textareaContainerRef} className='relative flex flex-grow'>
+                <form className='flex items-end mr-2 relative gap-2 w-full' onSubmit={(e) => e.preventDefault()}>
+                  <div ref={textareaContainerRef} className='relative flex flex-grow items-end'>
                     <textarea ref={textareaRef}
                       onChange={(e) => {
                         if (textareaRef.current === null || textareaContainerRef.current === null) return
-                        // textareaContainerRef.current.style.height = "auto";
                         textareaRef.current.style.height = "auto";
                         textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
                         handleInputChange(e)
-                      }
-                      }
+                      }}
                       value={input}
                       rows={1}
-                      className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 absolute bottom-0 left-0 right-0 w-full overflow-auto bg-[var(--text-primary)]'
+                      className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 w-full overflow-hidden bg-[var(--text-primary)]'
                       placeholder='Send a message...'
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey && input.trim() !== '') {
                           handleSendOrStop(e)
                         }
-                      }} />
+                      }} 
+                      style={{height: '2.5rem'}}
+                      />
                   </div>
 
-                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 origin:px-3'>
+                  <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 h-10'>
                     {!isAssistantStreaming ? <SendIcon /> : <StopIcon />}
-                    <span className='hidden origin:block font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
+                    <span className='hidden font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
                   </button>
 
                 </form>
 
-                <div className='flex justify-evenly ml-1 flex-grow items-center bg-[var(--text-primary)] border-[var(--text-primary)] border-x-2'>
-                  <div className='w-[50%] text-center'>
-                    Flashcards created: {flashcards.length}
-                  </div>
-                  {isDownloading ? (
-                    <div className='w-[50%] flex justify-center'><LoadingBrick className='w-10 h-10 animate-spin' /></div>
-                  ) : flashcards.length > 0 ? (
-                    <button className='bg-gray-300 rounded-md p-1 w-[50%]' onClick={() => {
-                      setIsDownloading(true);
-                      // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
-                      // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
-                      const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
-                      fetch(url, {
-                        method: "POST",
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          jsonFlashcards: flashcards
-                        })
-                      })
-                        .then(response => response.blob())
-                        .then(blob => {
-                          console.log('handling blob')
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.style.display = 'none';
-                          a.href = url;
-                          a.download = 'brick-bot-flashcards.apkg';
-                          document.body.appendChild(a);
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                          setIsDownloading(false);
-                        })
-                        .catch((error) => {
-                          console.error('Error:', error);
-                          setIsDownloading(false);
-                        });
-                    }}>
-                      Download flashcards!
-                    </button>
-                  ) : null}
-                </div>
+
               </div>
             </div>
             : hasHydrated && !hasStarted ?
