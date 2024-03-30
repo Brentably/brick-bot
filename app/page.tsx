@@ -12,7 +12,7 @@ import { BasicFlashcard, ClozeFlashcard, Flashcard } from '../lib/types';
 import LoadingBrick from '../components/LoadingBrick';
 import { debounce } from "lodash"
 import { Tooltip as ReactTooltip } from "react-tooltip";
-import {toast} from 'react-toastify'
+import { toast } from 'react-toastify'
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -103,6 +103,10 @@ const LANGUAGE_TO_EXAMPLE_PROMPTS = {
     "Я готов узнать больше о русском языке.",
   ]
 }
+
+const EXAMPLE_TOPICS = ['Food and Cuisine', 'Travel and Adventure', 'Music and Entertainment', 'Sports and Fitness']
+
+
 export type MessageData = {
   role: "user" | "assistant"
   didMakeMistakes: boolean | null,
@@ -211,7 +215,7 @@ export default function Home() {
     const selection = document.getSelection()
     const selectionString = selection?.toString()
     // console.log(selection, selectionString)
-    if (!Boolean(selectionString)) {
+    if (!Boolean(selectionString) || !hasStarted) {
       setSelectionBoxActive(false)
       setSelectionTranslation('')
       return
@@ -242,7 +246,7 @@ export default function Home() {
       back: selectionTranslation
     }
     addFlashcards([flashcard])
-    toast(`Flashcard added!`, {position: 'top-center', type: 'success'})
+    toast(`Flashcard added!`, { position: 'top-center', type: 'success' })
   }
 
 
@@ -598,25 +602,6 @@ export default function Home() {
                 </p>
                 <div className='flex flex-col lg:flex-row justify-between'>
                   <div className='flex flex-col flex-wrap'>
-                    {!hasStarted ?
-                      <div className="mt-1">
-                        <label htmlFor="language-select" className="chatbot-text-primary">Choose a language:</label>
-                        <select
-                          id="language-select"
-                          value={targetLanguage}
-                          onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_EXAMPLE_PROMPTS)}
-                          className="chatbot-input ml-2"
-                        >
-                          <option value="German">German</option>
-                          <option value="Spanish">Spanish</option>
-                          <option value="French">French</option>
-                          <option value="Chinese">Chinese</option>
-                          <option value="Portuguese">Portuguese</option>
-                          <option value="Italian">Italian</option>
-                          <option value="Russian">Russian</option>
-                        </select>
-                      </div>
-                      : <div className='mt-1'>Target language: {targetLanguage}</div>}
                   </div>
                   <button className='self-start bg-red-300 rounded-md p-1' onClick={() => {
                     stopChat()
@@ -630,24 +615,10 @@ export default function Home() {
               </>
             )}
           </header>
-          {hasHydrated ?
+          {hasHydrated && hasStarted ?
             <div className='flex-1 flex-grow relative my-4 lg:my-6 flex flex-col justify-stretch overflow-y-auto'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
                 {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} />) : null)}
-
-                {!hasStarted &&
-                  <div id='example prompts container' className='flex flex-col absolute bottom-0 max-w-[60%] p-2'>
-                    Quick start by clicking one of these prompts!
-                    <div id='example prompts' className='flex flex-row flex-wrap'>
-                      {Array(4).fill(null).map((_, index) => (
-                        <ExamplePrompt key={index} text={LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index]} onClick={() => {
-                          setHasStarted(true)
-                          append({ content: LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index], role: 'user' })
-                        }} />
-                      ))}
-                    </div>
-                  </div>
-                }
               </div>
               <div id='blue background' className='border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.6rem)' }}>
               </div>
@@ -729,11 +700,55 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            : <div className='h-full justify-center items-center text-center relative'>
-              <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
-                <LoadingBrick />
+            : hasHydrated && !hasStarted ?
+              <div id='start screen' className='flex-1 flex-grow flex flex-col items-center justify-center'>
+                <div className='rounded-lg shadow-md p-4 bg-gray-100 max-w-md'>
+                  <div className="flex flex-row justify-between items-center">
+                    <label htmlFor="language-select" className="block text-lg font-medium text-gray-700">Choose a language:</label>
+                    <select
+                      id="language-select"
+                      value={targetLanguage}
+                      onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_EXAMPLE_PROMPTS)}
+                      className=" pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    >
+                      <option value="German">German</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                      <option value="Chinese">Chinese</option>
+                      <option value="Portuguese">Portuguese</option>
+                      <option value="Italian">Italian</option>
+                      <option value="Russian">Russian</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-row justify-between items-center mt-2">
+                    <label htmlFor="number-select" className="block text-lg font-medium text-gray-700"># of flashcards</label>
+                    <input id='number-select' type='number' defaultValue={20} className='px-3 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md max-w-[147px]' />
+                  </div>
+
+
+
+                  <div className='flex flex-row flex-wrap justify-between items-center mt-2'>
+                    <label htmlFor="topic-select" className="block text-lg font-medium text-gray-700">Select a topic or enter your own!</label>
+
+                   
+                    <div id='example prompts' className='flex flex-row flex-wrap'>
+                      {Array(4).fill(null).map((_, index) => (
+                        <ExamplePrompt key={index} text={EXAMPLE_TOPICS[index]} onClick={() => {
+                          setHasStarted(true)
+                          append({ content: LANGUAGE_TO_EXAMPLE_PROMPTS[targetLanguage][index], role: 'user' })
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+              :
+              <div className='h-full justify-center items-center text-center relative'>
+                <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+                  <LoadingBrick />
+                </div>
+              </div>
           }
 
 
