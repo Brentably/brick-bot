@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { Flashcard } from "./types";
 import { Message } from "ai";
 import { MessageData } from "../app/page";
+import {toast} from "react-toastify"
 
 export interface Store {
   flashcards: Flashcard[];
@@ -30,11 +31,12 @@ export const useBrickStore = create<Store>()(
   persist(
     (set, get) => ({
       ...INIT_STORE,
-      addFlashcards: (newFlashcards) =>
+      addFlashcards: (newFlashcards) =>{
+        toast(`Flashcard(s) added!`, { position: "top-center", type: "success" });
         set((ps) => ({
           ...ps,
           flashcards: [...ps.flashcards, ...newFlashcards],
-        })),
+        }))},
       setZustandMessages: (zustandMessages) =>
         set((pS) => ({ ...pS, zustandMessages })),
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),

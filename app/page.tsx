@@ -256,7 +256,6 @@ export default function Home() {
       back: selectionTranslation
     }
     addFlashcards([flashcard])
-    toast(`Flashcard added!`, { position: 'top-center', type: 'success' })
   }
 
 
@@ -731,7 +730,7 @@ export default function Home() {
 
                 <div id='bottom bar' className='flex flex-row z-10 relative w-full'>
 
-                  <form className='flex items-end mr-2 relative gap-2 w-full' onSubmit={(e) => e.preventDefault()}>
+                  <form className='flex items-end relative gap-2 w-full' onSubmit={(e) => e.preventDefault()}>
                     <div ref={textareaContainerRef} className='relative flex flex-grow items-end'>
                       <textarea ref={textareaRef}
                         onChange={(e) => {
