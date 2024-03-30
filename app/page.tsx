@@ -128,6 +128,9 @@ export default function Home() {
   const setMessagesData = useBrickStore(state => state.setMessagesData)
   const zustandMessages = useBrickStore(state => state.zustandMessages)
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
+  const flashcardsGoal = useBrickStore(state => state.flashcardsGoal)
+  const setFlashcardsGoal = useBrickStore(state => state.setFlashcardsGoal)
+
   const [hasHydrated, setHasHydrated] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -745,7 +748,7 @@ export default function Home() {
 
                   <div className="flex flex-row justify-between items-center mt-3">
                     <label htmlFor="number-select" className="block text-lg font-medium text-gray-700"># of flashcards</label>
-                    <input id='number-select' type='number' defaultValue={20} className='px-3 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md max-w-[147px]' />
+                    <input id='number-select' type='number' value={flashcardsGoal} onChange={(e) => setFlashcardsGoal(e.target.valueAsNumber)} className='px-3 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md max-w-[147px]' />
                   </div>
 
 
