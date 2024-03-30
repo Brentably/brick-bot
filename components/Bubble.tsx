@@ -14,17 +14,17 @@ interface BubbleProps {
     [key: string]: any;
   };
   messageData: MessageData;
-  playAudio: (message: string) => Promise<HTMLAudioElement>; 
-  pauseAudio: (audio: HTMLAudioElement) => void;
-  isAudioPlaying: boolean
-  setIsAudioPlaying: (bool: boolean) => void;
+  playAudio?: (message: string) => Promise<HTMLAudioElement>;
+  pauseAudio?: (audio: HTMLAudioElement) => void;
+  isAudioPlaying?: boolean
+  setIsAudioPlaying?: (bool: boolean) => void;
 }
 
 const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }, ref) => {
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
-  const bubbleAudio = useRef<HTMLAudioElement|null>(null)
+  const bubbleAudio = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     if (!isUser) return
@@ -35,12 +35,15 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
   const handleAudio = async () => {
     if (isAudioPlaying) {
       // need to make sure audio has been set
-      if (bubbleAudio.current) pauseAudio(bubbleAudio.current);
+      if (bubbleAudio.current) pauseAudio?.(bubbleAudio.current);
     } else {
-      setIsAudioPlaying(true)
-      bubbleAudio.current = await playAudio(content.content);
+      setIsAudioPlaying?.(true)
+      bubbleAudio.current = await playAudio?.(content.content) ?? null;
     }
   };
+
+  const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
+
 
   return (
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
@@ -49,6 +52,25 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
           <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
         </button>
         : null}
+        <div className='flex flex-row'>
+        {
+          isUser ? <>
+            <div className="p-2 lg:p-4">
+              <div className="inline-block relative w-4 mr-1">
+                <span>&nbsp;</span>
+                <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
+              </div>
+              <strong>{messageData?.correctedMessage}</strong>
+            </div>
+            <div>
+              <Markdown
+                className="markdown grid grid-cols-1 gap-3"
+                remarkPlugins={[remarkGfm]}
+              >
+                {messageData?.correctedMessage && messageData.mistakes}
+              </Markdown>
+            </div> 
+            </> : null}
       <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-[var(--text-primary)] bg-[var(--background-bubble-primary)]' : 'rounded-bl-none text-[var(--text-secondary-inverse)] bg-[var(--background-bubble-secondary)]'} p-2 lg:p-4 leading-[1.65] pr-9 relative self-start`}>
         <Markdown
           className="markdown grid grid-cols-1 gap-3"
@@ -56,6 +78,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
         >
           {content.content}
         </Markdown>
+      </div>
       </div>
     </div>
   )

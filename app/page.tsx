@@ -13,6 +13,7 @@ import LoadingBrick from '../components/LoadingBrick';
 import { debounce } from "lodash"
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import { toast } from 'react-toastify'
+import { createChatSystemPrompt } from '../lib/prompts';
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -163,7 +164,7 @@ export default function Home() {
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
   const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const [topic, setTopic] = useState('')
   const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_EXAMPLE_PROMPTS>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
@@ -533,7 +534,7 @@ export default function Home() {
     } else {
       console.log("send form event")
       audioStopped.current = false
-      append({ content: input, role: 'user' })
+      append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
       setInput('')
     }
   }
@@ -571,10 +572,12 @@ export default function Home() {
   }, [input])
 
 
-  const beginChat = (topic: string) => {
+  const beginChat = (_topic: string) => {
     setHasStarted(true)
-  if (window.innerWidth < 600) setIsHeaderOpen(false);
-  
+    if (window.innerWidth < 600) setIsHeaderOpen(false);
+
+    append({ role: 'system', content: createChatSystemPrompt(targetLanguage, _topic) }, { options: { body: { language: targetLanguage, topic: _topic } } })
+    setTopic(_topic)
   }
 
   return (
@@ -599,7 +602,8 @@ export default function Home() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
-                )}              </button>
+                )}
+              </button>
             </div>
             {isHeaderOpen && (
               <>
@@ -626,10 +630,20 @@ export default function Home() {
           {hasHydrated && hasStarted ?
             <div className='flex-1 flex-grow relative my-4 lg:my-6 flex flex-col justify-stretch overflow-y-auto'>
               <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
-                {messages.map((message, index, messages) => isEven(index) ? (<BubblePair ref={messagesEndRef} key={`message-pair-${index}`} user={{ content: message, messageData: messagesData[index], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} assistant={{ content: messages[index + 1], messageData: messagesData[index + 1], playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }} />) : null)}
+                {messages.map((message, index) => (index > 0) ?
+                  <Bubble
+                    ref={messagesEndRef}
+                    key={`message-${index}`}
+                    content={message}
+                    messageData={messagesData[index]}
+                    playAudio={playAudio}
+                    pauseAudio={pauseAudio}
+                    isAudioPlaying={isAudioPlaying}
+                    setIsAudioPlaying={setIsAudioPlaying}
+                  /> : null
+                )}
               </div>
-              <div id='blue background' className='border-l-2 border-black absolute right-0 top-0 bottom-0' style={{ width: 'calc(40% - 0.6rem)' }}>
-              </div>
+
 
 
               <div id='bottom bar' className='flex flex-row z-10 relative'>

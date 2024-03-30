@@ -20,7 +20,7 @@ const INIT_STORE = {
   flashcards: [],
   zustandMessages: [],
   hasStarted: false,
-  messagesData: [{ role: "user", didMakeMistakes: null }] as MessageData[],
+  messagesData: [{ role: "system", didMakeMistakes: null },{ role: "user", didMakeMistakes: null }] as MessageData[],
 };
 
 export const useBrickStore = create<Store>()(
