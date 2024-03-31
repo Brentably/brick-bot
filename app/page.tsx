@@ -175,16 +175,14 @@ export default function Home() {
   const setHasStarted = useBrickStore(state => state.setHasStarted)
   const resetStore = useBrickStore(state => state.resetStore)
   const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number | null>(null)
-  // boolean is whether it is the last message
+
   const [audioQueue, setAudioQueue] = useState<[Promise<Blob>, boolean][]>([]);
-  // lock to make sure only one audio plays at a time
+
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  // # sentences that have been processed and put in queue
+
   const processedSentenceCount = useRef(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
-  // lock for when audio execution is stopped using the stop button
-  // useRef so this doesn't change during execution of async func
-  const audioStopped = useRef(false)
+
 
   useEffect(() => {
     if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
@@ -286,11 +284,7 @@ export default function Home() {
 
     const playNextAudio = async () => {
       if (audioQueue.length === 0) return
-      if (audioStopped.current) {
-        console.log("audio stopped.")
-        setAudioQueue([])
-        return
-      }
+
       setIsAudioPlaying(true);
 
       const currentTuple = audioQueue[0]
@@ -545,10 +539,8 @@ export default function Home() {
       stopChat()
       setIsAssistantStreaming(false)
       setAudioQueue([])
-      audioStopped.current = true
     } else {
       console.log("send form event")
-      audioStopped.current = false
       append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
       setInput('')
     }
@@ -570,16 +562,7 @@ export default function Home() {
     return a;
   }
 
-  const pauseAudio = (audio: HTMLAudioElement) => {
-    // if audio is streaming in, stop it
-    if (audioStopped.current === false) {
-      setAudioQueue([])
-      audioStopped.current = true
-    } else {
-      audio.pause()
-      setIsAudioPlaying(false)
-    }
-  }
+
   useEffect(() => {
     if (textareaRef.current == null) return
     textareaRef.current.style.height = "auto";
@@ -728,10 +711,6 @@ export default function Home() {
                       key={`message-${index}`}
                       content={message}
                       messageData={messagesData[index]}
-                      playAudio={playAudio}
-                      pauseAudio={pauseAudio}
-                      isAudioPlaying={isAudioPlaying}
-                      setIsAudioPlaying={setIsAudioPlaying}
                     /> : null
                   )}
                 </div>

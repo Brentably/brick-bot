@@ -20,7 +20,7 @@ interface BubbleProps {
   setIsAudioPlaying?: (bool: boolean) => void;
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, playAudio, pauseAudio, isAudioPlaying, setIsAudioPlaying }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }, ref) => {
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
@@ -32,16 +32,12 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
     // console.log(messageData)
   }, [messageData])
 
-  const handleAudio = async () => {
-    if (isAudioPlaying) {
-      // need to make sure audio has been set
-      if (bubbleAudio.current) pauseAudio?.(bubbleAudio.current);
-    } else {
-      setIsAudioPlaying?.(true)
-      bubbleAudio.current = await playAudio?.(content.content) ?? null;
-    }
-  };
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const handleAudio = () => {
+    console.log('handle audio')
+  }
+  
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
 
@@ -50,7 +46,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
       {!isUser ?
         <button onClick={handleAudio} className='flex-shrink-0'>
-          <Image src={isAudioPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
+          <Image src={true ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
         </button>
         : null}
       <div className='flex flex-row items-center'>
@@ -58,10 +54,10 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
           isUser ? <>
 
             {/*  */}
-            {isDropdownOpen && didMakeMistakes && (
-              <div className="fixed inset-0 z-50 flex justify-center items-center" onClick={() => setIsDropdownOpen(false)}>
+            {isModalOpen && didMakeMistakes && (
+              <div className="fixed inset-0 z-50 flex justify-center items-center" onClick={() => setIsModalOpen(false)}>
                 <div className="bg-gray-100 bg-opacity-90 border border-gray-300 rounded-lg shadow-lg p-6 relative" style={{ width: 'calc(100% - 2rem)', maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setIsDropdownOpen(false)} className="absolute top-0 right-0 mt-4 mr-4 text-gray-600 hover:text-gray-800">
+                  <button onClick={() => setIsModalOpen(false)} className="absolute top-0 right-0 mt-4 mr-4 text-gray-600 hover:text-gray-800">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -98,7 +94,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
                     ? 'bg-red-500'
                     : 'bg-green-500'
                   } h-6 w-6 rounded-full focus:outline-none hover:opacity-80 transition duration-200 flex items-center justify-center mr-2`}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onClick={() => setIsModalOpen(!isModalOpen)}
               >
                 {didMakeMistakes ? (
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <line x1="12" y1="17" x2="12.01" y2="17" /> </svg>
