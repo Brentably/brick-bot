@@ -135,8 +135,8 @@ export default function Home() {
   const flashcardsGoal = useBrickStore(state => state.flashcardsGoal)
   const setFlashcardsGoal = useBrickStore(state => state.setFlashcardsGoal)
 
-  const audioRef = useRef<HTMLAudioElement|null>(null)
-  const [currentlyPlayingMessageIndex, setCurrentlyPlayingMessageIndex] = useState<number|null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [currentlyPlayingMessageIndex, setCurrentlyPlayingMessageIndex] = useState<number | null>(null)
   const [hasHydrated, setHasHydrated] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -312,7 +312,7 @@ export default function Home() {
 
   useEffect(() => {
     console.log('audioQueue useEffect')
-    if(audioQueue.length === 0 && !isAudioPlaying) setCurrentlyPlayingMessageIndex(null)
+    if (audioQueue.length === 0 && !isAudioPlaying) setCurrentlyPlayingMessageIndex(null)
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
     // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
@@ -321,7 +321,7 @@ export default function Home() {
 
 
     const currentBlobURL = URL.createObjectURL(audioQueue[0]);
-    
+
     audioRef.current = new Audio(currentBlobURL);
     // Remove the first item from the audio queue
     setAudioQueue(pq => pq.slice(1));
@@ -342,7 +342,7 @@ export default function Home() {
   }, [audioQueue, isAudioPlaying]);
 
   // Function to add audio promises to the queue
-  const queueAudioFromText = (text: string, messageIndex: number = messages.length-1) => {
+  const queueAudioFromText = (text: string, messageIndex: number = messages.length - 1) => {
     const blobPromise = fetch('/api/tts', {
       method: 'POST',
       body: JSON.stringify({ "input": text })
@@ -601,6 +601,8 @@ export default function Home() {
     setTopic(_topic)
   }
 
+
+
   const handleDownloadFlashcards = () => {
     setIsDownloading(true);
     // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
@@ -634,6 +636,7 @@ export default function Home() {
       });
   }
   const [showResetConfirmationModal, setShowResetConfirmationModal] = useState(false)
+  const [showCompletedModal, setShowCompletedModal] = useState(true)
 
   const stopAudio = () => {
     audioRef.current?.pause()
@@ -732,6 +735,31 @@ export default function Home() {
                   </div>
                 </div>
               )}
+              {showCompletedModal && flashcards.length === flashcardsGoal && (
+                <div className="fixed inset-0 flex items-center justify-center z-50">
+                  <div className="absolute inset-0 bg-black opacity-50"></div>
+                  <div className='rounded-lg shadow-md p-4 bg-gray-100 max-w-md z-10'>
+                    <div className="text-center p-4">
+                      <h2 className="text-2xl font-bold mb-4">🎉 Congratulations! 🌟</h2>
+                      <p className="text-lg mb-4">You completed {flashcards.length} flashcards!</p>
+                      <div className="flex justify-center gap-4">
+                        <button
+                          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                          onClick={handleDownloadFlashcards}
+                        >
+                          Download Flashcards
+                        </button>
+                        <button
+                          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                          onClick={() => setShowCompletedModal(false)}
+                        >
+                          Keep Going
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </header>
             {hasStarted ?
 
@@ -746,13 +774,13 @@ export default function Home() {
                       handleAudio={() => {
                         const isCurrentlyPlaying = isAudioPlaying && (currentlyPlayingMessageIndex === index)
                         // if this bubble is currently playing, then it pauses the audio.
-                        if(isCurrentlyPlaying) {
+                        if (isCurrentlyPlaying) {
                           stopAudio()
                           return
-                        } 
+                        }
 
                         // if another bubble is currently playing, then it stops that audio
-                        if(isAudioPlaying && !isCurrentlyPlaying) {
+                        if (isAudioPlaying && !isCurrentlyPlaying) {
                           stopAudio()
                         }
                         // normally, just plays the fucking audio of the bubble
