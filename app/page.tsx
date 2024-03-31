@@ -204,6 +204,7 @@ export default function Home() {
   const [selectionBoxActive, setSelectionBoxActive] = useState(false)
   const [isSelectionTranslationLoading, setIsSelectionTranslationLoading] = useState(false)
   const [selectionTranslation, setSelectionTranslation] = useState('')
+  const [selection, setSelection] = useState('')
 
   const repositionSelectionBox = () => {
     console.log('reposition selection Box')
@@ -226,12 +227,12 @@ export default function Home() {
 
 
   const handleSelectionChange = async () => {
-    // console.log('handle selection change')
+    console.log('handle selection change')
     // Your logic here
-    // console.log('Selection changed');
+    console.log('Selection changed');
     const selection = document.getSelection()
     const selectionString = selection?.toString()
-    // console.log(selection, selectionString)
+    console.log(selection, selectionString)
     // console.log(!Boolean(selectionString))
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
     if (!Boolean(selectionString) || !_hasStarted) {
@@ -240,7 +241,7 @@ export default function Home() {
       return
     }
 
-
+    setSelection(selectionString)
     setSelectionBoxActive(true)
     repositionSelectionBox()
     setIsSelectionTranslationLoading(true)
@@ -260,8 +261,9 @@ export default function Home() {
   }
 
   const addSelectionFlashcard = () => {
+    console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
     const flashcard: BasicFlashcard = {
-      front: document.getSelection()?.toString() ?? '',
+      front: selection,
       back: selectionTranslation
     }
     addFlashcards([flashcard])
