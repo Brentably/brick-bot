@@ -256,6 +256,7 @@ export default function Home() {
       back: selectionTranslation
     }
     addFlashcards([flashcard])
+    toast(`Flashcard added!`, { position: "top-right", type: "success" });
   }
 
 
