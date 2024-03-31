@@ -256,7 +256,7 @@ export default function Home() {
       back: selectionTranslation
     }
     addFlashcards([flashcard])
-    toast(`Flashcard added!`, { position: "top-right", type: "success" });
+    toast(`Flashcard added!`, { position: "top-center", type: "success" });
   }
 
 
@@ -695,7 +695,7 @@ export default function Home() {
                 </>
               )}
               <div className="relative w-full bg-gray-200 h-6 mt-4 flex items-center">
-                <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%` }}></div>
+                <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%`, transition: 'width 0.5s ease-in-out' }}></div>
                 <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
               </div>
               {showResetConfirmationModal && (
