@@ -175,12 +175,15 @@ export default function Home() {
   const setHasStarted = useBrickStore(state => state.setHasStarted)
   const resetStore = useBrickStore(state => state.resetStore)
   const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number | null>(null)
+  const [isProcessingAudioPromise, setIsProcessingAudioPromise] = useState(false);
 
-  const [audioQueue, setAudioQueue] = useState<[Promise<Blob>, boolean][]>([]);
+  const [audioPromiseQueue, setAudioPromiseQueue] = useState<Promise<Blob>[]>([]);
+  const [audioQueue, setAudioQueue] = useState<Blob[]>([])
 
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-  const processedSentenceCount = useRef(0)
+  // how many sentences have been processed through tts on the currently streaming message
+  const [processedSentenceChunkCount, setProcessedSentenceChunkCount] = useState(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
 
 
@@ -280,81 +283,106 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    if (isAudioPlaying) return;
+    console.log('audioPromiseQueue useEffect hit. isProcessingAudioPromise & audioPromiseQueue.length', isProcessingAudioPromise, audioPromiseQueue.length)
+    if (isProcessingAudioPromise || audioPromiseQueue.length === 0) return
+    console.log('audioPromiseQueue useEffect running w/', audioPromiseQueue)
+    setIsProcessingAudioPromise(true)
+    const numToProcess = audioPromiseQueue.length
+    console.log('aPQ, processing this many:', numToProcess)
+    const promises = Array.from(audioPromiseQueue)
+    Promise.all(promises).then(processedAudioBlobs => {
+      console.log('awaited all')
+      setAudioQueue(pS => [...pS, ...processedAudioBlobs])
+      setAudioPromiseQueue(ps => [...ps.slice(numToProcess-1)])
+      console.log('setting isProcessingAudioPromise to FALSE')
+      setIsProcessingAudioPromise(false)
+    })
+  }, [audioPromiseQueue, isProcessingAudioPromise]);
 
-    const playNextAudio = async () => {
-      if (audioQueue.length === 0) return
+  useEffect(() => {
+    console.log('audioQueue useEffect')
+    if (audioQueue.length === 0 || isAudioPlaying) return;
+    console.log('audioQueue useEffect running w/ ', audioQueue)
+    setIsAudioPlaying(true);
 
-      setIsAudioPlaying(true);
 
-      const currentTuple = audioQueue[0]
-      const currentBlob = await currentTuple[0]
-      const currentBlobURL = URL.createObjectURL(currentBlob)
-      const audio = new Audio(currentBlobURL);
+    const currentBlobURL = URL.createObjectURL(audioQueue[0]);
+    const audio = new Audio(currentBlobURL);
 
-      // rm from audio queue
-      setAudioQueue(pq => pq.slice(1))
+    // Remove the first item from the audio queue
+    setAudioQueue(pq => pq.slice(1));
 
-      audio.onended = () => setIsAudioPlaying(false)
-      audio.play();
-    }
-    playNextAudio();
+    audio.onended = () => {
+      setIsAudioPlaying(false);
+    };
+
+    audio.play().catch(() => {
+      console.error('error playing audio')
+      setIsAudioPlaying(false);
+    })
+
+
 
   }, [audioQueue, isAudioPlaying]);
 
   useEffect(() => {
 
-    const addToAudioQueue = async () => {
-      // build the queue of sentences as they come in. 
-      // no duplication.
-      if (messages.length < 1) return
-      const lastMessage = messages[messages.length - 1]
-      if (lastMessage.role !== 'assistant') return
 
-      const messageStr = lastMessage.content;
-      const sentencesChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
-      // number of full sentences i.e. does not include sentence still streaming in
-      const currSentenceCount = sentencesChunks.length - 1;
+    // build the queue of sentences as they come in. 
+    // no duplication.
+    if (messages.length < 1) return
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage.role !== 'assistant') return
 
-      // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
-      // skip over first chunk because we don't want to add array[-1] chunk
-      if (currSentenceCount < 1) return
+    const messageStr = lastMessage.content;
+    const sentencesChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
+    // number of full sentences i.e. does not include sentence still streaming in
+    const currSentenceCount = sentencesChunks.length - 1;
 
-      // iterate until we have added all new sentences to queue
-      while (currSentenceCount > processedSentenceCount.current) {
-        // we need to get the first sentence that hasn't been added to the queue yet
-        // we have missed (newSentenceCount - sentenceCount.current) sentences since the last time we added to queue
-        const numMissedSentences = (currSentenceCount - processedSentenceCount.current)
+    // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
+    // skip over first chunk because we don't want to add array[-1] chunk
+    // ignore if we're already up to date
+    if (currSentenceCount < 1 || processedSentenceChunkCount === currSentenceCount) return
 
-        processedSentenceCount.current += 1;
-        const chunkIndex = (sentencesChunks.length - 1) - numMissedSentences
+    let textToQueueUp = ''
+    // iterate until we have added all new sentences to queue
+    for (let i = processedSentenceChunkCount; i < currSentenceCount; i++) {
+      // we need to get the first sentence that hasn't been added to the queue yet
+      // we have missed (currSentenceCount - processedSentenceCount.current) sentences since the last time we added to queue
+      const numMissedSentences = currSentenceCount - processedSentenceChunkCount;
 
-        // get promise of audio blob from sentence
-        const blob = fetch('/api/tts', {
-          method: 'POST',
-          body: JSON.stringify({
-            "input": sentencesChunks[chunkIndex]
-          })
-        }).then(res => res.blob())
-
-        setAudioQueue(pq => [...pq, [blob, false]])
-      }
-      // once text streaming has ended, add last chunk
-      if (!isAssistantStreaming) {
-        // get promise of audio blob from sentence
-        const blob = fetch('/api/tts', {
-          method: 'POST',
-          body: JSON.stringify({
-            "input": sentencesChunks[sentencesChunks.length - 1]
-          })
-        }).then(res => res.blob())
-
-        setAudioQueue(pq => [...pq, [blob, true]])
-
-        processedSentenceCount.current = 0
-      }
+      const chunkIndex = (sentencesChunks.length - 1) - (numMissedSentences - (i - processedSentenceChunkCount));
+      textToQueueUp += sentencesChunks[chunkIndex]
     }
-    addToAudioQueue();
+    // get promise of audio blob from sentence
+    const blobPromise = fetch('/api/tts', {
+      method: 'POST',
+      body: JSON.stringify({
+        "input": textToQueueUp
+      })
+    }).then(res => res.blob());
+
+    console.log('queuing up:', textToQueueUp)
+    setAudioPromiseQueue(pq => [...pq, blobPromise]);
+
+    setProcessedSentenceChunkCount(currSentenceCount)
+
+    // once text streaming has ended, add last chunk
+    if (!isAssistantStreaming) {
+      console.log('get last sentence')
+      // get promise of audio blob from sentence
+      const blob = fetch('/api/tts', {
+        method: 'POST',
+        body: JSON.stringify({
+          "input": sentencesChunks[sentencesChunks.length - 1]
+        })
+      }).then(res => res.blob())
+      console.log('queuing up:', sentencesChunks[sentencesChunks.length - 1])
+      setAudioPromiseQueue(pq => [...pq, blob])
+
+      setProcessedSentenceChunkCount(0)
+    }
+
 
   }, [messages, isAssistantStreaming]);
 
@@ -538,7 +566,7 @@ export default function Home() {
       console.log("stop form event")
       stopChat()
       setIsAssistantStreaming(false)
-      setAudioQueue([])
+      setAudioPromiseQueue([])
     } else {
       console.log("send form event")
       append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
