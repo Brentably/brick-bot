@@ -83,6 +83,11 @@ Pupil: danke
 Output: NO
 </example>
 
+<example>
+Instructor: Hallo! Ich freue mich sehr, mit dir über Essen und Küche zu sprechen. Was ist dein Lieblingsessen?
+Pupil: Was machst du gerne in deiner Freizeit?
+Output: NO
+</example>
 
 `;
 

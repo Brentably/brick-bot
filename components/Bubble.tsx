@@ -35,8 +35,8 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
       {!isUser && (
 
-        <button onClick={handleAudio} className='flex-shrink-0' disabled={isLoading}>
-          {!isLoading ? <Image src={isPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off / On Icon" /> : <LoadingBrick className="w-5 h-5 animate-spin" />}
+        <button onClick={handleAudio} className='flex-shrink-0 mr-1' disabled={isLoading}>
+          {!isLoading ? <Image src={isPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off / On Icon" /> : <LoadingIndicator />}
         </button>
 
       )}

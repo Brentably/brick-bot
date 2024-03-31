@@ -312,7 +312,6 @@ export default function Home() {
 
   useEffect(() => {
     console.log('audioQueue useEffect')
-    if (audioQueue.length === 0 && !isAudioPlaying) setCurrentlyPlayingMessageIndex(null)
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
     // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
@@ -328,12 +327,15 @@ export default function Home() {
 
     audioRef.current.onended = () => {
       setIsAudioPlaying(false);
+      setCurrentlyPlayingMessageIndex(null)
       // isAudioPlayingRef.current = false
     };
 
     audioRef.current.play().catch(() => {
       console.error('error playing audio')
       setIsAudioPlaying(false);
+      setCurrentlyPlayingMessageIndex(null)
+
       // isAudioPlayingRef.current = false
     })
 
@@ -347,8 +349,8 @@ export default function Home() {
       method: 'POST',
       body: JSON.stringify({ "input": text })
     }).then(res => res.blob());
-    setCurrentlyPlayingMessageIndex(messageIndex)
     setAudioPromiseQueue(pq => [...pq, blobPromise]);
+    setCurrentlyPlayingMessageIndex(messageIndex)
   };
 
 
@@ -556,12 +558,11 @@ export default function Home() {
 
   const handleSendOrStop = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault()
-    setHasStarted(true)
+    stopAudio()
     if (isAssistantStreaming) {
       console.log("stop form event")
       stopChat()
       setIsAssistantStreaming(false)
-      setAudioPromiseQueue([])
     } else {
       console.log("send form event")
       append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
@@ -596,7 +597,6 @@ export default function Home() {
   const beginChat = (_topic: string) => {
     setHasStarted(true)
     if (window.innerWidth < 600) setIsHeaderOpen(false);
-
     append({ role: 'system', content: createChatSystemPrompt(targetLanguage, _topic) }, { options: { body: { language: targetLanguage, topic: _topic } } })
     setTopic(_topic)
   }
@@ -646,6 +646,12 @@ export default function Home() {
     setIsProcessingAudioPromise(false)
     setCurrentlyPlayingMessageIndex(null)
   }
+
+
+  useEffect(() => {
+    console.log('%cisAudioPlaying: %s', 'color: lightblue', isAudioPlaying);
+    console.log('%ccurrentlyPlayingMessageIndex: %s', 'color: lightblue', currentlyPlayingMessageIndex);
+  }, [isAudioPlaying, currentlyPlayingMessageIndex]);
 
   return (
     <Div100vh>
@@ -744,10 +750,23 @@ export default function Home() {
                       <p className="text-lg mb-4">You completed {flashcards.length} flashcards!</p>
                       <div className="flex justify-center gap-4">
                         <button
-                          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                          className={`flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform ${flashcards.length === 0 || isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
                           onClick={handleDownloadFlashcards}
+                          disabled={flashcards.length === 0 || isDownloading}
                         >
-                          Download Flashcards
+                          {isDownloading ? (
+                            <>
+                              <LoadingBrick className='w-6 h-6 animate-spin' />
+                              <span>Preparing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                              </svg>
+                              <span>Download Flashcards!</span>
+                            </>
+                          )}
                         </button>
                         <button
                           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
