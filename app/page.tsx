@@ -119,7 +119,11 @@ export type MessageData = {
 export default function Home() {
 
   const { append, messages, input, handleInputChange, setMessages, reload, stop: stopChat, setInput } = useChat({
-    onResponse: () => setIsAssistantStreaming(true),
+    onResponse: () => {
+      console.log('setting to 0')
+      setProcessedSentenceChunkCount(0)
+      setIsAssistantStreaming(true)
+    },
     // onFinish does not have access to the latest messages[], so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
     onFinish: () => setIsAssistantStreaming(false)
   });
@@ -181,6 +185,8 @@ export default function Home() {
   const [audioQueue, setAudioQueue] = useState<Blob[]>([])
 
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const isAudioPlayingRef = useRef(false)
+  const isAudioProcessingRef = useRef(false)
 
   // how many sentences have been processed through tts on the currently streaming message
   const [processedSentenceChunkCount, setProcessedSentenceChunkCount] = useState(0)
@@ -218,13 +224,13 @@ export default function Home() {
 
 
   const handleSelectionChange = async () => {
-    console.log('handle selection change')
+    // console.log('handle selection change')
     // Your logic here
     // console.log('Selection changed');
     const selection = document.getSelection()
     const selectionString = selection?.toString()
-    console.log(selection, selectionString)
-    console.log(!Boolean(selectionString))
+    // console.log(selection, selectionString)
+    // console.log(!Boolean(selectionString))
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
     if (!Boolean(selectionString) || !_hasStarted) {
       setSelectionBoxActive(false)
@@ -286,16 +292,19 @@ export default function Home() {
     console.log('audioPromiseQueue useEffect hit. isProcessingAudioPromise & audioPromiseQueue.length', isProcessingAudioPromise, audioPromiseQueue.length)
     if (isProcessingAudioPromise || audioPromiseQueue.length === 0) return
     console.log('audioPromiseQueue useEffect running w/', audioPromiseQueue)
+    if(isAudioProcessingRef.current === true) throw new Error('boogagooga')
     setIsProcessingAudioPromise(true)
+    isAudioProcessingRef.current = true
     const numToProcess = audioPromiseQueue.length
     console.log('aPQ, processing this many:', numToProcess)
     const promises = Array.from(audioPromiseQueue)
     Promise.all(promises).then(processedAudioBlobs => {
       console.log('awaited all')
       setAudioQueue(pS => [...pS, ...processedAudioBlobs])
-      setAudioPromiseQueue(ps => [...ps.slice(numToProcess-1)])
+      setAudioPromiseQueue(ps => ps.slice(numToProcess))
       console.log('setting isProcessingAudioPromise to FALSE')
       setIsProcessingAudioPromise(false)
+      isAudioProcessingRef.current = false
     })
   }, [audioPromiseQueue, isProcessingAudioPromise]);
 
@@ -303,7 +312,9 @@ export default function Home() {
     console.log('audioQueue useEffect')
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
+    if(isAudioPlayingRef.current === true) throw new Error('googabooga')
     setIsAudioPlaying(true);
+    isAudioPlayingRef.current = true
 
 
     const currentBlobURL = URL.createObjectURL(audioQueue[0]);
@@ -314,11 +325,13 @@ export default function Home() {
 
     audio.onended = () => {
       setIsAudioPlaying(false);
+      isAudioPlayingRef.current = false
     };
 
     audio.play().catch(() => {
       console.error('error playing audio')
       setIsAudioPlaying(false);
+      isAudioPlayingRef.current = false
     })
 
 
@@ -339,6 +352,25 @@ export default function Home() {
     // number of full sentences i.e. does not include sentence still streaming in
     const currSentenceCount = sentencesChunks.length - 1;
 
+
+
+    // ONFINAL once text streaming has ended, add last chunk
+    if (!isAssistantStreaming) {
+      console.log('get last sentence')
+      // get promise of audio blob from sentence
+      const blob = fetch('/api/tts', {
+        method: 'POST',
+        body: JSON.stringify({
+          "input": sentencesChunks[sentencesChunks.length - 1]
+        })
+      }).then(res => res.blob())
+      console.log('queuing up:', sentencesChunks[sentencesChunks.length - 1])
+      setAudioPromiseQueue(pq => [...pq, blob])
+
+
+      setProcessedSentenceChunkCount(0)
+    }
+
     // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
     // skip over first chunk because we don't want to add array[-1] chunk
     // ignore if we're already up to date
@@ -354,6 +386,10 @@ export default function Home() {
       const chunkIndex = (sentencesChunks.length - 1) - (numMissedSentences - (i - processedSentenceChunkCount));
       textToQueueUp += sentencesChunks[chunkIndex]
     }
+    if(textToQueueUp.trim() === '') {
+      console.log('textToQueueUp is blank? so returning')
+      return
+    }
     // get promise of audio blob from sentence
     const blobPromise = fetch('/api/tts', {
       method: 'POST',
@@ -367,21 +403,6 @@ export default function Home() {
 
     setProcessedSentenceChunkCount(currSentenceCount)
 
-    // once text streaming has ended, add last chunk
-    if (!isAssistantStreaming) {
-      console.log('get last sentence')
-      // get promise of audio blob from sentence
-      const blob = fetch('/api/tts', {
-        method: 'POST',
-        body: JSON.stringify({
-          "input": sentencesChunks[sentencesChunks.length - 1]
-        })
-      }).then(res => res.blob())
-      console.log('queuing up:', sentencesChunks[sentencesChunks.length - 1])
-      setAudioPromiseQueue(pq => [...pq, blob])
-
-      setProcessedSentenceChunkCount(0)
-    }
 
 
   }, [messages, isAssistantStreaming]);

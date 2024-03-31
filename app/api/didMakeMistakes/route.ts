@@ -18,6 +18,7 @@ Don't count grammar, such as a missed period or comma, as a mistake.
 The examples are in German, but you should provide the same analysis for ${language}.
 Your answer should always be "YES" or "NO" in English, even though you're analyzing ${language}.
 Only comment on linguistic / grammar / vocabulary mistakes, not logical consistency with what the pupil might have said.
+DO NOT correct capitalization.
 </instructions>
 
 <example>
@@ -67,6 +68,12 @@ Output: NO
 <example>
 Instructor: Hallo! Wie geht's dir heute? Magst du deutsches Essen?
 Pupil: Nein, ich liebe Bier!
+Output: NO
+</example>
+
+<example>
+Instructor: Super! Äpfel sind wirklich lecker und gesund. Es gibt so viele verschiedene Sorten. Machst du gerne etwas Besonderes mit Äpfeln? Zum Beispiel Apfelkuchen oder Apfelmus?
+Pupil: danke
 Output: NO
 </example>
 `;
