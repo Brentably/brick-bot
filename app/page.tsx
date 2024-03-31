@@ -135,6 +135,8 @@ export default function Home() {
   const flashcardsGoal = useBrickStore(state => state.flashcardsGoal)
   const setFlashcardsGoal = useBrickStore(state => state.setFlashcardsGoal)
 
+  const audioRef = useRef<HTMLAudioElement|null>(null)
+  const [currentlyPlayingMessageIndex, setCurrentlyPlayingMessageIndex] = useState<number|null>(null)
   const [hasHydrated, setHasHydrated] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -292,9 +294,9 @@ export default function Home() {
     console.log('audioPromiseQueue useEffect hit. isProcessingAudioPromise & audioPromiseQueue.length', isProcessingAudioPromise, audioPromiseQueue.length)
     if (isProcessingAudioPromise || audioPromiseQueue.length === 0) return
     console.log('audioPromiseQueue useEffect running w/', audioPromiseQueue)
-    if(isAudioProcessingRef.current === true) throw new Error('boogagooga')
+    // if(isAudioProcessingRef.current === true) throw new Error('boogagooga')
     setIsProcessingAudioPromise(true)
-    isAudioProcessingRef.current = true
+    // isAudioProcessingRef.current = true
     const numToProcess = audioPromiseQueue.length
     console.log('aPQ, processing this many:', numToProcess)
     const promises = Array.from(audioPromiseQueue)
@@ -304,34 +306,35 @@ export default function Home() {
       setAudioPromiseQueue(ps => ps.slice(numToProcess))
       console.log('setting isProcessingAudioPromise to FALSE')
       setIsProcessingAudioPromise(false)
-      isAudioProcessingRef.current = false
+      // isAudioProcessingRef.current = false
     })
   }, [audioPromiseQueue, isProcessingAudioPromise]);
 
   useEffect(() => {
     console.log('audioQueue useEffect')
+    if(audioQueue.length === 0 && !isAudioPlaying) setCurrentlyPlayingMessageIndex(null)
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
-    if(isAudioPlayingRef.current === true) throw new Error('googabooga')
+    // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
     setIsAudioPlaying(true);
-    isAudioPlayingRef.current = true
+    // isAudioPlayingRef.current = true
 
 
     const currentBlobURL = URL.createObjectURL(audioQueue[0]);
-    const audio = new Audio(currentBlobURL);
-
+    
+    audioRef.current = new Audio(currentBlobURL);
     // Remove the first item from the audio queue
     setAudioQueue(pq => pq.slice(1));
 
-    audio.onended = () => {
+    audioRef.current.onended = () => {
       setIsAudioPlaying(false);
-      isAudioPlayingRef.current = false
+      // isAudioPlayingRef.current = false
     };
 
-    audio.play().catch(() => {
+    audioRef.current.play().catch(() => {
       console.error('error playing audio')
       setIsAudioPlaying(false);
-      isAudioPlayingRef.current = false
+      // isAudioPlayingRef.current = false
     })
 
 
@@ -339,12 +342,12 @@ export default function Home() {
   }, [audioQueue, isAudioPlaying]);
 
   // Function to add audio promises to the queue
-  const queueAudioFromText = (text: string) => {
+  const queueAudioFromText = (text: string, messageIndex: number = messages.length-1) => {
     const blobPromise = fetch('/api/tts', {
       method: 'POST',
       body: JSON.stringify({ "input": text })
     }).then(res => res.blob());
-
+    setCurrentlyPlayingMessageIndex(messageIndex)
     setAudioPromiseQueue(pq => [...pq, blobPromise]);
   };
 
@@ -632,6 +635,15 @@ export default function Home() {
   }
   const [showResetConfirmationModal, setShowResetConfirmationModal] = useState(false)
 
+  const stopAudio = () => {
+    audioRef.current?.pause()
+    setAudioQueue([])
+    setAudioPromiseQueue([])
+    setIsAudioPlaying(false)
+    setIsProcessingAudioPromise(false)
+    setCurrentlyPlayingMessageIndex(null)
+  }
+
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
@@ -731,6 +743,23 @@ export default function Home() {
                       key={`message-${index}`}
                       content={message}
                       messageData={messagesData[index]}
+                      handleAudio={() => {
+                        const isCurrentlyPlaying = isAudioPlaying && (currentlyPlayingMessageIndex === index)
+                        // if this bubble is currently playing, then it pauses the audio.
+                        if(isCurrentlyPlaying) {
+                          stopAudio()
+                          return
+                        } 
+
+                        // if another bubble is currently playing, then it stops that audio
+                        if(isAudioPlaying && !isCurrentlyPlaying) {
+                          stopAudio()
+                        }
+                        // normally, just plays the fucking audio of the bubble
+                        queueAudioFromText(message.content, index)
+                      }}
+                      isPlaying={isAudioPlaying && (currentlyPlayingMessageIndex === index)}
+                      isLoading={!isAudioPlaying && (currentlyPlayingMessageIndex === index)}
                     /> : null
                   )}
                 </div>

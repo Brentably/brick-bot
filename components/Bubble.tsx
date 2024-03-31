@@ -7,6 +7,7 @@ import { MessageData } from "../app/page";
 import soundOnIcon from "../public/assets/soundOnIcon.svg"
 import soundOffIcon from "../public/assets/soundOffIcon.svg"
 import Image from 'next/image'
+import LoadingBrick from "./LoadingBrick";
 interface BubbleProps {
   content: {
     role: string;
@@ -14,28 +15,16 @@ interface BubbleProps {
     [key: string]: any;
   };
   messageData: MessageData;
-  playAudio?: (message: string) => Promise<HTMLAudioElement>;
-  pauseAudio?: (audio: HTMLAudioElement) => void;
-  isAudioPlaying?: boolean
-  setIsAudioPlaying?: (bool: boolean) => void;
+  handleAudio?: () => void
+  isPlaying: boolean
+  isLoading: boolean
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, handleAudio, isPlaying, isLoading }, ref) => {
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
-  const bubbleAudio = useRef<HTMLAudioElement | null>(null)
 
-  useEffect(() => {
-    if (!isUser) return
-    // console.log('messageData update on ')
-    // console.log(messageData)
-  }, [messageData])
-
-  const handleAudio = () => {
-    console.log('handle audio')
-  }
-  
 
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -44,11 +33,13 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
 
   return (
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
-      {!isUser ?
-        <button onClick={handleAudio} className='flex-shrink-0'>
-          <Image src={true ? soundOffIcon : soundOnIcon} alt="Sound Off Icon" />
+      {!isUser && (
+
+        <button onClick={handleAudio} className='flex-shrink-0' disabled={isLoading}>
+          {!isLoading ? <Image src={isPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off / On Icon" /> : <LoadingBrick className="w-5 h-5 animate-spin" />}
         </button>
-        : null}
+
+      )}
       <div className='flex flex-row items-center'>
         {
           isUser ? <>
@@ -91,8 +82,8 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData }
             ) : (
               <button
                 className={`${didMakeMistakes
-                    ? 'bg-red-500'
-                    : 'bg-green-500'
+                  ? 'bg-red-500'
+                  : 'bg-green-500'
                   } h-6 w-6 rounded-full focus:outline-none hover:opacity-80 transition duration-200 flex items-center justify-center mr-2`}
                 onClick={() => setIsModalOpen(!isModalOpen)}
               >
