@@ -271,13 +271,13 @@ export default function Home() {
     const debouncedSelectionChange = debounce(handleSelectionChange, 300)
 
     if (typeof window !== 'undefined') {
-        document.addEventListener("selectionchange", debouncedSelectionChange);
-        window.addEventListener("resize", repositionSelectionBox);
+      document.addEventListener("selectionchange", debouncedSelectionChange);
+      window.addEventListener("resize", repositionSelectionBox);
     }
 
     return () => {
-        document.removeEventListener('selectionchange', debouncedSelectionChange);
-        window.removeEventListener("resize", repositionSelectionBox);
+      document.removeEventListener('selectionchange', debouncedSelectionChange);
+      window.removeEventListener("resize", repositionSelectionBox);
     }
   }, [])
 
@@ -662,13 +662,16 @@ export default function Home() {
                   </p>
                   <div className='flex flex-col lg:flex-row justify-between'>
 
-                    {hasStarted && (
-                      <button className='mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded' onClick={() => {
+
+                    <button
+                      className={`mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ${!hasStarted ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+                      onClick={() => {
                         setShowResetConfirmationModal(true)
-                      }}>
-                        Reset Chat
-                      </button>
-                    )}
+                      }}
+                      disabled={!hasStarted}>
+                      Reset Chat
+                    </button>
+
 
                     <button
                       className={`mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform ${flashcards.length === 0 || isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
@@ -690,7 +693,7 @@ export default function Home() {
                       )}
                     </button>
 
- 
+
                   </div>
                 </>
               )}
@@ -716,7 +719,7 @@ export default function Home() {
               )}
             </header>
             {hasStarted ?
-            
+
               <div className='flex-1 flex-grow relative flex flex-col justify-stretch overflow-y-auto'>
                 <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
                   {messages.map((message, index) => (index > 0) ?
