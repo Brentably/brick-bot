@@ -338,75 +338,46 @@ export default function Home() {
 
   }, [audioQueue, isAudioPlaying]);
 
-  useEffect(() => {
-
-
-    // build the queue of sentences as they come in. 
-    // no duplication.
-    if (messages.length < 1) return
-    const lastMessage = messages[messages.length - 1]
-    if (lastMessage.role !== 'assistant') return
-
-    const messageStr = lastMessage.content;
-    const sentencesChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
-    // number of full sentences i.e. does not include sentence still streaming in
-    const currSentenceCount = sentencesChunks.length - 1;
-
-
-
-    // ONFINAL once text streaming has ended, add last chunk
-    if (!isAssistantStreaming) {
-      console.log('get last sentence')
-      // get promise of audio blob from sentence
-      const blob = fetch('/api/tts', {
-        method: 'POST',
-        body: JSON.stringify({
-          "input": sentencesChunks[sentencesChunks.length - 1]
-        })
-      }).then(res => res.blob())
-      console.log('queuing up:', sentencesChunks[sentencesChunks.length - 1])
-      setAudioPromiseQueue(pq => [...pq, blob])
-
-
-      setProcessedSentenceChunkCount(0)
-    }
-
-    // as new chunks stream in, we add the second to last chunk, so we only add completed chunks.
-    // skip over first chunk because we don't want to add array[-1] chunk
-    // ignore if we're already up to date
-    if (currSentenceCount < 1 || processedSentenceChunkCount === currSentenceCount) return
-
-    let textToQueueUp = ''
-    // iterate until we have added all new sentences to queue
-    for (let i = processedSentenceChunkCount; i < currSentenceCount; i++) {
-      // we need to get the first sentence that hasn't been added to the queue yet
-      // we have missed (currSentenceCount - processedSentenceCount.current) sentences since the last time we added to queue
-      const numMissedSentences = currSentenceCount - processedSentenceChunkCount;
-
-      const chunkIndex = (sentencesChunks.length - 1) - (numMissedSentences - (i - processedSentenceChunkCount));
-      textToQueueUp += sentencesChunks[chunkIndex]
-    }
-    if(textToQueueUp.trim() === '') {
-      console.log('textToQueueUp is blank? so returning')
-      return
-    }
-    // get promise of audio blob from sentence
+  // Function to add audio promises to the queue
+  const queueAudioFromText = (text: string) => {
     const blobPromise = fetch('/api/tts', {
       method: 'POST',
-      body: JSON.stringify({
-        "input": textToQueueUp
-      })
+      body: JSON.stringify({ "input": text })
     }).then(res => res.blob());
 
-    console.log('queuing up:', textToQueueUp)
     setAudioPromiseQueue(pq => [...pq, blobPromise]);
-
-    setProcessedSentenceChunkCount(currSentenceCount)
-
+  };
 
 
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role !== 'assistant') return;
+
+    const messageStr = lastMessage.content;
+    const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
+    const isFinalChunk = !isAssistantStreaming;
+    const newChunksCount = sentenceChunks.length - 1 - processedSentenceChunkCount;
+
+
+    // Handle the final chunk when streaming ends
+    if (isFinalChunk && sentenceChunks.length > 0) {
+      console.log('Queueing final sentence:', sentenceChunks[sentenceChunks.length - 1]);
+      queueAudioFromText(sentenceChunks[sentenceChunks.length - 1]);
+      setProcessedSentenceChunkCount(0); // Reset for the next message
+    }
+
+    // Handle new chunks that arrived during streaming
+    if (newChunksCount > 0) {
+      const textToQueue = sentenceChunks.slice(processedSentenceChunkCount, -1).join(' ');
+      if (textToQueue.trim()) {
+        console.log('Queueing new chunks:', textToQueue);
+        queueAudioFromText(textToQueue);
+        setProcessedSentenceChunkCount(sentenceChunks.length - 1);
+      }
+    }
   }, [messages, isAssistantStreaming]);
-
 
 
 
@@ -863,7 +834,7 @@ export default function Home() {
 
         </section>
       </main>
-      <div ref={selectionBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] max-w-[50%] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${selectionBoxActive ? '' : 'invisible'}`}>
+      <div ref={selectionBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] max-w-[80%] lg:max-w-[700px] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${selectionBoxActive ? '' : 'invisible'}`}>
         {!isSelectionTranslationLoading ?
           <div className='select-none flex justify-between items-center'>
             {selectionTranslation}

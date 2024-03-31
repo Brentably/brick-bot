@@ -76,6 +76,14 @@ Instructor: Super! Äpfel sind wirklich lecker und gesund. Es gibt so viele vers
 Pupil: danke
 Output: NO
 </example>
+
+<example>
+Instructor: Hallo! Schön, dass du da bist. Was magst du gerne essen?
+Pupil: danke
+Output: NO
+</example>
+
+
 `;
 
 // B. if yes, make flashcards (can do a different call for each flashcard if better.)
