@@ -128,6 +128,7 @@ export default function Home() {
     onFinish: () => setIsAssistantStreaming(false)
   });
 
+
   const messagesData = useBrickStore(state => state.messagesData)
   const setMessagesData = useBrickStore(state => state.setMessagesData)
   const zustandMessages = useBrickStore(state => state.zustandMessages)
@@ -156,12 +157,12 @@ export default function Home() {
     }
   }, [messages, zustandMessages, hasHydrated])
 
-  const { input: correctionInput, setInput: setCorrectionInput, complete: correctionComplete, stop: stopCorrection, completion } = useCompletion({
-    api: '/api/getCorrectedMessageAndFeedback', id: 'correction',
-    onResponse: () => setIsCorrectionStreaming(true),
-    // onFinish does not have access to the latest data, so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
-    onFinish: () => setIsCorrectionStreaming(false)
-  })
+  // const { input: correctionInput, setInput: setCorrectionInput, complete: correctionComplete, stop: stopCorrection, completion } = useCompletion({
+  //   api: '/api/getCorrectedMessageAndFeedback', id: 'correction',
+  //   onResponse: () => setIsCorrectionStreaming(true),
+  //   // onFinish does not have access to the latest data, so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
+  //   onFinish: () => setIsCorrectionStreaming(false)
+  // })
 
 
   useEffect(() => {
@@ -239,8 +240,8 @@ export default function Home() {
       setSelectionBoxActive(false)
       setSelectionTranslation('')
       return
-    } 
-    
+    }
+
     setSelection(selectionString)
     setSelectionBoxActive(true)
     repositionSelectionBox()
@@ -402,22 +403,22 @@ export default function Home() {
     } else return
   }
 
-  useEffect(() => {
-    // prevents running on first render
-    if (messages.length < 1) return
-    // console.log('completion update: ', completion)
+  // useEffect(() => {
+  //   // prevents running on first render
+  //   if (messages.length < 1) return
+  //   // console.log('completion update: ', completion)
 
-    // correction is streaming in so this gets called a bunch
-    const processCorrectionStream = (completionStream: string) => {
+  //   // correction is streaming in so this gets called a bunch
+  //   const processCorrectionStream = (completionStream: string) => {
 
-      const correctedMessageText = extractTextFromInsideTags(completionStream, 'corrected-message')
-      const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
-      const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
-      if (indexOfProcessingMessage === null) throw new Error(`no index of processing message`)
-      setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })])
-    }
-    processCorrectionStream(completion)
-  }, [completion])
+  //     const correctedMessageText = extractTextFromInsideTags(completionStream, 'corrected-message')
+  //     const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
+  //     const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
+  //     if (indexOfProcessingMessage === null) throw new Error(`no index of processing message`)
+  //     setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })])
+  //   }
+  //   processCorrectionStream(completion)
+  // }, [completion])
 
   async function createFlashcardsFromXML(XMLFlashcards: string) {
     console.log('createFlashcards from XML hit')
@@ -477,39 +478,27 @@ export default function Home() {
   }
 
 
-  useEffect(() => {
-    if (isCorrectionStreaming || indexOfProcessingMessage === null) return
-    // ON FINISH
-    const makeFlashcards = async () => {
-      // FIXME TODO! this is called multiple times for the same indexOfProcessingMessage, even when the body data is not ready, causing errors on both frontend and backend, which expects that data to be ready
-      console.log('processing xml flashcards for ', indexOfProcessingMessage)
-      const body = {
-        pupilMessage: messages[indexOfProcessingMessage].content,
-        correctedMessage: messagesData[indexOfProcessingMessage].correctedMessage,
-        mistakes: messagesData[indexOfProcessingMessage].mistakes,
-        language: targetLanguage
-      }
-      console.log('full body: ', body)
-      const resp = await fetch(`/api/getXMLFlashcards`, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      }).then(resp => resp.json())
-      const XMLFlashcards = resp.XMLFlashcards
-      const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
-      addFlashcards(_flashcards)
+  const makeFlashcards = async ({ pupilMessage, correctedMessage, mistakes }: { pupilMessage: string, correctedMessage: string, mistakes: string }) => {
+    console.log('processing xml flashcards for ', indexOfProcessingMessage)
+    const body = {
+      pupilMessage,
+      correctedMessage,
+      mistakes,
+      language: targetLanguage
     }
-    if (messagesData[indexOfProcessingMessage]?.didMakeMistakes) makeFlashcards()
+    console.log('full body: ', body)
+    const resp = await fetch(`/api/getXMLFlashcards`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    }).then(resp => resp.json())
+    const XMLFlashcards = resp.XMLFlashcards
+    const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
+    addFlashcards(_flashcards)
+  }
 
-  }, [isCorrectionStreaming, completion])
-
-  useEffect(() => {
-    // console.log('messages / messagesData')
-    // console.log(messages)
-    // console.log(messagesData)
-  }, [messages, messagesData])
 
 
   useEffect(() => {
@@ -546,13 +535,24 @@ export default function Home() {
         return newArr
       })
 
-      if (didMakeMistakes) correctionComplete(``, {
-        body: {
+      if (!didMakeMistakes) return
+
+      const correctedJSON = await fetch(`/api/getCorrectedMessageAndFeedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           language: targetLanguage,
           pupilMessage: message.content,
           instructorMessage
-        }
-      })
+        })
+      }).then(resp => resp.json())
+
+      const {mistakes, corrected_message} = correctedJSON
+
+      setMessagesData(pMD => [...pMD.with(index, { ...pMD[index], mistakes, correctedMessage: corrected_message })])
+      makeFlashcards({pupilMessage: message.content, correctedMessage: corrected_message, mistakes})
 
     }
     if (messages.length) processMessage(messages[messages.length - 1], messages.length - 1)
@@ -630,12 +630,12 @@ export default function Home() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        toast(`Download Complete!`, {type: 'success'})
+        toast(`Download Complete!`, { type: 'success' })
         setIsDownloading(false);
       })
       .catch((error) => {
         console.error('Error:', error);
-        toast(`Download Failed :(.. Please note the time and contact Brent`, {type: 'error'})
+        toast(`Download Failed :(.. Please note the time and contact Brent`, { type: 'error' })
         setIsDownloading(false);
       });
   }
@@ -726,7 +726,7 @@ export default function Home() {
                   <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
                 </div>
               )}
-              
+
               {showResetConfirmationModal && (
                 <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
                   <div className=" rounded-lg z-50 bg-gray-50 bg-opacity-90 border border-gray-300 shadow-lg p-6 relative">
@@ -828,7 +828,7 @@ export default function Home() {
                         }}
                         value={input}
                         rows={1}
-                        className='chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 w-full overflow-hidden bg-[var(--text-primary)]'
+                        className='text-base chatbot-input flex-1 outline-none rounded-md p-2 resize-none m-0 w-full overflow-hidden bg-[var(--text-primary)]'
                         placeholder='Send a message...'
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey && input.trim() !== '') {
