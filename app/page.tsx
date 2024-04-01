@@ -806,8 +806,8 @@ export default function Home() {
                         // normally, just plays the fucking audio of the bubble
                         queueAudioFromText(message.content, index)
                       }}
-                      isPlaying={isAudioPlaying && (currentlyPlayingMessageIndex === index)}
-                      isLoading={!isAudioPlaying && (currentlyPlayingMessageIndex === index)}
+                      isPlaying={(isAudioPlaying || Boolean(audioPromiseQueue.length) || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
+                      isLoading={(!isAudioPlaying && !Boolean(audioPromiseQueue.length) && !Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                     /> : null
                   )}
                 </div>
