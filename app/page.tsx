@@ -315,7 +315,9 @@ export default function Home() {
 
   useEffect(() => {
     console.log('audioQueue useEffect')
-    if (audioQueue.length === 0 && !isAudioPlaying) setCurrentlyPlayingMessageIndex(null)
+    if (audioQueue.length === 0 && !isAudioPlaying) {
+      console.log('%cspot A so setting to null', 'color: red');
+      setCurrentlyPlayingMessageIndex(null)}
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
     // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
@@ -338,6 +340,8 @@ export default function Home() {
     audioRef.current.play().catch((e) => {
       console.error('error playing audio: ', e)
       setIsAudioPlaying(false);
+      
+      console.log('%cspot B so setting to null', 'color: red');
       setCurrentlyPlayingMessageIndex(null)
 
       // isAudioPlayingRef.current = false
@@ -354,6 +358,7 @@ export default function Home() {
       body: JSON.stringify({ "input": text })
     }).then(res => res.blob());
     setAudioPromiseQueue(pq => [...pq, blobPromise]);
+    console.log('%cspot C so setting to ', 'color: red', messageIndex);
     setCurrentlyPlayingMessageIndex(messageIndex)
   };
 
@@ -637,6 +642,7 @@ export default function Home() {
     setAudioPromiseQueue([])
     setIsAudioPlaying(false)
     setIsProcessingAudioPromise(false)
+    console.log('%cspot D so setting to null', 'color: red');
     setCurrentlyPlayingMessageIndex(null)
   }
 
