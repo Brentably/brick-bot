@@ -329,15 +329,16 @@ export default function Home() {
 
     audioRef.current = new Audio(currentBlobURL);
     // Remove the first item from the audio queue
-    setAudioQueue(pq => pq.slice(1));
-
+    
     audioRef.current.onended = () => {
+      setAudioQueue(pq => pq.slice(1));
       setIsAudioPlaying(false);
       // setCurrentlyPlayingMessageIndex(null)
       // isAudioPlayingRef.current = false
     };
 
     audioRef.current.play().catch((e) => {
+      setAudioQueue(pq => pq.slice(1));
       console.error('error playing audio: ', e)
       setIsAudioPlaying(false);
       
@@ -485,8 +486,9 @@ export default function Home() {
     return flashcards
   }
 
-  useEffect(() => console.log('%ccurrently playing message index', 'color: lightgreen', [currentlyPlayingMessageIndex]))
-  useEffect(() => console.log('%cisAudioPlaying', 'color: lightgreen', [isAudioPlaying]))
+  useEffect(() => console.log('%ccurrently playing message index', 'color: lightgreen', currentlyPlayingMessageIndex), [currentlyPlayingMessageIndex])
+  useEffect(() => console.log('%cisAudioPlaying', 'color: lightgreen', isAudioPlaying), [isAudioPlaying])
+  useEffect(() => console.log('%caudioqueue.length', 'color: lightgreen', audioQueue.length), [audioQueue])
 
   const makeFlashcards = async ({ pupilMessage, correctedMessage, mistakes }: { pupilMessage: string, correctedMessage: string, mistakes: string }) => {
     console.log('processing xml flashcards for ', indexOfProcessingMessage)
@@ -646,12 +648,6 @@ export default function Home() {
     setCurrentlyPlayingMessageIndex(null)
   }
 
-
-  useEffect(() => {
-    console.log('%cisAudioPlaying: %s', 'color: lightblue', isAudioPlaying);
-    console.log('%ccurrentlyPlayingMessageIndex: %s', 'color: lightblue', currentlyPlayingMessageIndex);
-  }, [isAudioPlaying, currentlyPlayingMessageIndex]);
-
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
@@ -806,8 +802,8 @@ export default function Home() {
                         // normally, just plays the fucking audio of the bubble
                         queueAudioFromText(message.content, index)
                       }}
-                      isPlaying={(isAudioPlaying || Boolean(audioPromiseQueue.length) || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
-                      isLoading={(!isAudioPlaying && !Boolean(audioPromiseQueue.length) && !Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
+                      isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
+                      isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                     /> : null
                   )}
                 </div>
