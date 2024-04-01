@@ -652,8 +652,11 @@ export default function Home() {
               <div className='flex justify-between items-center'>
                 <div className='flex items-center gap-2'>
                   <Image src={bricks} alt='' className='w-10' />
-                  <h1 className='chatbot-text-primary text-xl lg:text-2xl font-medium'>Brick Bot</h1>
-                </div>
+                  <div className='flex items-center'>
+                    <h1 className='chatbot-text-primary text-xl lg:text-2xl font-medium'>Brick Bot</h1>
+                    <span className='ml-2 bg-[var(--background-soft)] text-[var(--text-primary-main)] px-2 py-1 text-xs rounded'>Beta</span>
+                  </div>
+                  </div>
                 <button
                   className='text-sm lg:text-base'
                   onClick={() => setIsHeaderOpen(!isHeaderOpen)}
