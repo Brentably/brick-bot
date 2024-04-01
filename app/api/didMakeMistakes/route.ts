@@ -6,6 +6,11 @@ const client = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
 });
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+
 export const runtime = "edge"; // 'nodejs' is the default
 
 // prompt chaining:
@@ -168,11 +173,11 @@ export async function POST(req: Request) {
   try {
     const { pupilMessage, instructorMessage, language } = await req.json();
 
-    const respA = await client.messages.create({
-      model: "claude-3-sonnet-20240229",
-      max_tokens: 5,
-      system: createSystemPromptA(language),
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-0125-preview",
       messages: [
+        { role: "system", content: createSystemPromptA(language) },
         {
           role: "user",
           content: `
@@ -183,7 +188,8 @@ export async function POST(req: Request) {
       ],
     });
 
-    const yesOrNoText = respA.content[0].text;
+
+    const yesOrNoText = response.choices[0].message.content ?? ''
     const yesOrNo = yesOrNoText.includes("YES") ? 'YES' : yesOrNoText.includes("NO") ? "NO" : yesOrNoText
     console.log("was it concluded that mistakes were made?", yesOrNo)
 
