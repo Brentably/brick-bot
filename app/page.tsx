@@ -630,10 +630,12 @@ export default function Home() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
+        toast(`Download Complete!`, {type: 'success'})
         setIsDownloading(false);
       })
       .catch((error) => {
         console.error('Error:', error);
+        toast(`Download Failed :(.. Please note the time and contact Brent`, {type: 'error'})
         setIsDownloading(false);
       });
   }
