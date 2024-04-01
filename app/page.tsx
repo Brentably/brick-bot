@@ -315,7 +315,7 @@ export default function Home() {
 
   useEffect(() => {
     console.log('audioQueue useEffect')
-    if (audioQueue.length === 0 && !isAudioPlaying) {
+    if (audioQueue.length === 0 && audioPromiseQueue.length === 0 && !isAudioPlaying) {
       console.log('%cspot A so setting to null', 'color: red');
       setCurrentlyPlayingMessageIndex(null)}
     if (audioQueue.length === 0 || isAudioPlaying) return;
