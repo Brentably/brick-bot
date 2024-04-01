@@ -672,7 +672,7 @@ export default function Home() {
               {isHeaderOpen && (
                 <>
                   <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
-                    Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
+                    Brick Bot is a project made by <a href="https://twitter.com/BingBongBrent" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Brent Burdick</a>. Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
                   </p>
                   {hasStarted && (
                     <div className='flex flex-col lg:flex-row justify-between'>

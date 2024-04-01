@@ -81,10 +81,11 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
               </div>
             ) : (
               <button
+                disabled={!didMakeMistakes}
                 className={`${didMakeMistakes
-                  ? 'bg-red-500'
+                  ? 'bg-red-500 hover:opacity-80'
                   : 'bg-green-500'
-                  } h-6 w-6 rounded-full focus:outline-none hover:opacity-80 transition duration-200 flex items-center justify-center mr-2`}
+                  } h-6 w-6 rounded-full focus:outline-none transition duration-200 flex items-center justify-center mr-2`}
                 onClick={() => setIsModalOpen(!isModalOpen)}
               >
                 {didMakeMistakes ? (
