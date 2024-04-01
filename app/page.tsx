@@ -235,12 +235,12 @@ export default function Home() {
     console.log(selection, selectionString)
     // console.log(!Boolean(selectionString))
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
-    if (!Boolean(selectionString) || !_hasStarted) {
+    if (!selectionString || !_hasStarted) {
       setSelectionBoxActive(false)
       setSelectionTranslation('')
       return
-    }
-
+    } 
+    
     setSelection(selectionString)
     setSelectionBoxActive(true)
     repositionSelectionBox()
