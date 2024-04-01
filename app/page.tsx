@@ -729,7 +729,7 @@ export default function Home() {
                   </div>
                 </div>
               )}
-              {showCompletedModal && flashcards.length === flashcardsGoal && (
+              {showCompletedModal && flashcards.length >= flashcardsGoal && (
                 <div className="fixed inset-0 flex items-center justify-center z-50">
                   <div className="absolute inset-0 bg-black opacity-50"></div>
                   <div className='rounded-lg shadow-md p-4 bg-gray-100 max-w-md z-10'>
