@@ -1,7 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 const client = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export const runtime = "edge"; // 'nodejs' is the default
@@ -78,48 +83,52 @@ Output:
 </example>
 `;
 
-const createSystemPrompt = (language: string) => 
-`<instructions>
+const createSystemPrompt = (language: string) =>
+  `<instructions>
 You are a ${language} language expert. You are well versed in creating excellent cloze flashcards for language learners using spaced repetition software such as Anki and SuperMemo. You will be given a snippet of conversation between a language instructor and their pupil. Create one or multiple flashcards based on the instructor's feedback. 
 Reply in XML, and only XML.
-There are 2 types of cards you can make.
-1. <vocab> cards. These identify a ${language} word or short phrase that the user should know. They specify the vocab word / phrase in ${language}.
-Example: <vocab>schön</vocab>
-Use a vocab card when it's clear the pupil is being corrected on the correct vocab word or phrase.
 
-2. <cloze> cards which have <deletion> tags to specify what words to cloze delete.
+Create cloze flashcards like this:
+<cloze> cards with <deletion> tags to specify what words to cloze delete.
 Example: <cloze>Es war <deletion>schön</deltion> mit zu <deletion>reden</deletion>.</cloze>
-Use a cloze sentence when the instructor gives a correct sentence to the pupil in order to remedy some mistakes. Do NOT use the instructor's explanation as the cloze sentence, but rather the sentence should be an example sentence around the conversation.
-Any cloze sentence / cloze deletion should come directly from the instructor's feedback! It should bridge the gap between the pupil's statement and the instructor's example / explanation.
-Let me reiterate, only include cloze deletions which test improvements pointed out by the instructor.
 </instructions>
 
 
-
+<example>
+<message>Ich weis nicht.</message>
+<corrected-message>Ich weiß nicht</message>
+<mistakes>Weis sollte weiß sein</mistakes>
+<cards>
+<cloze>Ich <deletion>weiß</deletion></cloze>
+</cards>
+<example>
 
 `;
 
 export async function POST(req: Request) {
   console.log("getXMLFlashcards hit");
   try {
-    const { pupilMessage, correctedMessage, mistakes, language } = await req.json();
+    const { pupilMessage, correctedMessage, mistakes, language } =
+      await req.json();
 
-    const resp = await client.messages.create({
-      model: "claude-3-opus-20240229",
-      max_tokens: 4096,
-      system: createSystemPromptOld(language),
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-0125-preview",
       messages: [
+        { role: "system", content: createSystemPrompt(language) },
         {
           role: "user",
-          content: 
-          `<message>${pupilMessage}</message>
-          <corrected-message>${correctedMessage}</corrected-message>
-          <mistakes>${mistakes}</mistakes>`,
+          content: `<message>${pupilMessage}</message>
+              <corrected-message>${correctedMessage}</corrected-message>
+              <mistakes>${mistakes}</mistakes>
+              `,
         },
+        { role: "assistant", content: "<cards>" },
       ],
     });
 
-    const XMLFlashcards = resp.content[0].text;
+    const resp = response.choices[0].message.content
+
+    const XMLFlashcards = resp?.trimStart().startsWith('<cards>') ? resp : "<cards>" + resp
 
     console.log(`unparsed flashcards: \n${XMLFlashcards}`);
     // we send unparsed flashcards b/c edge runtime doesn't have DOMParser

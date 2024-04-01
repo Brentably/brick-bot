@@ -8,6 +8,10 @@ import soundOnIcon from "../public/assets/soundOnIcon.svg"
 import soundOffIcon from "../public/assets/soundOffIcon.svg"
 import Image from 'next/image'
 import LoadingBrick from "./LoadingBrick";
+import { HiOutlineQuestionMarkCircle } from "react-icons/hi";
+import { FaGear } from "react-icons/fa6";
+
+
 interface BubbleProps {
   content: {
     role: string;
@@ -73,9 +77,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
 
             {didMakeMistakes === null ? (
               <div className="h-6 w-6 rounded-full flex items-center justify-center mr-2 animate-spin">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m16.92 6.92l-1.41-1.41M6.49 6.49L5.07 5.07M22 12a10 10 0 11-20 0 10 10 0 0120 0z" />
-                </svg>
+                  <FaGear className="h-5 w-5" />
               </div>
             ) : (
               <button
@@ -86,7 +88,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
                 onClick={() => setIsModalOpen(!isModalOpen)}
               >
                 {didMakeMistakes ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <line x1="12" y1="17" x2="12.01" y2="17" /> </svg>
+                    <HiOutlineQuestionMarkCircle className="h-6 w-6" />
                 ) : null}
               </button>
             )}
@@ -98,8 +100,8 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
             className="markdown grid grid-cols-1 gap-3"
             remarkPlugins={[remarkGfm]}
           >
-            {content.content}
-          </Markdown>
+            {'\u200B' + content.content}
+            </Markdown>
         </div>
       </div>
     </div>

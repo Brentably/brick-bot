@@ -390,6 +390,8 @@ export default function Home() {
 
 
   const scrollToBottom = () => {
+    console.log('scroll to bottom called')
+    console.dir(messagesEndRef.current)
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -570,22 +572,6 @@ export default function Home() {
       append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
       setInput('')
     }
-  }
-
-  const playAudio = async (message: string): Promise<HTMLAudioElement> => {
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      body: JSON.stringify({
-        "input": message
-      })
-    })
-    const blob = await res.blob()
-    const blobURL = URL.createObjectURL(blob)
-    const a = new Audio(blobURL)
-    a.onended = () => setIsAudioPlaying(false);
-    a.play()
-    setIsAudioPlaying(true)
-    return a;
   }
 
 
