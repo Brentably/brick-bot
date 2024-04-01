@@ -686,47 +686,45 @@ export default function Home() {
                   <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
                     Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki cards for you to study based on your mistakes.
                   </p>
-                  <div className='flex flex-col lg:flex-row justify-between'>
+                  {hasStarted && (
+                    <div className='flex flex-col lg:flex-row justify-between'>
+                      <button
+                        className="mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded hover:scale-105"
+                        onClick={() => setShowResetConfirmationModal(true)}
+                      >
+                        Reset Chat
+                      </button>
 
-
-                    <button
-                      className={`mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ${!hasStarted ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
-                      onClick={() => {
-                        setShowResetConfirmationModal(true)
-                      }}
-                      disabled={!hasStarted}>
-                      Reset Chat
-                    </button>
-
-
-                    <button
-                      className={`mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform ${flashcards.length === 0 || isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
-                      onClick={handleDownloadFlashcards}
-                      disabled={flashcards.length === 0 || isDownloading}
-                    >
-                      {isDownloading ? (
-                        <>
-                          <LoadingBrick className='w-6 h-6 animate-spin' />
-                          <span>Preparing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                          </svg>
-                          <span>Download Flashcards!</span>
-                        </>
-                      )}
-                    </button>
-
-
-                  </div>
+                      <button
+                        className={`mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform ${flashcards.length === 0 || isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+                        onClick={handleDownloadFlashcards}
+                        disabled={flashcards.length === 0 || isDownloading}
+                      >
+                        {isDownloading ? (
+                          <>
+                            <LoadingBrick className='w-6 h-6 animate-spin' />
+                            <span>Preparing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Download Flashcards!</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
-              <div className="relative w-full bg-gray-200 h-6 mt-4 flex items-center">
-                <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%`, transition: 'width 0.5s ease-in-out' }}></div>
-                <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
-              </div>
+              {hasStarted && (
+                <div className="relative w-full bg-gray-200 h-6 mt-4 flex items-center">
+                  <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%`, transition: 'width 0.5s ease-in-out' }}></div>
+                  <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
+                </div>
+              )}
+              
               {showResetConfirmationModal && (
                 <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
                   <div className=" rounded-lg z-50 bg-gray-50 bg-opacity-90 border border-gray-300 shadow-lg p-6 relative">
