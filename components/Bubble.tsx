@@ -53,7 +53,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
                   </button>
                   <strong className="text-lg">Corrected Message:</strong>
                   <p className="text-md mt-2">{messageData?.correctedMessage ? <>{messageData.correctedMessage}</> : <LoadingIndicator />}</p>
-                  <strong className="text-lg mt-4">Mistakes:</strong>
+                  <strong className="text-lg mt-4 inline-block">Mistakes:</strong>
                   {messageData?.mistakes ?
                     <Markdown
                       className="markdown text-md grid grid-cols-1 gap-2 mt-2"
