@@ -333,8 +333,8 @@ export default function Home() {
       // isAudioPlayingRef.current = false
     };
 
-    audioRef.current.play().catch(() => {
-      console.error('error playing audio')
+    audioRef.current.play().catch((e) => {
+      console.error('error playing audio: ', e)
       setIsAudioPlaying(false);
       setCurrentlyPlayingMessageIndex(null)
 

@@ -33,12 +33,10 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
 
   return (
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
-      {!isUser && (
-
+      {!isUser && typeof navigator !== "undefined" && !/Mobi|Android/i.test(navigator.userAgent) && (
         <button onClick={handleAudio} className='flex-shrink-0 mr-1' disabled={isLoading}>
           {!isLoading ? <Image src={isPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off / On Icon" /> : <LoadingIndicator />}
         </button>
-
       )}
       <div className='flex flex-row items-center'>
         {
