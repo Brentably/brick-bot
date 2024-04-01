@@ -315,6 +315,7 @@ export default function Home() {
 
   useEffect(() => {
     console.log('audioQueue useEffect')
+    if (audioQueue.length === 0 && !isAudioPlaying) setCurrentlyPlayingMessageIndex(null)
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
     // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
@@ -330,7 +331,7 @@ export default function Home() {
 
     audioRef.current.onended = () => {
       setIsAudioPlaying(false);
-      setCurrentlyPlayingMessageIndex(null)
+      // setCurrentlyPlayingMessageIndex(null)
       // isAudioPlayingRef.current = false
     };
 
@@ -479,6 +480,8 @@ export default function Home() {
     return flashcards
   }
 
+  useEffect(() => console.log('%ccurrently playing message index', 'color: lightgreen', [currentlyPlayingMessageIndex]))
+  useEffect(() => console.log('%cisAudioPlaying', 'color: lightgreen', [isAudioPlaying]))
 
   const makeFlashcards = async ({ pupilMessage, correctedMessage, mistakes }: { pupilMessage: string, correctedMessage: string, mistakes: string }) => {
     console.log('processing xml flashcards for ', indexOfProcessingMessage)
