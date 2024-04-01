@@ -558,7 +558,7 @@ export default function Home() {
     if (messages.length) processMessage(messages[messages.length - 1], messages.length - 1)
   }, [messages, isAssistantStreaming, targetLanguage]);
 
-  const handleSendOrStop = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleSendOrStop = (e: React.KeyboardEvent<HTMLTextAreaElement> | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault()
     stopAudio()
     if (isAssistantStreaming) {
@@ -837,7 +837,7 @@ export default function Home() {
                       />
                     </div>
 
-                    <button type="submit" className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 h-10'>
+                    <button onClick={handleSendOrStop} className='chatbot-send-button flex rounded-md items-center justify-center px-2.5 h-10'>
                       {!isAssistantStreaming ? <SendIcon /> : <StopIcon />}
                       <span className='hidden font-semibold text-sm ml-2'>{!isAssistantStreaming ? "Send" : "Stop"}</span>
                     </button>
