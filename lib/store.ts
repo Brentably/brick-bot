@@ -31,7 +31,7 @@ const INIT_STORE = {
     { role: "system", didMakeMistakes: null },
     { role: "user", didMakeMistakes: null },
   ] as MessageData[],
-  flashcardsGoal: 20,
+  flashcardsGoal: 10,
 };
 
 export const useBrickStore = create<Store>()(
