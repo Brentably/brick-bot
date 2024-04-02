@@ -10,6 +10,8 @@ import Image from 'next/image'
 import LoadingBrick from "./LoadingBrick";
 import { HiOutlineQuestionMarkCircle } from "react-icons/hi";
 import { FaGear } from "react-icons/fa6";
+import {Tooltip as ReactTooltip} from 'react-tooltip'
+import { useBrickStore } from "../lib/store";
 
 
 interface BubbleProps {
@@ -31,12 +33,17 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
 
 
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const tooltipDisplayCount = useBrickStore(state => state.tooltipDisplayCount)
+  const incrementTooltipDisplayCount = useBrickStore(state => state.incrementTooltipDisplayCount)
 
   const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
 
   useEffect(() => console.log('navigator useragent', navigator.userAgent), [])
   return (
-    <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`}>
+    <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`} data-tooltip-id="translateHint">
+{ (!isUser && tooltipDisplayCount < 2) &&  <ReactTooltip id="translateHint" place="top" afterHide={incrementTooltipDisplayCount}>
+        Tip: Select any text to see its translation!
+      </ReactTooltip>}
       {!isUser && typeof navigator !== "undefined" && !/Mobi|Android|iPhone/i.test(navigator.userAgent) && (
         <button onClick={handleAudio} className='flex-shrink-0 mr-1' disabled={isLoading}>
           {!isLoading ? <Image src={isPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off / On Icon" /> : <LoadingIndicator />}

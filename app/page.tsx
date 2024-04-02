@@ -120,7 +120,7 @@ export default function Home() {
 
   const { append, messages, input, handleInputChange, setMessages, reload, stop: stopChat, setInput } = useChat({
     onResponse: () => {
-      console.log('setting to 0')
+      // console.log('setting to 0')
       setProcessedSentenceChunkCount(0)
       setIsAssistantStreaming(true)
     },
@@ -145,7 +145,7 @@ export default function Home() {
 
 
   const serializeMessages = useCallback(() => {
-    console.log('serializing messages')
+    // console.log('serializing messages')
     if (!hasHydrated) {
       setMessages(zustandMessages)
     } else if (messages.length >= zustandMessages.length && messages.length) {
@@ -208,7 +208,7 @@ export default function Home() {
   const [selection, setSelection] = useState('')
 
   const repositionSelectionBox = () => {
-    console.log('reposition selection Box')
+    // console.log('reposition selection Box')
     const selection = document.getSelection()
     if (selection && selection.rangeCount > 0) {
       const selectionBox = selectionBoxRef.current
@@ -226,11 +226,11 @@ export default function Home() {
 
   useEffect(() => console.log('has Started', hasStarted), [hasStarted])
 
-
+  const incrementTooltipDisplayCount = useBrickStore(state => state.incrementTooltipDisplayCount)
   const handleSelectionChange = async () => {
-    console.log('handle selection change')
+ //   console.log('handle selection change')
     // Your logic here
-    console.log('Selection changed');
+ //   console.log('Selection changed');
     const selection = document.getSelection()
     const selectionString = selection?.toString()
     console.log(selection, selectionString)
@@ -258,11 +258,12 @@ export default function Home() {
     }).then(resp => resp.json())
     const english = resp.englishTranslation
     setSelectionTranslation(english)
+    incrementTooltipDisplayCount()
     setIsSelectionTranslationLoading(false)
   }
 
   const addSelectionFlashcard = () => {
-    console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
+   // console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
     const flashcard: BasicFlashcard = {
       front: selection,
       back: selectionTranslation
@@ -790,7 +791,7 @@ export default function Home() {
                       content={message}
                       messageData={messagesData[index]}
                       handleAudio={() => {
-                        const isCurrentlyPlaying = isAudioPlaying && (currentlyPlayingMessageIndex === index)
+                        const isCurrentlyPlaying = (isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)
                         // if this bubble is currently playing, then it pauses the audio.
                         if (isCurrentlyPlaying) {
                           stopAudio()

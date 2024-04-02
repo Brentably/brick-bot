@@ -21,6 +21,8 @@ export interface Store {
   ) => void;
   flashcardsGoal: number;
   setFlashcardsGoal: (flashcardsGoal: number) => void;
+  tooltipDisplayCount: number;
+  incrementTooltipDisplayCount: () => void;
 }
 
 const INIT_STORE = {
@@ -32,6 +34,7 @@ const INIT_STORE = {
     { role: "user", didMakeMistakes: null },
   ] as MessageData[],
   flashcardsGoal: 10,
+  tooltipDisplayCount: 0,
 };
 
 export const useBrickStore = create<Store>()(
@@ -59,6 +62,8 @@ export const useBrickStore = create<Store>()(
       },
       setFlashcardsGoal: (flashcardsGoal) =>
         set((pS) => ({ ...pS, flashcardsGoal })),
+      incrementTooltipDisplayCount: () =>
+        set((ps) => ({ ...ps, tooltipDisplayCount: ps.tooltipDisplayCount + 1 })),
     }),
     {
       name: "brick-storage",
