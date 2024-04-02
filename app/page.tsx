@@ -681,7 +681,7 @@ export default function Home() {
                 <>
                   <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
                     Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki flashcards cards for you to study based on your mistakes.
-                    <br/><br/>
+                    <br/>
                     <a href="https://apps.ankiweb.net/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Download Anki here</a>
                     <br /><br />If you want to support / give feedback please reach out to Brent Burdick on <a href="https://twitter.com/BingBongBrent" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Twitter</a> or email <a href="mailto:brentably@gmail.com" className="text-blue-500 underline">brentably@gmail.com</a>! :)
                   </p>
