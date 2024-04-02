@@ -679,7 +679,7 @@ export default function Home() {
               </div>
               {isHeaderOpen && (
                 <>
-                  <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2 lg:mt-4">
+                  <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2">
                     Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki flashcards cards for you to study based on your mistakes.
                     <br/>
                     <a href="https://apps.ankiweb.net/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Download Anki here</a>
