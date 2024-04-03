@@ -223,20 +223,23 @@ export default function Home() {
       selectionBox.style.left = `${x}px`
     }
   }
-
+  
+const mixpanelId = useBrickStore(state => state.mixpanelId)
   useEffect(() => {
+    if(!hasHydrated) return
+    const MIXPANEL_CUSTOM_LIB_URL = "https://proxy-production-b389.up.railway.app/lib.min.js";
 
-
-    mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { debug: true, track_pageview: true, persistence: 'localStorage' });
+    mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { api_host: MIXPANEL_CUSTOM_LIB_URL ,debug: true, track_pageview: true, persistence: 'localStorage' });
 
     // Set this to a unique identifier for the user performing the event.
-    mixpanel.identify(crypto.randomUUID())
+    mixpanel.identify(mixpanelId)
 
+    console.log('%cmp initialized', 'color: red; background-color: black;')
     // Track an event. It can be anything, but in this example, we're tracking a Sign Up event.
     // mixpanel.track('Sign Up', {
     //   'Signup Type': 'Referral'
     // })
-  }, [])
+  }, [hasHydrated])
 
   useEffect(() => console.log('has Started', hasStarted), [hasStarted])
 

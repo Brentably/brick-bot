@@ -23,6 +23,7 @@ export interface Store {
   setFlashcardsGoal: (flashcardsGoal: number) => void;
   tooltipDisplayCount: number;
   incrementTooltipDisplayCount: () => void;
+  mixpanelId: string
 }
 
 const INIT_STORE = {
@@ -35,6 +36,7 @@ const INIT_STORE = {
   ] as MessageData[],
   flashcardsGoal: 10,
   tooltipDisplayCount: 0,
+  mixpanelId: crypto.randomUUID()
 };
 
 export const useBrickStore = create<Store>()(
