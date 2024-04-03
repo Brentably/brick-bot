@@ -14,6 +14,7 @@ import { debounce } from "lodash"
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import { toast } from 'react-toastify'
 import { createChatSystemPrompt } from '../lib/prompts';
+import mixpanel from 'mixpanel-browser';
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -223,6 +224,20 @@ export default function Home() {
       selectionBox.style.left = `${x}px`
     }
   }
+
+  useEffect(() => {
+
+
+    mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { debug: true, track_pageview: true, persistence: 'localStorage' });
+
+    // Set this to a unique identifier for the user performing the event.
+    mixpanel.identify(crypto.randomUUID())
+
+    // Track an event. It can be anything, but in this example, we're tracking a Sign Up event.
+    // mixpanel.track('Sign Up', {
+    //   'Signup Type': 'Referral'
+    // })
+  }, [])
 
   useEffect(() => console.log('has Started', hasStarted), [hasStarted])
 
