@@ -94,6 +94,13 @@ Pupil: Was machst du gerne in deiner Freizeit?
 Output: NO
 </example>
 
+<example>
+Instructor: ​Guten Tag! Wie geht es dir?
+
+Was ist dein Lieblingsessen?
+Pupil: ​lass mich etwas testen
+Output: NO
+</example>
 `;
 
 // B. if yes, make flashcards (can do a different call for each flashcard if better.)
