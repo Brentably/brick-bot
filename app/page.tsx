@@ -593,7 +593,7 @@ export default function Home() {
       stopChat()
       setIsAssistantStreaming(false)
     } else {
-      mixpanel.track('send_chat')
+      mixpanel.track('send_chat', {messages, messagesData})
       console.log("send form event")
       append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
       setInput('')
