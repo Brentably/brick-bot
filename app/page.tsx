@@ -144,7 +144,6 @@ export default function Home() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const textareaContainerRef = useRef<HTMLDivElement | null>(null);
 
-
   const serializeMessages = useCallback(() => {
     // console.log('serializing messages')
     if (!hasHydrated) {
@@ -594,6 +593,7 @@ export default function Home() {
       stopChat()
       setIsAssistantStreaming(false)
     } else {
+      mixpanel.track('send_chat')
       console.log("send form event")
       append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
       setInput('')
@@ -609,6 +609,7 @@ export default function Home() {
 
 
   const beginChat = (_topic: string) => {
+    mixpanel.track('begin_chat', { topic: _topic, targetLanguage })
     setHasStarted(true)
     if (window.innerWidth < 600) setIsHeaderOpen(false);
     append({ role: 'system', content: createChatSystemPrompt(targetLanguage, _topic) }, { options: { body: { language: targetLanguage, topic: _topic } } })
@@ -619,6 +620,7 @@ export default function Home() {
 
   const handleDownloadFlashcards = () => {
     setIsDownloading(true);
+    mixpanel.track('download')
     // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
     // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
     const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
