@@ -228,7 +228,7 @@ export default function Home() {
 const mixpanelId = useBrickStore(state => state.mixpanelId)
   useEffect(() => {
     if(!hasHydrated) return
-    const MIXPANEL_CUSTOM_LIB_URL = "https://proxy-production-b389.up.railway.app/lib.min.js";
+    const MIXPANEL_CUSTOM_LIB_URL = "https://nginx-proxy-su8f.onrender.com/lib.min.js";
 
     mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { api_host: MIXPANEL_CUSTOM_LIB_URL ,debug: true, track_pageview: true, persistence: 'localStorage' });
 
