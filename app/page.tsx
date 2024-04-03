@@ -38,7 +38,8 @@ const LANGUAGE_TO_HELLO = {
   "Hebrew": "שלום!",
   "Korean": "안녕하세요!",
   "Swedish": "Hej!",
-  "Turkish": "Merhaba!"
+  "Turkish": "Merhaba!",
+  "Norwegian": "Hei!"
 }
 
 const LANGUAGE_TO_INTRO = {
@@ -885,6 +886,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                       <option value="Portuguese">Portuguese</option>
                       <option value="Italian">Italian</option>
                       <option value="Russian">Russian</option>
+                      <option value="Norwegian">Norwegian</option>
                     </select>
                   </div>
 
