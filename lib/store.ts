@@ -52,7 +52,7 @@ export const useBrickStore = create<Store>()(
       setZustandMessages: (zustandMessages) =>
         set((pS) => ({ ...pS, zustandMessages })),
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),
-      resetStore: () => set(() => ({ ...INIT_STORE })),
+      resetStore: () => set(() => ({ ...INIT_STORE, mixpanelId: get().mixpanelId })),
       setMessagesData: (newMessagesDataOrFunction) => {
         const newMessagesData =
           typeof newMessagesDataOrFunction === "object"
