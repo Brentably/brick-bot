@@ -229,9 +229,10 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
   useEffect(() => {
     if(!hasHydrated) return
     // const MIXPANEL_CUSTOM_LIB_URL = "https://mixpanel-fork-production.up.railway.app/lib.min.js";
+    const MIXPANEL_CUSTOM_LIB_URL = "https://mixpanel-fork-production.up.railway.app/";
 
-    // mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', {api_host: MIXPANEL_CUSTOM_LIB_URL, debug: true, track_pageview: true, persistence: 'localStorage' });
-    mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { debug: true, track_pageview: true, persistence: 'localStorage' });
+    mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', {api_host: MIXPANEL_CUSTOM_LIB_URL, debug: true, track_pageview: true, persistence: 'localStorage' });
+    // mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { debug: true, track_pageview: true, persistence: 'localStorage' });
 
     // Set this to a unique identifier for the user performing the event.
     mixpanel.identify(mixpanelId)
