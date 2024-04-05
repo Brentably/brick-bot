@@ -896,11 +896,8 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                     <input id='number-select' type='number' value={flashcardsGoal} onChange={(e) => setFlashcardsGoal(e.target.valueAsNumber)} className='px-3 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md max-w-[147px]' />
                   </div>
 
-
-
                   <div className='flex flex-row flex-wrap justify-between items-center mt-3'>
                     <label htmlFor="topic-select" className="text-lg font-medium text-gray-700">Select a topic or enter your own!</label>
-
 
                     <div id='example prompts' className='flex flex-row flex-wrap justify-around'>
                       {Array(4).fill(null).map((_, index) => (
@@ -919,6 +916,11 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                         <SendIcon color='#374151' />
                       </button>
                     </div>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <a href="/terms.html" className="text-sm text-gray-600 hover:underline">Terms of Service</a>
+                    <span className="mx-2">|</span>
+                    <a href="/privacy.html" className="text-sm text-gray-600 hover:underline">Privacy Policy</a>
                   </div>
                 </div>
               </div>
