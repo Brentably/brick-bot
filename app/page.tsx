@@ -759,6 +759,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                         setMessages([])
                         resetStore()
                         setShowResetConfirmationModal(false)
+                        mixpanel.track('reset_chat')
                       }}>Reset</button>
                     </div>
                   </div>

@@ -12,6 +12,7 @@ import { HiOutlineQuestionMarkCircle } from "react-icons/hi";
 import { FaGear } from "react-icons/fa6";
 import {Tooltip as ReactTooltip} from 'react-tooltip'
 import { useBrickStore } from "../lib/store";
+import mixpanel from 'mixpanel-browser';
 
 
 interface BubbleProps {
@@ -93,7 +94,10 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
                   ? 'bg-red-500 hover:opacity-80'
                   : 'bg-green-500'
                   } h-6 w-6 rounded-full focus:outline-none transition duration-200 flex items-center justify-center mr-2`}
-                onClick={() => setIsModalOpen(!isModalOpen)}
+                onClick={() => {
+                  setIsModalOpen(!isModalOpen)
+                  mixpanel.track('modal_button_event', {isModalOpen})
+                }}
               >
                 {didMakeMistakes ? (
                     <HiOutlineQuestionMarkCircle className="h-6 w-6" />
