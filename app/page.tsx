@@ -626,7 +626,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
 
   const handleDownloadFlashcards = () => {
     setIsDownloading(true);
-    mixpanel.track('download', {flashcards})
+    mixpanel.track('download', {numberOfFlashcards: flashcards.length, flashcardsGoal, flashcards})
     // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
     // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
     const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
