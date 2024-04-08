@@ -45,7 +45,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
 { (!isUser && tooltipDisplayCount < 2) &&  <ReactTooltip id="translateHint" place="top" afterHide={incrementTooltipDisplayCount}>
         Tip: Select any text to see its translation!
       </ReactTooltip>}
-      {!isUser && typeof navigator !== "undefined" && !/Mobi|Android|iPhone/i.test(navigator.userAgent) && (
+      {!isUser && typeof window !== 'undefined' && window.innerWidth > 600 && (
         <button onClick={handleAudio} className='flex-shrink-0 mr-1' disabled={isLoading}>
           {!isLoading ? <Image src={isPlaying ? soundOffIcon : soundOnIcon} alt="Sound Off / On Icon" /> : <LoadingIndicator />}
         </button>
