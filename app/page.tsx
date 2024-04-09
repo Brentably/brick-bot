@@ -176,7 +176,7 @@ export default function Home() {
   const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [topic, setTopic] = useState('')
-  const [targetLanguage, setTargetLanguage] = useState<keyof typeof LANGUAGE_TO_EXAMPLE_PROMPTS>('German')
+  const [targetLanguage, setTargetLanguage] = useState<string>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
   const hasStarted = useBrickStore(state => state.hasStarted)
@@ -546,7 +546,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
       console.log('setting index of processing message', index)
       setIndexOfProcessingMessage(index)
       // if no instructor message just make some shit up
-      const instructorMessage = messages.at(-2)?.content ?? LANGUAGE_TO_HELLO[targetLanguage]
+      const instructorMessage = messages.at(-2)?.content ?? ''
 
       const resp = await fetch(`/api/didMakeMistakes`, {
         method: 'POST',
@@ -879,7 +879,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                     <select
                       id="language-select"
                       value={targetLanguage}
-                      onChange={(e) => setTargetLanguage(e.target.value as keyof typeof LANGUAGE_TO_EXAMPLE_PROMPTS)}
+                      onChange={(e) => setTargetLanguage(e.target.value)}
                       className=" pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                     >
                       <option value="German">German</option>
@@ -890,6 +890,9 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                       <option value="Italian">Italian</option>
                       <option value="Russian">Russian</option>
                       <option value="Norwegian">Norwegian</option>
+                    <option value="Swedish">Swedish</option>
+                        <option value="Indonesian">Indonesian</option>
+                    
                     </select>
                   </div>
 
