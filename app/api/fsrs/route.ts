@@ -6,7 +6,6 @@ export async function POST(req: Request) {
 
         console.log(cardRatingPairs) 
 
-
         const f = fsrs.fsrs()
         let updatedCards = []
 

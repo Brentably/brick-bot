@@ -15,6 +15,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import { toast } from 'react-toastify'
 import { createChatSystemPrompt } from '../lib/prompts';
 import mixpanel from 'mixpanel-browser';
+import { Card, Rating, createEmptyCard } from 'ts-fsrs';
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -137,6 +138,9 @@ export default function Home() {
   const setZustandMessages = useBrickStore(state => state.setZustandMessages)
   const flashcardsGoal = useBrickStore(state => state.flashcardsGoal)
   const setFlashcardsGoal = useBrickStore(state => state.setFlashcardsGoal)
+
+  const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
+  const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, Rating]>>({})
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [currentlyPlayingMessageIndex, setCurrentlyPlayingMessageIndex] = useState<number | null>(null)
@@ -290,7 +294,28 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
     }
     addFlashcards([flashcard])
     toast(`Flashcard added!`, { position: "top-center", type: "success" });
+
+    // // add card to FSRS
+    // if (selection in fsrsCardsDict) {
+    //   // card already exists, update card from dict
+    //   setFsrsCardsToUpdate(prevCards => ({...prevCards, [selection]: [fsrsCardsDict[selection], Rating.Again]}))
+    // } else {
+    //   // card does not yet exist
+    //   // create card, add to dict, update fsrs card
+    //   let newCard = createEmptyCard()
+    //   setFsrsCardsDict(prevDict => ({...prevDict, selection: newCard}))
+    //   setFsrsCardsToUpdate(prevCards => ({...prevCards, [selection]: [fsrsCardsDict[selection], Rating.Again]}))
+    // }
+
   }
+
+  // **** FSRS TESTING ****
+
+  useEffect(() => {
+    console.log(fsrsCardsToUpdate)
+  }, [fsrsCardsToUpdate])
+
+  // **** FSRS TESTING ****
 
 
   // load messagesData on initial render
