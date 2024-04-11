@@ -14,7 +14,6 @@ import {Tooltip as ReactTooltip} from 'react-tooltip'
 import { useBrickStore } from "../lib/store";
 import mixpanel from 'mixpanel-browser';
 
-
 interface BubbleProps {
   content: {
     role: string;
@@ -28,6 +27,7 @@ interface BubbleProps {
 }
 
 const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, handleAudio, isPlaying, isLoading }, ref) => {
+
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
@@ -108,12 +108,29 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
 
           </> : null}
         <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-[var(--text-primary)] bg-[var(--background-bubble-primary)]' : 'rounded-bl-none text-[var(--text-secondary-inverse)] bg-[var(--background-bubble-secondary)]'} p-2 lg:p-4 leading-[1.65] pr-9 relative self-start`}>
-          <Markdown
+          {/* <Markdown
             className="markdown grid grid-cols-1 gap-3"
             remarkPlugins={[remarkGfm]}
-          >
-            {'\u200B' + content.content}
-            </Markdown>
+          > {'\u200B' + content.content} </Markdown>
+          */}
+          {/* make all words in the assistant's message clickable. note: this can not be used with markdown formatting. */}
+          {'\u200B'}
+          {isUser ? content.content : 
+            content.content.match(/[\wÀ-ž]+|[^\wÀ-ž\s]+/g)?.map((chunk, index, chunksArray) => {
+              console.log(chunk)
+              const isFirstChunk = index === 0;
+              const isPrecededByDashOrApostrophe = (chunksArray[index-1] === "'" || chunksArray[index-1] === "-")
+              return (
+                // if it's a word, make it clickable
+                // if it's the first word or preceded by a - or ', do not add a space in front. otherwise, do
+                chunk.match(/^[a-zA-ZÀ-ž]+$/) ? 
+                  <span key={index} onClick={() => console.log(chunk)} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">
+                    {isFirstChunk || isPrecededByDashOrApostrophe ? chunk : ' ' + chunk}
+                  </span> 
+                  : <span key={index}>{chunk}</span>
+              )
+            })
+          }
         </div>
       </div>
     </div>
