@@ -24,14 +24,37 @@ interface BubbleProps {
   handleAudio?: () => void
   isPlaying: boolean
   isLoading: boolean
+  language: string
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, handleAudio, isPlaying, isLoading }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, handleAudio, isPlaying, isLoading, language }, ref) => {
 
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
+  
+  const [tokenizedMessage, setTokenizedMessage] = useState<string[]>([])
+  const tokenizeMessage = async (input_str: string, language: string): Promise<string[]> => {
+    const url = 'http://localhost:8000/tokenizer'
+    const response = await fetch(url, {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        input_str: input_str,
+        language: language
+      })
+    })
+    const tokenArray = response.json()
+    return tokenArray
+  }
 
+  useEffect(() => {
+    if (!isUser) {
+      tokenizeMessage(content.content, language).then(setTokenizedMessage)
+    }
+  }, [content.content, isUser])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const tooltipDisplayCount = useBrickStore(state => state.tooltipDisplayCount)
@@ -115,22 +138,23 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
           */}
           {/* make all words in the assistant's message clickable. note: this can not be used with markdown formatting. */}
           {'\u200B'}
-          {isUser ? content.content : 
-            content.content.match(/[\wÀ-ž]+|[^\wÀ-ž\s]+/g)?.map((chunk, index, chunksArray) => {
-              console.log(chunk)
+          {isUser ? content.content : (
+            tokenizedMessage.map((token, index, tokensArray) => {
               const isFirstChunk = index === 0;
-              const isPrecededByDashOrApostrophe = (chunksArray[index-1] === "'" || chunksArray[index-1] === "-")
+              const isPrecededByDashOrApostrophe = (tokensArray[index-1]?.[tokensArray.length-1] === "-" || tokensArray[index-1]?.[tokensArray.length-1] === "'" || token[0] === "-" || token[0] === "'")
               return (
-                // if it's a word, make it clickable
-                // if it's the first word or preceded by a - or ', do not add a space in front. otherwise, do
-                chunk.match(/^[a-zA-ZÀ-ž]+$/) ? 
-                  <span key={index} onClick={() => console.log(chunk)} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">
-                    {isFirstChunk || isPrecededByDashOrApostrophe ? chunk : ' ' + chunk}
-                  </span> 
-                  : <span key={index}>{chunk}</span>
+                // if token is a word, make it highlightable.
+                token.match(/[a-zA-ZÀ-ž]+/) ? 
+                  <>
+                    {isFirstChunk || isPrecededByDashOrApostrophe ? 
+                    // add unhighlightable space in front if not first chunk/preceded by dash/apostrophe
+                      null : <span> </span>}
+                    <span key={index} onClick={() => console.log(token)} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span> 
+                  </> 
+                  : <span key={index}>{token}</span>
               )
-            })
-          }
+              })
+          )}
         </div>
       </div>
     </div>

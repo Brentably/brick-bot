@@ -856,6 +856,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                       }}
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
+                      language={targetLanguage}
                     /> : null
                   )}
                 </div>
