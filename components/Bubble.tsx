@@ -13,6 +13,7 @@ import { FaGear } from "react-icons/fa6";
 import {Tooltip as ReactTooltip} from 'react-tooltip'
 import { useBrickStore } from "../lib/store";
 import mixpanel from 'mixpanel-browser';
+import { debounce } from "lodash"
 
 interface BubbleProps {
   content: {
@@ -34,6 +35,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
   const isUser = role === "user"
   
   const [tokenizedMessage, setTokenizedMessage] = useState<string[]>([])
+  const [tokenizedMessageUpdated, setTokenizedMessageUpdated] = useState(false)
   const tokenizeMessage = async (input_str: string, language: string): Promise<string[]> => {
     const url = 'http://localhost:8000/tokenizer'
     const response = await fetch(url, {
@@ -50,11 +52,19 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
     return tokenArray
   }
 
+  // only call TokenizeMessage every 500 ms to reduce latency
+  const debouncedTokenizeMessage = useMemo(() => debounce(async (input_str: string, language: string) => {
+    const tokenized = await tokenizeMessage(input_str, language);
+    setTokenizedMessage(tokenized);
+    setTokenizedMessageUpdated(true);
+  }, 500), []);
+
   useEffect(() => {
+    setTokenizedMessageUpdated(false)
     if (!isUser) {
-      tokenizeMessage(content.content, language).then(setTokenizedMessage)
+      debouncedTokenizeMessage(content.content, language)
     }
-  }, [content.content, isUser])
+  }, [content.content, isUser, debouncedTokenizeMessage])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const tooltipDisplayCount = useBrickStore(state => state.tooltipDisplayCount)
@@ -138,22 +148,27 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
           */}
           {/* make all words in the assistant's message clickable. note: this can not be used with markdown formatting. */}
           {'\u200B'}
-          {isUser ? content.content : (
+          {/* if tokenizedMessage is not ready, just render unclickable content */}
+          {isUser || !tokenizedMessageUpdated ? content.content : (
             tokenizedMessage.map((token, index, tokensArray) => {
               const isFirstChunk = index === 0;
-              const isPrecededByDashOrApostrophe = (tokensArray[index-1]?.[tokensArray.length-1] === "-" || tokensArray[index-1]?.[tokensArray.length-1] === "'" || token[0] === "-" || token[0] === "'")
+              const lastToken = tokensArray[index-1]
+              const lastCharOfLastToken = lastToken?.[lastToken.length-1]
+              const isPrecededByDashOrApostropheOrParenthese = (lastCharOfLastToken === "(" || lastCharOfLastToken === "-" || lastCharOfLastToken === "'" || token[0] === "-" || token[0] === "'" || token[0] === "(")
+              console.log("tokens array: " + tokensArray)
               return (
-                // if token is a word, make it highlightable.
+                // if token is a word, make it clickable
                 token.match(/[a-zA-ZÀ-ž]+/) ? 
                   <>
-                    {isFirstChunk || isPrecededByDashOrApostrophe ? 
+                    {isFirstChunk || isPrecededByDashOrApostropheOrParenthese ? 
                     // add unhighlightable space in front if not first chunk/preceded by dash/apostrophe
-                      null : <span> </span>}
+                      null : 
+                      <span> </span>}
                     <span key={index} onClick={() => console.log(token)} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span> 
                   </> 
                   : <span key={index}>{token}</span>
               )
-              })
+            })
           )}
         </div>
       </div>
