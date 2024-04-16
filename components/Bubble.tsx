@@ -26,9 +26,10 @@ interface BubbleProps {
   isPlaying: boolean
   isLoading: boolean
   language: string
+  handleLemmaClick: (lemma: string) => void
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, handleAudio, isPlaying, isLoading, language }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, handleAudio, isPlaying, isLoading, language, handleLemmaClick }, ref) => {
 
   Bubble.displayName = 'Bubble';
   const { role } = content;
@@ -37,6 +38,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
   const [tokenizedMessage, setTokenizedMessage] = useState<string[]>([])
   const [tokenizedMessageUpdated, setTokenizedMessageUpdated] = useState(false)
   const tokenizeMessage = async (input_str: string, language: string): Promise<string[]> => {
+    // TODO update to fastapi url 
     const url = 'http://localhost:8000/tokenizer'
     const response = await fetch(url, {
       method: 'POST', 
@@ -164,7 +166,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
                     // add unhighlightable space in front if not first chunk/preceded by dash/apostrophe
                       null : 
                       <span> </span>}
-                    <span key={index} onClick={() => console.log(token)} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span> 
+                    <span key={index} onClick={() => handleLemmaClick} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span> 
                   </> 
                   : <span key={index}>{token}</span>
               )

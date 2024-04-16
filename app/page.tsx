@@ -21,7 +21,6 @@ function isEven(number: number): boolean {
   return number % 2 === 0;
 }
 
-
 const LANGUAGE_TO_HELLO = {
   "German": "Hallo!",
   "French": "Bonjour!",
@@ -139,9 +138,6 @@ export default function Home() {
   const flashcardsGoal = useBrickStore(state => state.flashcardsGoal)
   const setFlashcardsGoal = useBrickStore(state => state.setFlashcardsGoal)
 
-  const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
-  const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, Rating]>>({})
-
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [currentlyPlayingMessageIndex, setCurrentlyPlayingMessageIndex] = useState<number | null>(null)
   const [hasHydrated, setHasHydrated] = useState(false)
@@ -199,7 +195,6 @@ export default function Home() {
   // how many sentences have been processed through tts on the currently streaming message
   const [processedSentenceChunkCount, setProcessedSentenceChunkCount] = useState(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
-
 
   useEffect(() => {
     if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
@@ -309,15 +304,6 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
 
   }
 
-  // **** FSRS TESTING ****
-
-  useEffect(() => {
-    console.log(fsrsCardsToUpdate)
-  }, [fsrsCardsToUpdate])
-
-  // **** FSRS TESTING ****
-
-
   // load messagesData on initial render
   useEffect(() => {
     useBrickStore.persist.onFinishHydration((s) => {
@@ -393,8 +379,6 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
 
       // isAudioPlayingRef.current = false
     })
-
-
 
   }, [audioQueue, isAudioPlaying]);
 
@@ -557,8 +541,6 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
     addFlashcards(_flashcards)
   }
 
-
-
   useEffect(() => {
     scrollToBottom();
     if (isAssistantStreaming) return  // process latest message. think of as onFinish()
@@ -696,6 +678,9 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
     console.log('%cspot D so setting to null', 'color: red');
     setCurrentlyPlayingMessageIndex(null)
   }
+
+  const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
+  const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, Rating]>>({})
 
   return (
     <Div100vh>
@@ -857,6 +842,9 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       language={targetLanguage}
+                      handleLemmaClick={(lemma: string) => {
+                        
+                      }}
                     /> : null
                   )}
                 </div>
