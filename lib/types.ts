@@ -9,3 +9,10 @@ export type ClozeFlashcard = {
 };
 
 export type Flashcard = BasicFlashcard | ClozeFlashcard;
+
+export interface TokenData {
+  id: number | null, 
+  token: string,
+  lemmas: string[],
+  clicked: boolean
+}

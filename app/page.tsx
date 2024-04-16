@@ -8,7 +8,7 @@ import Div100vh, { measureHeight } from 'react-div-100vh';
 import Image from 'next/image'
 import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
-import { BasicFlashcard, ClozeFlashcard, Flashcard } from '../lib/types';
+import { BasicFlashcard, ClozeFlashcard, Flashcard, TokenData } from '../lib/types';
 import LoadingBrick from '../components/LoadingBrick';
 import { debounce } from "lodash"
 import { Tooltip as ReactTooltip } from "react-tooltip";
@@ -115,7 +115,9 @@ export type MessageData = {
   didMakeMistakes: boolean | null,
   mistakes?: string,
   correctedMessage?: string,
-  explanation?: string
+  explanation?: string,
+  // store word/lemma/clicked data for each word in message
+  tokenData: TokenData[]
 }
 
 export default function Home() {
@@ -169,7 +171,7 @@ export default function Home() {
   useEffect(() => {
     // console.log('messages change')
     // always keep messages data length 1 above messages to prevent undefined errors.
-    if (messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, { didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant' }])
+    if (messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, { didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant', tokenData: [] }])
   }, [messages])
 
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
@@ -223,14 +225,14 @@ export default function Home() {
       selectionBox.style.left = `${x}px`
     }
   }
-  
-const mixpanelId = useBrickStore(state => state.mixpanelId)
+
+  const mixpanelId = useBrickStore(state => state.mixpanelId)
   useEffect(() => {
-    if(!hasHydrated) return
+    if (!hasHydrated) return
     // const MIXPANEL_CUSTOM_LIB_URL = "https://mixpanel-fork-production.up.railway.app/lib.min.js";
     const MIXPANEL_CUSTOM_LIB_URL = "https://mixpanel-fork-production.up.railway.app/";
 
-    mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', {api_host: MIXPANEL_CUSTOM_LIB_URL, debug: true, track_pageview: true, persistence: 'localStorage' });
+    mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { api_host: MIXPANEL_CUSTOM_LIB_URL, debug: true, track_pageview: true, persistence: 'localStorage' });
     // mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { debug: true, track_pageview: true, persistence: 'localStorage' });
 
     // Set this to a unique identifier for the user performing the event.
@@ -247,9 +249,9 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
 
   const incrementTooltipDisplayCount = useBrickStore(state => state.incrementTooltipDisplayCount)
   const handleSelectionChange = async () => {
- //   console.log('handle selection change')
+    //   console.log('handle selection change')
     // Your logic here
- //   console.log('Selection changed');
+    //   console.log('Selection changed');
     const selection = document.getSelection()
     const selectionString = selection?.toString()
     console.log(selection, selectionString)
@@ -282,7 +284,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
   }
 
   const addSelectionFlashcard = () => {
-   // console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
+    // console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
     const flashcard: BasicFlashcard = {
       front: selection,
       back: selectionTranslation
@@ -349,7 +351,8 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
     console.log('audioQueue useEffect')
     if (audioQueue.length === 0 && audioPromiseQueue.length === 0 && !isAudioPlaying) {
       console.log('%cspot A so setting to null', 'color: red');
-      setCurrentlyPlayingMessageIndex(null)}
+      setCurrentlyPlayingMessageIndex(null)
+    }
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
     // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
@@ -361,7 +364,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
 
     audioRef.current = new Audio(currentBlobURL);
     // Remove the first item from the audio queue
-    
+
     audioRef.current.onended = () => {
       setAudioQueue(pq => pq.slice(1));
       setIsAudioPlaying(false);
@@ -373,7 +376,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
       setAudioQueue(pq => pq.slice(1));
       console.error('error playing audio: ', e)
       setIsAudioPlaying(false);
-      
+
       console.log('%cspot B so setting to null', 'color: red');
       setCurrentlyPlayingMessageIndex(null)
 
@@ -589,10 +592,10 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
         })
       }).then(resp => resp.json())
 
-      const {mistakes, corrected_message} = correctedJSON
+      const { mistakes, corrected_message } = correctedJSON
 
       setMessagesData(pMD => [...pMD.with(index, { ...pMD[index], mistakes, correctedMessage: corrected_message })])
-      makeFlashcards({pupilMessage: message.content, correctedMessage: corrected_message, mistakes})
+      makeFlashcards({ pupilMessage: message.content, correctedMessage: corrected_message, mistakes })
 
     }
     if (messages.length) processMessage(messages[messages.length - 1], messages.length - 1)
@@ -606,7 +609,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
       stopChat()
       setIsAssistantStreaming(false)
     } else {
-      mixpanel.track('send_chat', {messages, messagesData})
+      mixpanel.track('send_chat', { messages, messagesData })
       console.log("send form event")
       append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
       setInput('')
@@ -633,7 +636,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
 
   const handleDownloadFlashcards = () => {
     setIsDownloading(true);
-    mixpanel.track('download', {numberOfFlashcards: flashcards.length, flashcardsGoal, flashcards})
+    mixpanel.track('download', { numberOfFlashcards: flashcards.length, flashcardsGoal, flashcards })
     // const url = `http://localhost:10000/export-flashcards?language=${targetLanguage}`
     // const url = `https://api.brick.bot/export-flashcards?language=${targetLanguage}`
     const url = `https://brick-bot-fastapi.onrender.com/export-flashcards?language=${targetLanguage}`
@@ -682,6 +685,43 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
   const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
   const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, Rating]>>({})
 
+
+  // update the latest assistant messages data with its words data
+  const processAssistantResponse = async (input_str: string, language: string): Promise<void> => {
+    // call process_message on messageContent to receive [word, id, [lemmas]][]
+    const url = 'http://localhost:10000/process-message'
+    //const url = 'https://api.brick.bot/process-message'
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        input_str: input_str,
+        language: language
+      })
+    })
+    const processedMessage: [string, number | null, string[]][] = await response.json()
+    const responseTokenData: TokenData[] = []
+    for (const token of processedMessage) {
+      const tokenData: TokenData = {
+        id: token[1],
+        token: token[0],
+        lemmas: token[2],
+        // clicked defaults to false when message first comes in
+        clicked: false
+      };
+      console.log("pushing " + tokenData.token + " to messageData")
+      responseTokenData.push(tokenData)
+    }
+    // what if api call doesn't come back before latest message is updated?
+    setMessagesData(pM => [...pM, { ...pM[pM.length - 1], tokenData: responseTokenData }])
+  }
+
+  useEffect(() => {
+    if (messages.length && messages[messages.length - 1].role === 'assistant') processAssistantResponse(messages[messages.length - 1].content, targetLanguage)
+  }, [messages])
+
   return (
     <Div100vh>
       <main className="flex h-full flex-col items-center justify-center">
@@ -695,7 +735,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                     <h1 className='chatbot-text-primary text-xl lg:text-2xl font-medium'>Brick Bot</h1>
                     <span className='ml-2 bg-[var(--background-soft)] text-[var(--text-primary-main)] px-2 py-1 text-xs rounded'>Beta</span>
                   </div>
-                  </div>
+                </div>
                 <button
                   className='text-sm lg:text-base'
                   onClick={() => setIsHeaderOpen(!isHeaderOpen)}
@@ -715,7 +755,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                 <>
                   <p className="chatbot-text-secondary-inverse text-sm lg:text-base mt-2">
                     Chatting with Brick Bot is awesome! You simply have a conversation in your desired target language, it adjusts to your level, and generates Anki flashcards cards for you to study based on your mistakes.
-                    <br/>
+                    <br />
                     <a href="https://apps.ankiweb.net/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Download Anki here</a>
                     <br /><br />If you want to support / give feedback please reach out to Brent Burdick on <a href="https://twitter.com/BingBongBrent" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Twitter</a> or email <a href="mailto:brentably@gmail.com" className="text-blue-500 underline">brentably@gmail.com</a>! :)
                   </p>
@@ -843,7 +883,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       language={targetLanguage}
                       handleLemmaClick={(lemma: string) => {
-                        
+
                       }}
                     /> : null
                   )}
@@ -904,9 +944,9 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
                       <option value="Italian">Italian</option>
                       <option value="Russian">Russian</option>
                       <option value="Norwegian">Norwegian</option>
-                    <option value="Swedish">Swedish</option>
-                        <option value="Indonesian">Indonesian</option>
-                    
+                      <option value="Swedish">Swedish</option>
+                      <option value="Indonesian">Indonesian</option>
+
                     </select>
                   </div>
 

@@ -152,12 +152,13 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
           {'\u200B'}
           {/* if tokenizedMessage is not ready, just render unclickable content */}
           {isUser || !tokenizedMessageUpdated ? content.content : (
-            tokenizedMessage.map((token, index, tokensArray) => {
+            messageData.tokenData.map((tokenData, index, tokenDataArr) => {
+              const token = tokenData.token
+
               const isFirstChunk = index === 0;
-              const lastToken = tokensArray[index-1]
+              const lastToken = tokenDataArr[index-1].token
               const lastCharOfLastToken = lastToken?.[lastToken.length-1]
               const isPrecededByDashOrApostropheOrParenthese = (lastCharOfLastToken === "(" || lastCharOfLastToken === "-" || lastCharOfLastToken === "'" || token[0] === "-" || token[0] === "'" || token[0] === "(")
-              console.log("tokens array: " + tokensArray)
               return (
                 // if token is a word, make it clickable
                 token.match(/[a-zA-ZÀ-ž]+/) ? 
