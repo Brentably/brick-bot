@@ -15,7 +15,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import { toast } from 'react-toastify'
 import { createChatSystemPrompt } from '../lib/prompts';
 import mixpanel from 'mixpanel-browser';
-import { Card, Rating, createEmptyCard } from 'ts-fsrs';
+import { Card, createEmptyCard } from 'ts-fsrs';
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -434,10 +434,10 @@ export default function Home() {
     if (messages.length === 0) return;
 
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role !== 'assistant') {
-      // 
-      return
-    }
+    if (lastMessage.role !== 'assistant') return;
+
+    // add WordData for each word in response to messageData
+    processAssistantResponse(messages[messages.length - 1].content, targetLanguage, messages.length-1)
 
     const messageStr = lastMessage.content;
     const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
@@ -634,7 +634,11 @@ export default function Home() {
       makeFlashcards({ pupilMessage: message.content, correctedMessage: corrected_message, mistakes })
 
     }
-    if (messages.length) processMessageMistakesAndCorrection(messages[messages.length - 1], messages.length - 1)
+    if (messages.length) {
+      processMessageMistakesAndCorrection(messages[messages.length - 1], messages.length - 1)
+      const lastAssistantMessageTokensData: TokenData[] = messagesData[messagesData.length - 2].tokenDataArr
+      updateCardsDict(lastAssistantMessageTokensData)
+    }
   }, [messages, isAssistantStreaming, targetLanguage]);
 
   const handleSendOrStop = (e: React.KeyboardEvent<HTMLTextAreaElement> | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -719,7 +723,7 @@ export default function Home() {
   }
 
   const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
-  const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, Rating]>>({})
+  const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, boolean]>>({})
 
   // update the latest assistant messages data with its words data
   // const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
@@ -745,9 +749,41 @@ export default function Home() {
   //   setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
   // }
 
-  // useEffect(() => {
-  //   if (messages.length && messages[messages.length - 1].role === 'assistant') processAssistantResponse(messages[messages.length - 1].content, targetLanguage, messages.length-1)
-  // }, [messages])
+  const updateCardsDict = async (tokensData: TokenData[]) => {
+    // for each word in WordsData for last assistant message
+    // message that user just sent should be the last message
+    tokensData.forEach(tD => {
+      // if exists, add to cardsToUpdate
+      if (fsrsCardsDict[tD.token]) {
+        // add to cardsToUpdate
+        setFsrsCardsToUpdate(prev => ({ ...prev, [tD.token]: [fsrsCardsDict[tD.token], false] }))
+      }
+      // else, create a new card and add that
+      else {
+        // Create a new card and add it to cardsDict
+        const newCard = createEmptyCard();
+        setFsrsCardsDict(prev => ({ ...prev, [tD.token]: newCard }));
+        // add to cardsToUpdate
+        setFsrsCardsToUpdate(prev => ({ ...prev, [tD.token]: [newCard, false] }))
+      }
+    });
+
+    // call fsrs on all cards from this message
+    const resp = await fetch(`/api/fsrs/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(fsrsCardsToUpdate)
+    })
+    const updatedCards: [string, Card][] = await resp.json()
+
+    // update cards dict w/ reviewed cards
+    updatedCards.forEach(([word, card]) => {
+      setFsrsCardsDict(prev => ({ ...prev, [word]: card }));
+    });
+  
+  }
 
   return (
     <Div100vh>

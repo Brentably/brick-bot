@@ -10,11 +10,11 @@ export async function POST(req: Request) {
         let updatedCards = []
 
         for (let word in cardRatingPairs) {
+            console.log("updating card data for token: " + word)
             let card = cardRatingPairs[word].card;
-            let ratingNum = cardRatingPairs[word].rating;
+            let clicked = cardRatingPairs[word].clicked;
             const scheduling_options = f.repeat(card, new Date())
-            if (ratingNum != 1 && ratingNum != 3) throw new Error("invalid rating")
-            const rating = (ratingNum == 1) ? fsrs.Rating.Again : fsrs.Rating.Good
+            const rating = (clicked) ? fsrs.Rating.Again : fsrs.Rating.Good
             card = scheduling_options[rating].card
             updatedCards.push([word, card])
         }
