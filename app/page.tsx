@@ -637,7 +637,7 @@ export default function Home() {
     if (messages.length) {
       processMessageMistakesAndCorrection(messages[messages.length - 1], messages.length - 1)
       const lastAssistantMessageTokensData: TokenData[] = messagesData[messagesData.length - 2].tokenDataArr
-      updateCardsDict(lastAssistantMessageTokensData)
+      if (lastAssistantMessageTokensData) updateCardsDict(lastAssistantMessageTokensData)
     }
   }, [messages, isAssistantStreaming, targetLanguage]);
 
@@ -726,28 +726,28 @@ export default function Home() {
   const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, boolean]>>({})
 
   // update the latest assistant messages data with its words data
-  // const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
-  //   console.log("processing assistant response for message: ")
-  //   // call process_message on messageContent to receive [word, id, [lemmas]][]
-  //   const url = 'http://localhost:8000/process-message'
-  //   //const url = 'https://api.brick.bot/process-message'
-  //   const response = await fetch(url, {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json'
-  //     },
-  //     body: JSON.stringify({
-  //       input_str: input_str,
-  //       language: language
-  //     })
-  //   })
+  const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
+    console.log("processing assistant response for message: ")
+    // call process_message on messageContent to receive [word, id, [lemmas]][]
+    const url = 'http://localhost:8000/process-message'
+    //const url = 'https://api.brick.bot/process-message'
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        input_str: input_str,
+        language: language
+      })
+    })
 
-  //   const responseTokenDataArr = (await response.json()).tokens
-  //   console.log(`responseTokenDataArr:`)
-  //   console.log(responseTokenDataArr)
-  //   // what if api call doesn't come back before latest message is updated?
-  //   setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
-  // }
+    const responseTokenDataArr = (await response.json()).tokens
+    console.log(`responseTokenDataArr:`)
+    console.log(responseTokenDataArr)
+    // what if api call doesn't come back before latest message is updated?
+    setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
+  }
 
   const updateCardsDict = async (tokensData: TokenData[]) => {
     // for each word in WordsData for last assistant message
@@ -784,6 +784,10 @@ export default function Home() {
     });
   
   }
+
+  useEffect(() => {
+    console.log(fsrsCardsDict)
+  }, [fsrsCardsDict])
 
   return (
     <Div100vh>
