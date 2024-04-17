@@ -161,7 +161,8 @@ export async function POST(req: Request) {
   
   try {
 
-
+    console.log('messages  s s s s ')
+    console.log(messages)
 
     const [xmlResp, cleanResp, focusWordsUsed, tokenDataArr] = await _main(messages, createSystemPrompt(language, topic, HARDCODED_WORD_LIST, focusList))
 

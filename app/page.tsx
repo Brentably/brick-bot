@@ -129,7 +129,7 @@ export default function Home() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          messages: [...messages.map(x => {role: x.role; content: x.content}), { role, content }],
+          messages: [...messages.map(x => ({role: x.role, content: x.content})), { role, content }],
           messagesData,
           ...body
         }),
