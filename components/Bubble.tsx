@@ -3,7 +3,7 @@ import { forwardRef, JSXElementConstructor, useMemo, RefObject, useEffect, useRe
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks"
-import { MessageData } from "../app/page";
+import { MessageData } from "../lib/types";
 import soundOnIcon from "../public/assets/soundOnIcon.svg"
 import soundOffIcon from "../public/assets/soundOffIcon.svg"
 import Image from 'next/image'

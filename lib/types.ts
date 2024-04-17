@@ -15,6 +15,16 @@ export interface TokenData {
   token: string, 
   // any whitespace characters following original token
   token_ws: string,
-  lemmas: string[],
+  root_words: string[],
   clicked?: boolean
 }
+
+export type MessageData = {
+  role: "user" | "assistant";
+  didMakeMistakes: boolean | null;
+  mistakes?: string;
+  correctedMessage?: string;
+  explanation?: string;
+  // store word/lemma/clicked data for each word in message
+  tokenDataArr?: TokenData[];
+};

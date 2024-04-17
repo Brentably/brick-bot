@@ -21,7 +21,7 @@ function isEven(number: number): boolean {
   return number % 2 === 0;
 }
 
-const LANGUAGE_TO_HELLO = {
+const LANGUAGE_TO_HELLO:Record<string, string> = {
   "German": "Hallo!",
   "French": "Bonjour!",
   "Spanish": "¡Hola!",
@@ -110,17 +110,60 @@ const LANGUAGE_TO_EXAMPLE_PROMPTS = {
 const EXAMPLE_TOPICS = ['Food and Cuisine', 'Travel and Adventure', 'Music and Entertainment', 'Sports and Fitness']
 
 
-export type MessageData = {
-  role: "user" | "assistant"
-  didMakeMistakes: boolean | null,
-  mistakes?: string,
-  correctedMessage?: string,
-  explanation?: string,
-  // store word/lemma/clicked data for each word in message
-  tokenDataArr: TokenData[]
-}
-
 export default function Home() {
+
+  // const appendControllerRef = useRef<AbortController | null>(null);
+
+  // const append = async ({ id, role, content }:Message, { options: { body } }:any) => {
+  //   const controller = new AbortController();
+  //   const { signal } = controller;
+
+  //   setMessages(pM => [...pM, { id, role, content }])
+
+  //   try {
+  //     setProcessedSentenceChunkCount(0)
+  //     setIsAssistantStreaming(true)
+  //     const resp = await fetch(`/api/chat`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json'
+  //       },
+  //       body: JSON.stringify({
+  //         role: role,
+  //         content: content,
+  //         ...body
+  //       }),
+  //       signal
+  //     })
+  //     const data = await resp.json()
+  //     setMessages(pM => [...pM, { id: crypto.randomUUID(), role: 'assistant', content: data.response }])
+  //     setIsAssistantStreaming(false)
+  //   } catch (error:any) {
+  //     if (error.name === 'AbortError') {
+  //       console.log('Fetch aborted');
+  //     } else {
+  //       console.error('Fetch error:', error);
+  //     }
+  //   }
+
+
+  //   appendControllerRef.current = controller;
+  // }
+
+  // const [messages, setMessages] = useState<Message[]>([])
+  // const [input, setInput] = useState('')
+  // function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  //   setInput(e.target.value)
+  // }
+
+  // const stopChat = () => {
+  //   if (appendControllerRef.current) {
+  //     appendControllerRef.current.abort();
+  //     appendControllerRef.current = null;
+  //   }
+  // }
+
+
 
   const { append, messages, input, handleInputChange, setMessages, reload, stop: stopChat, setInput } = useChat({
     onResponse: () => {
@@ -611,7 +654,7 @@ export default function Home() {
     } else {
       mixpanel.track('send_chat', { messages, messagesData })
       console.log("send form event")
-      append({ content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic } } })
+      append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic, messagesData, focusList: [] } } })
       setInput('')
     }
   }
@@ -628,7 +671,7 @@ export default function Home() {
     mixpanel.track('begin_chat', { topic: _topic, targetLanguage })
     setHasStarted(true)
     if (window.innerWidth < 600) setIsHeaderOpen(false);
-    append({ role: 'system', content: createChatSystemPrompt(targetLanguage, _topic) }, { options: { body: { language: targetLanguage, topic: _topic } } })
+    append({ id: crypto.randomUUID(), role: 'user', content: LANGUAGE_TO_HELLO[targetLanguage] }, { options: { body: { language: targetLanguage, topic: _topic, messagesData, focusList: [] } } })
     setTopic(_topic)
   }
 
