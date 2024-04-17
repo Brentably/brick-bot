@@ -126,19 +126,18 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
           : 
           (
             messageData.tokenDataArr?.map((tokenData, index, tokenDataArr) => {
-              console.log("tokenData: ")
-              console.log(tokenData)
-              console.log('token_with_ws: ')
-              console.log(tokenData['token_with_ws'])
               const token = tokenData.token
-              const token_with_ws = tokenData['token_with_ws']
+              const token_ws = tokenData['token_ws']
               console.log("token: " + token)
 
               return (
                 // if token is a word, make it clickable
-                token_with_ws.match(/[a-zA-ZÀ-ž]+/) ?
-                    <span key={index} onClick={() => handleLemmaClick} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token_with_ws}</span>
-                  : <span key={index}>{token}</span>
+                token.match(/[a-zA-ZÀ-ž]+/) ?
+                  <>
+                    <span key={index} onClick={() => handleLemmaClick} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span>
+                    <span key={index}>{token_ws}</span>
+                  </>
+                  : <span key={index}>{token}{['-', '(', '\''].includes(token) ? '' : ' '}</span>
               )
             })
           )}

@@ -13,7 +13,8 @@ export type Flashcard = BasicFlashcard | ClozeFlashcard;
 export interface TokenData {
   id: number | null, 
   token: string, 
-  token_with_ws: string,
+  // any whitespace characters following original token
+  token_ws: string,
   lemmas: string[],
   clicked?: boolean
 }
