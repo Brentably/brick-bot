@@ -11,8 +11,9 @@ export async function POST(req: Request) {
 
         for (let word in cardRatingPairs) {
             console.log("updating card data for token: " + word)
-            let card = cardRatingPairs[word].card;
-            let clicked = cardRatingPairs[word].clicked;
+            let card = cardRatingPairs[word][0];
+            console.log("currently updating card: " + card)
+            let clicked = cardRatingPairs[word][1];
             const scheduling_options = f.repeat(card, new Date())
             const rating = (clicked) ? fsrs.Rating.Again : fsrs.Rating.Good
             card = scheduling_options[rating].card

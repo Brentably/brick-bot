@@ -129,7 +129,6 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
             messageData.tokenDataArr.map((tokenData, index, tokenDataArr) => {
               const token = tokenData.token
               const token_ws = tokenData['token_ws']
-              console.log("token: " + token)
 
               return (
                 // if token is a word, make it clickable
