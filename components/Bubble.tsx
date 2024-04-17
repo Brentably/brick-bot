@@ -10,7 +10,7 @@ import Image from 'next/image'
 import LoadingBrick from "./LoadingBrick";
 import { HiOutlineQuestionMarkCircle } from "react-icons/hi";
 import { FaGear } from "react-icons/fa6";
-import {Tooltip as ReactTooltip} from 'react-tooltip'
+import { Tooltip as ReactTooltip } from 'react-tooltip'
 import { useBrickStore } from "../lib/store";
 import mixpanel from 'mixpanel-browser';
 import { debounce } from "lodash"
@@ -34,39 +34,6 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
   Bubble.displayName = 'Bubble';
   const { role } = content;
   const isUser = role === "user"
-  
-  const [tokenizedMessage, setTokenizedMessage] = useState<string[]>([])
-  const [tokenizedMessageUpdated, setTokenizedMessageUpdated] = useState(false)
-  const tokenizeMessage = async (input_str: string, language: string): Promise<string[]> => {
-    // TODO update to fastapi url 
-    const url = 'http://localhost:8000/tokenizer'
-    const response = await fetch(url, {
-      method: 'POST', 
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        input_str: input_str,
-        language: language
-      })
-    })
-    const tokenArray = response.json()
-    return tokenArray
-  }
-
-  // only call TokenizeMessage every 500 ms to reduce latency
-  const debouncedTokenizeMessage = useMemo(() => debounce(async (input_str: string, language: string) => {
-    const tokenized = await tokenizeMessage(input_str, language);
-    setTokenizedMessage(tokenized);
-    setTokenizedMessageUpdated(true);
-  }, 500), []);
-
-  useEffect(() => {
-    setTokenizedMessageUpdated(false)
-    if (!isUser) {
-      debouncedTokenizeMessage(content.content, language)
-    }
-  }, [content.content, isUser, debouncedTokenizeMessage])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const tooltipDisplayCount = useBrickStore(state => state.tooltipDisplayCount)
@@ -75,9 +42,14 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
   const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
 
   useEffect(() => console.log('navigator useragent', navigator.userAgent), [])
+  useEffect(() => {
+    if (messageData) console.log(messageData)
+    if (isUser && !messageData) console.log("HELLO")
+  }, [messageData])
+
   return (
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`} data-tooltip-id="translateHint">
-{ (!isUser && tooltipDisplayCount < 2) &&  <ReactTooltip id="translateHint" place="top" afterHide={incrementTooltipDisplayCount}>
+      {(!isUser && tooltipDisplayCount < 2) && <ReactTooltip id="translateHint" place="top" afterHide={incrementTooltipDisplayCount}>
         Tip: Select any text to see its translation!
       </ReactTooltip>}
       {!isUser && typeof window !== 'undefined' && window.innerWidth > 600 && (
@@ -120,7 +92,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
 
             {didMakeMistakes === null ? (
               <div className="h-6 w-6 rounded-full flex items-center justify-center mr-2 animate-spin">
-                  <FaGear className="h-5 w-5" />
+                <FaGear className="h-5 w-5" />
               </div>
             ) : (
               <button
@@ -131,11 +103,11 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
                   } h-6 w-6 rounded-full focus:outline-none transition duration-200 flex items-center justify-center mr-2`}
                 onClick={() => {
                   setIsModalOpen(!isModalOpen)
-                  mixpanel.track('modal_button_event', {isModalOpen})
+                  mixpanel.track('modal_button_event', { isModalOpen })
                 }}
               >
                 {didMakeMistakes ? (
-                    <HiOutlineQuestionMarkCircle className="h-6 w-6" />
+                  <HiOutlineQuestionMarkCircle className="h-6 w-6" />
                 ) : null}
               </button>
             )}
@@ -148,27 +120,24 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
             remarkPlugins={[remarkGfm]}
           > {'\u200B' + content.content} </Markdown>
           */}
-          {/* make all words in the assistant's message clickable. note: this can not be used with markdown formatting. */}
           {'\u200B'}
-          {/* if tokenizedMessage is not ready, just render unclickable content */}
-          {isUser || !tokenizedMessageUpdated ? content.content : (
-            messageData.tokenData.map((tokenData, index, tokenDataArr) => {
+          {isUser ? 
+          content.content 
+          : 
+          (
+            messageData.tokenDataArr?.map((tokenData, index, tokenDataArr) => {
+              console.log("tokenData: ")
+              console.log(tokenData)
+              console.log('token_with_ws: ')
+              console.log(tokenData['token_with_ws'])
               const token = tokenData.token
+              const token_with_ws = tokenData['token_with_ws']
+              console.log("token: " + token)
 
-              const isFirstChunk = index === 0;
-              const lastToken = tokenDataArr[index-1].token
-              const lastCharOfLastToken = lastToken?.[lastToken.length-1]
-              const isPrecededByDashOrApostropheOrParenthese = (lastCharOfLastToken === "(" || lastCharOfLastToken === "-" || lastCharOfLastToken === "'" || token[0] === "-" || token[0] === "'" || token[0] === "(")
               return (
                 // if token is a word, make it clickable
-                token.match(/[a-zA-ZÀ-ž]+/) ? 
-                  <>
-                    {isFirstChunk || isPrecededByDashOrApostropheOrParenthese ? 
-                    // add unhighlightable space in front if not first chunk/preceded by dash/apostrophe
-                      null : 
-                      <span> </span>}
-                    <span key={index} onClick={() => handleLemmaClick} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span> 
-                  </> 
+                token_with_ws.match(/[a-zA-ZÀ-ž]+/) ?
+                    <span key={index} onClick={() => handleLemmaClick} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token_with_ws}</span>
                   : <span key={index}>{token}</span>
               )
             })

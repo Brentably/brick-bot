@@ -117,7 +117,7 @@ export type MessageData = {
   correctedMessage?: string,
   explanation?: string,
   // store word/lemma/clicked data for each word in message
-  tokenData: TokenData[]
+  tokenDataArr: TokenData[]
 }
 
 export default function Home() {
@@ -171,7 +171,7 @@ export default function Home() {
   useEffect(() => {
     // console.log('messages change')
     // always keep messages data length 1 above messages to prevent undefined errors.
-    if (messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, { didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant', tokenData: [] }])
+    if (messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, { didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant', tokenDataArr: [] }])
   }, [messages])
 
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
@@ -551,7 +551,7 @@ export default function Home() {
     serializeMessages()
 
 
-    const processMessage = async (message: Message, index: number) => {
+    const processMessageMistakesAndCorrection = async (message: Message, index: number) => {
       if (message.role !== 'user') return
       console.log('setting index of processing message', index)
       setIndexOfProcessingMessage(index)
@@ -598,7 +598,7 @@ export default function Home() {
       makeFlashcards({ pupilMessage: message.content, correctedMessage: corrected_message, mistakes })
 
     }
-    if (messages.length) processMessage(messages[messages.length - 1], messages.length - 1)
+    if (messages.length) processMessageMistakesAndCorrection(messages[messages.length - 1], messages.length - 1)
   }, [messages, isAssistantStreaming, targetLanguage]);
 
   const handleSendOrStop = (e: React.KeyboardEvent<HTMLTextAreaElement> | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -687,9 +687,10 @@ export default function Home() {
 
 
   // update the latest assistant messages data with its words data
-  const processAssistantResponse = async (input_str: string, language: string): Promise<void> => {
+  const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
+    console.log("processing assistant response for message: ")
     // call process_message on messageContent to receive [word, id, [lemmas]][]
-    const url = 'http://localhost:10000/process-message'
+    const url = 'http://localhost:8000/process-message'
     //const url = 'https://api.brick.bot/process-message'
     const response = await fetch(url, {
       method: 'POST',
@@ -701,25 +702,16 @@ export default function Home() {
         language: language
       })
     })
-    const processedMessage: [string, number | null, string[]][] = await response.json()
-    const responseTokenData: TokenData[] = []
-    for (const token of processedMessage) {
-      const tokenData: TokenData = {
-        id: token[1],
-        token: token[0],
-        lemmas: token[2],
-        // clicked defaults to false when message first comes in
-        clicked: false
-      };
-      console.log("pushing " + tokenData.token + " to messageData")
-      responseTokenData.push(tokenData)
-    }
+
+    const responseTokenDataArr = (await response.json()).tokens
+    console.log(`responseTokenDataArr:`)
+    console.log(responseTokenDataArr)
     // what if api call doesn't come back before latest message is updated?
-    setMessagesData(pM => [...pM, { ...pM[pM.length - 1], tokenData: responseTokenData }])
+    setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
   }
 
   useEffect(() => {
-    if (messages.length && messages[messages.length - 1].role === 'assistant') processAssistantResponse(messages[messages.length - 1].content, targetLanguage)
+    if (messages.length && messages[messages.length - 1].role === 'assistant') processAssistantResponse(messages[messages.length - 1].content, targetLanguage, messages.length-1)
   }, [messages])
 
   return (

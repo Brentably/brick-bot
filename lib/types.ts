@@ -12,7 +12,8 @@ export type Flashcard = BasicFlashcard | ClozeFlashcard;
 
 export interface TokenData {
   id: number | null, 
-  token: string,
+  token: string, 
+  token_with_ws: string,
   lemmas: string[],
-  clicked: boolean
+  clicked?: boolean
 }
