@@ -5,7 +5,7 @@
     "versions": ["der", "die", "das", "des", "dem", "den"]
   },
   { "word": "und", "pos": "conj", "versions": ["und"] },
-  { "word": "in", "pos": "prep", "versions": ["in"] },
+  { "word": "in", "pos": "prep", "versions": ["in", "im", "ins"] },
   {
     "word": "sein",
     "pos": "verb",
@@ -86,19 +86,19 @@
       "geworden"
     ]
   },
-  { "word": "von", "pos": "prep", "versions": ["von"] },
+  { "word": "von", "pos": "prep", "versions": ["von", "vom"] },
   { "word": "ich", "pos": "pron", "versions": ["ich", "mich", "mir"] },
   { "word": "nicht", "pos": "part", "versions": ["nicht"] },
   { "word": "es", "pos": "pron", "versions": ["es", "ihm"] },
   { "word": "mit", "pos": "prep", "versions": ["mit"] },
   { "word": "sich", "pos": "pron", "versions": ["sich"] },
   { "word": "er", "pos": "pron", "versions": ["er", "ihm", "ihn"] },
-  { "word": "auf", "pos": "prep", "versions": ["auf"] },
-  { "word": "für", "pos": "prep", "versions": ["für"] },
+  { "word": "auf", "pos": "prep", "versions": ["auf", "aufs"] },
+  { "word": "für", "pos": "prep", "versions": ["für", "fürs"] },
   { "word": "auch", "pos": "adv", "versions": ["auch"] },
-  { "word": "an", "pos": "prep", "versions": ["an"] },
+  { "word": "an", "pos": "prep", "versions": ["an", "ans", "am"] },
   { "word": "dass", "pos": "conj", "versions": ["dass"] },
-  { "word": "zu", "pos": "part", "versions": ["zu"] },
+  { "word": "zu", "pos": "part", "versions": ["zu", "zur", "zum"] },
   { "word": "als", "pos": "conj", "versions": ["als"] },
   {
     "word": "können",
@@ -137,7 +137,7 @@
     "versions": ["ihrer", "ihres", "ihrem", "ihren", "ihre", "ihrs"]
   },
   { "word": "so", "pos": "adv", "versions": ["so"] },
-  { "word": "bei", "pos": "prep", "versions": ["bei"] },
+  { "word": "bei", "pos": "prep", "versions": ["bei", "beim"] },
   {
     "word": "sein",
     "pos": "pron",
@@ -207,14 +207,14 @@
       "gemusst"
     ]
   },
-  { "word": "um", "pos": "prep", "versions": ["um"] },
+  { "word": "um", "pos": "prep", "versions": ["um", "ums"] },
   { "word": "ja", "pos": "part", "versions": ["ja"] },
   {
     "word": "kein",
     "pos": "pron/art",
     "versions": ["kein", "keines", "keine", "keinem", "keinen", "keiner"]
   },
-  { "word": "über", "pos": "prep", "versions": ["über"] },
+  { "word": "über", "pos": "prep", "versions": ["über", "überm", "übers"] },
   { "word": "da", "pos": "adv", "versions": ["da"] },
   {
     "word": "geben",
@@ -240,7 +240,7 @@
       "gegeben"
     ]
   },
-  { "word": "vor", "pos": "prep", "versions": ["vor"] },
+  { "word": "vor", "pos": "prep", "versions": ["vor", "vorm"] },
   {
     "word": "mein",
     "pos": "pron",
@@ -253,7 +253,7 @@
     "versions": ["Jahr", "Jahres", "Jahrs", "Jahre", "Jahren"]
   },
   { "word": "du", "pos": "pron", "versions": ["du", "dir", "dich"] },
-  { "word": "durch", "pos": "prep", "versions": ["durch"] },
+  { "word": "durch", "pos": "prep", "versions": ["durch", "durchs"] },
   {
     "word": "viel",
     "pos": "pron",
@@ -553,7 +553,7 @@
     "versions": ["jeder", "jedes", "jedem", "jeden", "jede"]
   },
   { "word": "weil", "pos": "conj", "versions": ["weil"] },
-  { "word": "unter", "pos": "prep", "versions": ["unter"] },
+  { "word": "unter", "pos": "prep", "versions": ["unter", "unterm"] },
   { "word": "Mensch", "pos": "der", "versions": ["Mensch", "Menschen"] },
   { "word": "denn", "pos": "conj", "versions": ["denn"] },
   {
