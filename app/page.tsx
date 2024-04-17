@@ -336,18 +336,6 @@ export default function Home() {
     addFlashcards([flashcard])
     toast(`Flashcard added!`, { position: "top-center", type: "success" });
 
-    // // add card to FSRS
-    // if (selection in fsrsCardsDict) {
-    //   // card already exists, update card from dict
-    //   setFsrsCardsToUpdate(prevCards => ({...prevCards, [selection]: [fsrsCardsDict[selection], Rating.Again]}))
-    // } else {
-    //   // card does not yet exist
-    //   // create card, add to dict, update fsrs card
-    //   let newCard = createEmptyCard()
-    //   setFsrsCardsDict(prevDict => ({...prevDict, selection: newCard}))
-    //   setFsrsCardsToUpdate(prevCards => ({...prevCards, [selection]: [fsrsCardsDict[selection], Rating.Again]}))
-    // }
-
   }
 
   // load messagesData on initial render
@@ -446,7 +434,10 @@ export default function Home() {
     if (messages.length === 0) return;
 
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role !== 'assistant') return;
+    if (lastMessage.role !== 'assistant') {
+      // 
+      return
+    }
 
     const messageStr = lastMessage.content;
     const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
@@ -729,7 +720,6 @@ export default function Home() {
 
   const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
   const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, Rating]>>({})
-
 
   // update the latest assistant messages data with its words data
   // const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
