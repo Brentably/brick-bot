@@ -1807,7 +1807,17 @@
     "pos": "das",
     "versions": ["Unternehmen", "Unternehmens"]
   },
-  { "word": "nächste", "pos": "adj", "versions": ["Nächste", "Nächsten"] },
+  {
+    "word": "nächsten",
+    "pos": "adj",
+    "versions": [
+      "nächster",
+      "nächsten",
+      "nächstem",
+      "nächste",
+      "nächstes"
+    ]
+  },
   {
     "word": "erklären",
     "pos": "verb",

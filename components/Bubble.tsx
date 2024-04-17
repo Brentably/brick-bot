@@ -124,8 +124,9 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
           {isUser ? 
           content.content 
           : 
+          messageData.tokenDataArr ?
           (
-            messageData.tokenDataArr?.map((tokenData, index, tokenDataArr) => {
+            messageData.tokenDataArr.map((tokenData, index, tokenDataArr) => {
               const token = tokenData.token
               const token_ws = tokenData['token_ws']
               console.log("token: " + token)
@@ -135,12 +136,12 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
                 token.match(/[a-zA-ZÀ-ž]+/) ?
                   <>
                     <span key={index} onClick={() => handleLemmaClick} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span>
-                    <span key={index}>{token_ws}</span>
+                    <span key={index+'ws'}>{token_ws}</span>
                   </>
                   : <span key={index}>{token}{['-', '(', '\''].includes(token) ? '' : ' '}</span>
               )
             })
-          )}
+          ) : <LoadingIndicator />}
         </div>
       </div>
     </div>

@@ -28,10 +28,11 @@ const client = new Anthropic({
 
 // export const runtime = "edge"; // 'nodejs' is the default
 
-const HARDCODED_WORD_LIST = (JSON.parse(fs.readFileSync(process.cwd() + '/app/wordDataArr.json', 'utf8')) as any[]).map(wordData => wordData.word).slice(0, 2000)
+const HARDCODED_WORD_LIST = (JSON.parse(fs.readFileSync(process.cwd() + '/app/5009_word_and_scraped_cd.json', 'utf8')) as any[]).map(wordData => wordData.word).slice(0, 2000)
 
-console.log('hwd: ', HARDCODED_WORD_LIST)
-
+import util from 'util';
+import { Token } from "typescript";
+console.log('hwd: ', HARDCODED_WORD_LIST.join(', '))
 
 const createSystemPrompt = (language: string = `German`, topic: string,  wordList: string[], focusList: string[]) => `
     <instructions>
@@ -85,7 +86,7 @@ export async function POST(req: Request) {
     messages: MessageParam[],
     systemPrompt: string,
     depth = 1
-  ): Promise<[string, string, string[]]> {
+  ): Promise<[string, string, string[], TokenData[]]> {
     const startTime = performance.now();
     const res = client.messages.stream({
       model: "claude-3-haiku-20240307",
@@ -108,7 +109,7 @@ export async function POST(req: Request) {
     messages.push({ role: "assistant", content: text });
 
     const aStartTime = performance.now();
-    const [misusedWords, focusWordsUsed] = await getAnalysis(xmlJson.result.answer[0]);
+    const [misusedWords, focusWordsUsed, tokenDataArr] = await getAnalysis(xmlJson.result.answer[0]);
     console.log(chalk.bgRed(`\nLatency for analysis: ${Math.round(performance.now() - aStartTime)}ms`));
 
     const hasMisusedWords = misusedWords.length > 0;
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
 
     if (!hasMisusedWords) {
       console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
-      return [text, xmlJson.result.answer[0], focusWordsUsed];
+      return [text, xmlJson.result.answer[0], focusWordsUsed, tokenDataArr];
     } else {
       messages.push({
         role: "user",
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
 
   const getAnalysis = async (
     assistantResponse: string = ""
-  ): Promise<[string[], string[]]> => {
+  ): Promise<[string[], string[], TokenData[]]> => {
     const tokenDataArr = await tokenizer(assistantResponse);
     // console.log('tokenDataArr')
     // console.log(tokenDataArr)
@@ -142,6 +143,7 @@ export async function POST(req: Request) {
         !tokenData.root_words.some((word) => HARDCODED_WORD_LIST.includes(word)) &&
         !allUsedUserWords.includes(tokenData.token)
       ) {
+        console.log('misused pushing token: ', tokenData)
         misused.push(tokenData.token);
       }
     }
@@ -149,7 +151,7 @@ export async function POST(req: Request) {
 
     const focusWordsUsed = misused.length !== 0 ? [] : Array.from(new Set(tokenDataArr.flatMap(tokenData => tokenData.root_words.filter(rootWord => focusList.includes(rootWord)))))
 
-    return [misused, focusWordsUsed];
+    return [misused, focusWordsUsed, tokenDataArr];
   };
   const { messages, messagesData, language, topic, focusList } = await req.json();
   console.log(`messagesData`)
@@ -161,20 +163,20 @@ export async function POST(req: Request) {
 
 
 
-    // const [xmlResp, cleanResp, focusWordsUsed] = await _main(messages, createSystemPrompt(language, topic, HARDCODED_WORD_LIST, focusList))
+    const [xmlResp, cleanResp, focusWordsUsed, tokenDataArr] = await _main(messages, createSystemPrompt(language, topic, HARDCODED_WORD_LIST, focusList))
 
     console.log(`cleanResp generated: `, 'cleanResp')
 
 
     const singleMessageStream = new ReadableStream({
       start(controller) {
-        controller.enqueue('clean Resp');
+        controller.enqueue(cleanResp);
         controller.close();
       }
     });
     
-    return new StreamingTextResponse(singleMessageStream)
-    // return Response.json({response: 'cleanResp'})
+    // return new StreamingTextResponse(singleMessageStream)
+    return Response.json({response: cleanResp, tokenDataArr})
   } catch (e) {
     throw e;
   }

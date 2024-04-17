@@ -112,68 +112,69 @@ const EXAMPLE_TOPICS = ['Food and Cuisine', 'Travel and Adventure', 'Music and E
 
 export default function Home() {
 
-  // const appendControllerRef = useRef<AbortController | null>(null);
+  const appendControllerRef = useRef<AbortController | null>(null);
 
-  // const append = async ({ id, role, content }:Message, { options: { body } }:any) => {
-  //   const controller = new AbortController();
-  //   const { signal } = controller;
+  const append = async ({ id, role, content }:Message, { options: { body } }:any) => {
+    const controller = new AbortController();
+    const { signal } = controller;
 
-  //   setMessages(pM => [...pM, { id, role, content }])
+    setMessages(pM => [...pM, { id, role, content }])
 
-  //   try {
-  //     setProcessedSentenceChunkCount(0)
-  //     setIsAssistantStreaming(true)
-  //     const resp = await fetch(`/api/chat`, {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json'
-  //       },
-  //       body: JSON.stringify({
-  //         role: role,
-  //         content: content,
-  //         ...body
-  //       }),
-  //       signal
-  //     })
-  //     const data = await resp.json()
-  //     setMessages(pM => [...pM, { id: crypto.randomUUID(), role: 'assistant', content: data.response }])
-  //     setIsAssistantStreaming(false)
-  //   } catch (error:any) {
-  //     if (error.name === 'AbortError') {
-  //       console.log('Fetch aborted');
-  //     } else {
-  //       console.error('Fetch error:', error);
-  //     }
-  //   }
-
-
-  //   appendControllerRef.current = controller;
-  // }
-
-  // const [messages, setMessages] = useState<Message[]>([])
-  // const [input, setInput] = useState('')
-  // function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-  //   setInput(e.target.value)
-  // }
-
-  // const stopChat = () => {
-  //   if (appendControllerRef.current) {
-  //     appendControllerRef.current.abort();
-  //     appendControllerRef.current = null;
-  //   }
-  // }
-
-
-
-  const { append, messages, input, handleInputChange, setMessages, reload, stop: stopChat, setInput } = useChat({
-    onResponse: () => {
-      // console.log('setting to 0')
+    try {
       setProcessedSentenceChunkCount(0)
       setIsAssistantStreaming(true)
-    },
-    // onFinish does not have access to the latest messages[], so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
-    onFinish: () => setIsAssistantStreaming(false)
-  });
+      const resp = await fetch(`/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [...messages.map(x => {role: x.role; content: x.content}), { role, content }],
+          messagesData,
+          ...body
+        }),
+        signal
+      })
+      const data = await resp.json()
+      setMessages(pM => [...pM, { id: crypto.randomUUID(), role: 'assistant', content: data.response }])
+      setIsAssistantStreaming(false)
+      setMessagesData(pM => [...pM.with(pM.length-1, { ...pM[pM.length-1], tokenDataArr: data.tokenDataArr })])
+    } catch (error:any) {
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+      } else {
+        console.error('Fetch error:', error);
+      }
+    }
+
+
+    appendControllerRef.current = controller;
+  }
+
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setInput(e.target.value)
+  }
+
+  const stopChat = () => {
+    if (appendControllerRef.current) {
+      appendControllerRef.current.abort();
+      appendControllerRef.current = null;
+    }
+  }
+
+
+
+  // const { append, messages, input, handleInputChange, setMessages, reload, stop: stopChat, setInput } = useChat({
+  //   onResponse: () => {
+  //     // console.log('setting to 0')
+  //     setProcessedSentenceChunkCount(0)
+  //     setIsAssistantStreaming(true)
+  //   },
+  //   // onFinish does not have access to the latest messages[], so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
+  //   onFinish: () => setIsAssistantStreaming(false)
+  // });
 
 
   const messagesData = useBrickStore(state => state.messagesData)
@@ -430,6 +431,7 @@ export default function Home() {
 
   // Function to add audio promises to the queue
   const queueAudioFromText = (text: string, messageIndex: number = messages.length - 1) => {
+    if(text.trim() === '') return
     const blobPromise = fetch('/api/tts', {
       method: 'POST',
       body: JSON.stringify({ "input": text })
@@ -730,32 +732,32 @@ export default function Home() {
 
 
   // update the latest assistant messages data with its words data
-  const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
-    console.log("processing assistant response for message: ")
-    // call process_message on messageContent to receive [word, id, [lemmas]][]
-    const url = 'http://localhost:8000/process-message'
-    //const url = 'https://api.brick.bot/process-message'
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        input_str: input_str,
-        language: language
-      })
-    })
+  // const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
+  //   console.log("processing assistant response for message: ")
+  //   // call process_message on messageContent to receive [word, id, [lemmas]][]
+  //   const url = 'http://localhost:8000/process-message'
+  //   //const url = 'https://api.brick.bot/process-message'
+  //   const response = await fetch(url, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify({
+  //       input_str: input_str,
+  //       language: language
+  //     })
+  //   })
 
-    const responseTokenDataArr = (await response.json()).tokens
-    console.log(`responseTokenDataArr:`)
-    console.log(responseTokenDataArr)
-    // what if api call doesn't come back before latest message is updated?
-    setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
-  }
+  //   const responseTokenDataArr = (await response.json()).tokens
+  //   console.log(`responseTokenDataArr:`)
+  //   console.log(responseTokenDataArr)
+  //   // what if api call doesn't come back before latest message is updated?
+  //   setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
+  // }
 
-  useEffect(() => {
-    if (messages.length && messages[messages.length - 1].role === 'assistant') processAssistantResponse(messages[messages.length - 1].content, targetLanguage, messages.length-1)
-  }, [messages])
+  // useEffect(() => {
+  //   if (messages.length && messages[messages.length - 1].role === 'assistant') processAssistantResponse(messages[messages.length - 1].content, targetLanguage, messages.length-1)
+  // }, [messages])
 
   return (
     <Div100vh>
