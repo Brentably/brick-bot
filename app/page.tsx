@@ -861,7 +861,7 @@ export default function Home() {
                         Reset Chat
                       </button>
 
-                      <button
+                      {/* <button
                         className={`mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform ${flashcards.length === 0 || isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
                         onClick={handleDownloadFlashcards}
                         disabled={flashcards.length === 0 || isDownloading}
@@ -879,7 +879,7 @@ export default function Home() {
                             <span>Download Flashcards!</span>
                           </>
                         )}
-                      </button>
+                      </button> */}
                     </div>
                   )}
                 </>
@@ -908,7 +908,7 @@ export default function Home() {
                   </div>
                 </div>
               )}
-              {showCompletedModal && flashcards.length >= flashcardsGoal && (
+              {/* {showCompletedModal && flashcards.length >= flashcardsGoal && (
                 <div className="fixed inset-0 flex items-center justify-center z-50">
                   <div className="absolute inset-0 bg-black opacity-50"></div>
                   <div className='rounded-lg shadow-md p-4 bg-gray-100 max-w-md z-10'>
@@ -945,7 +945,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
             </header>
             {hasStarted ?
 
