@@ -719,6 +719,8 @@ export default function Home() {
   }
 
   const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
+  // clicked tokens to update in fsrs the next time updateCardsDict is called
+  const [clickedRoots, setClickedRoots] = useState<string[]>([])
 
   // update the latest assistant messages data with its words data
   const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
@@ -744,40 +746,54 @@ export default function Home() {
     setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
   }
 
+  // update the cards dictionary by calling fsrs on all of the tokens inputted
   const updateCardsDict = async (tokensData: TokenData[]) => {
 
     const cardsToUpdate: Record<string, [Card, boolean]> = {}
+    let unClickedCards = 0
+    let clickedCards = 0
 
-    // for each word in WordsData for last assistant message
-    // message that user just sent should be the last message
-    let existingCardsCount = 0;
-    let newCardsCount = 0;
+    // Helper function to process a single token
+    const addWordToCardsToUpdate = (word: string, isClicked: boolean) => {
+      
+      // Check if token is already in cardsToUpdate to avoid duplicates
+      if (!cardsToUpdate[word]) {
+        isClicked ? clickedCards++ : unClickedCards++;
+        // if card already exists, add to cardsToUpdate
+        if (fsrsCardsDict[word]) {
+          cardsToUpdate[word] = [fsrsCardsDict[word], isClicked];
+        } else {
+          // else, create a new card and add that to cardsToUpdate
+          const newCard = createEmptyCard();
+          setFsrsCardsDict(prev => ({ ...prev, [word]: newCard }));
+          cardsToUpdate[word] = [newCard, isClicked];
+        }
+      } else if (isClicked && !cardsToUpdate[word][1]) {
+        // If the token is clicked but already in cardsToUpdate, ensure its boolean is true
+        // and increment clickedCards counter if it was previously unclicked
+        clickedCards++;
+        unClickedCards--;
+        cardsToUpdate[word][1] = true;
+      }
+    };
 
+    // Process each word in WordsData for the last assistant message
     tokensData.forEach(tD => {
       // if it is punctuation, do not add as card
       if (tD.id === null) return;
 
-      // iterate through all root words for this token
-      tD.root_words.forEach(rW => {
-        // Check if rW is already in cardsToUpdate to avoid duplicates
-        if (!cardsToUpdate[rW]) {
-          // if card already exists, add to cardsToUpdate
-          if (fsrsCardsDict[rW]) {
-            existingCardsCount++;
-            cardsToUpdate[rW] = [fsrsCardsDict[rW], false];
-          }
-          // else, create a new card and add that to cardToUpdate
-          else {
-            newCardsCount++;
-            const newCard = createEmptyCard();
-            setFsrsCardsDict(prev => ({ ...prev, [rW]: newCard }));
-            cardsToUpdate[rW] = [newCard, false];
-          }
-        }
-      })
+      // Iterate through all root words for this token
+      tD.root_words.forEach(rootWord => {
+        addWordToCardsToUpdate(rootWord, false);
+      });
     });
 
-    console.log(`%cUpdating ${existingCardsCount} existing cards and ${newCardsCount} new cards`, "color: blue");
+    // Process clicked tokens
+    clickedRoots.forEach(clickedToken => {
+      addWordToCardsToUpdate(clickedToken, true);
+    });
+
+    console.log(`%cUpdating ${clickedCards} clicked cards and ${unClickedCards} unclicked cards`, "color: blue");
 
     // call fsrs on all cards from this message
     const resp = await fetch(`/api/fsrs/`, {
@@ -956,9 +972,14 @@ export default function Home() {
                       }}
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
-                      language={targetLanguage}
-                      handleLemmaClick={(lemma: string) => {
+                      handleTokenClick={(token: string) => {
+                        // get root word(s) for token
+                        const roots: string[] = messageData.tokenDataArr?.find(tokenData => tokenData.token === token)?.root_words || []
 
+                        console.log("handling click for token: " + token + " with roots " + roots)
+
+                        // add all roots that aren't already in prevTokens
+                        setClickedRoots(prevTokens => [...prevTokens, ...roots.filter(root => !prevTokens.includes(root))])
                       }}
                     /> 
                   )}
