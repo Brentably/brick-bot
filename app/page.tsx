@@ -359,33 +359,33 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    console.log('audioPromiseQueue useEffect hit. isProcessingAudioPromise & audioPromiseQueue.length', isProcessingAudioPromise, audioPromiseQueue.length)
+    // console.log('audioPromiseQueue useEffect hit. isProcessingAudioPromise & audioPromiseQueue.length', isProcessingAudioPromise, audioPromiseQueue.length)
     if (isProcessingAudioPromise || audioPromiseQueue.length === 0) return
-    console.log('audioPromiseQueue useEffect running w/', audioPromiseQueue)
+    // console.log('audioPromiseQueue useEffect running w/', audioPromiseQueue)
     // if(isAudioProcessingRef.current === true) throw new Error('boogagooga')
     setIsProcessingAudioPromise(true)
     // isAudioProcessingRef.current = true
     const numToProcess = audioPromiseQueue.length
-    console.log('aPQ, processing this many:', numToProcess)
+    // console.log('aPQ, processing this many:', numToProcess)
     const promises = Array.from(audioPromiseQueue)
     Promise.all(promises).then(processedAudioBlobs => {
-      console.log('awaited all')
+      // console.log('awaited all')
       setAudioQueue(pS => [...pS, ...processedAudioBlobs])
       setAudioPromiseQueue(ps => ps.slice(numToProcess))
-      console.log('setting isProcessingAudioPromise to FALSE')
+      // console.log('setting isProcessingAudioPromise to FALSE')
       setIsProcessingAudioPromise(false)
       // isAudioProcessingRef.current = false
     })
   }, [audioPromiseQueue, isProcessingAudioPromise]);
 
   useEffect(() => {
-    console.log('audioQueue useEffect')
+    // console.log('audioQueue useEffect')
     if (audioQueue.length === 0 && audioPromiseQueue.length === 0 && !isAudioPlaying) {
-      console.log('%cspot A so setting to null', 'color: red');
+      // console.log('%cspot A so setting to null', 'color: red');
       setCurrentlyPlayingMessageIndex(null)
     }
     if (audioQueue.length === 0 || isAudioPlaying) return;
-    console.log('audioQueue useEffect running w/ ', audioQueue)
+    // console.log('audioQueue useEffect running w/ ', audioQueue)
     // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
     setIsAudioPlaying(true);
     // isAudioPlayingRef.current = true
@@ -408,7 +408,7 @@ export default function Home() {
       console.error('error playing audio: ', e)
       setIsAudioPlaying(false);
 
-      console.log('%cspot B so setting to null', 'color: red');
+      // console.log('%cspot B so setting to null', 'color: red');
       setCurrentlyPlayingMessageIndex(null)
 
       // isAudioPlayingRef.current = false
@@ -424,7 +424,7 @@ export default function Home() {
       body: JSON.stringify({ "input": text })
     }).then(res => res.blob());
     setAudioPromiseQueue(pq => [...pq, blobPromise]);
-    console.log('%cspot C so setting to ', 'color: red', messageIndex);
+    // console.log('%cspot C so setting to ', 'color: red', messageIndex);
     setCurrentlyPlayingMessageIndex(messageIndex)
   };
 
@@ -446,7 +446,7 @@ export default function Home() {
 
     // Handle the final chunk when streaming ends
     if (isFinalChunk && sentenceChunks.length > 0) {
-      console.log('Queueing final sentence:', sentenceChunks[sentenceChunks.length - 1]);
+      // console.log('Queueing final sentence:', sentenceChunks[sentenceChunks.length - 1]);
       queueAudioFromText(sentenceChunks[sentenceChunks.length - 1]);
       setProcessedSentenceChunkCount(0); // Reset for the next message
     }
@@ -455,7 +455,7 @@ export default function Home() {
     if (newChunksCount > 0) {
       const textToQueue = sentenceChunks.slice(processedSentenceChunkCount, -1).join(' ');
       if (textToQueue.trim()) {
-        console.log('Queueing new chunks:', textToQueue);
+        // console.log('Queueing new chunks:', textToQueue);
         queueAudioFromText(textToQueue);
         setProcessedSentenceChunkCount(sentenceChunks.length - 1);
       }
@@ -465,7 +465,7 @@ export default function Home() {
 
 
   const scrollToBottom = () => {
-    console.log('scroll to bottom called')
+    // console.log('scroll to bottom called')
     console.dir(messagesEndRef.current)
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -497,88 +497,88 @@ export default function Home() {
   //   processCorrectionStream(completion)
   // }, [completion])
 
-  async function createFlashcardsFromXML(XMLFlashcards: string) {
-    console.log('createFlashcards from XML hit')
-    const createClozeCard = async (clozeCardXml: Element) => {
-      console.dir(clozeCardXml)
-      let foreignSentenceClozed = ''
-      const foreignSentenceBase = clozeCardXml.textContent
-      if (!foreignSentenceBase) throw new Error(`couldnt get foreignSentenceBase from xml`)
-      let counter = 1
-      Array.from(clozeCardXml.childNodes).forEach((node, i) => {
-        if (node.nodeType === 3) {
-          foreignSentenceClozed += node.textContent
-        } else if (node instanceof Element && node.tagName === 'deletion') {
-          const clozeDeletion = `{{c${counter}::${node.textContent}}}`
-          counter++
-          foreignSentenceClozed += clozeDeletion
-        }
-        else throw new Error(`uncovered type of node: ${node.nodeName}`)
-      })
+  // async function createFlashcardsFromXML(XMLFlashcards: string) {
+  //   // console.log('createFlashcards from XML hit')
+  //   const createClozeCard = async (clozeCardXml: Element) => {
+  //     console.dir(clozeCardXml)
+  //     let foreignSentenceClozed = ''
+  //     const foreignSentenceBase = clozeCardXml.textContent
+  //     if (!foreignSentenceBase) throw new Error(`couldnt get foreignSentenceBase from xml`)
+  //     let counter = 1
+  //     Array.from(clozeCardXml.childNodes).forEach((node, i) => {
+  //       if (node.nodeType === 3) {
+  //         foreignSentenceClozed += node.textContent
+  //       } else if (node instanceof Element && node.tagName === 'deletion') {
+  //         const clozeDeletion = `{{c${counter}::${node.textContent}}}`
+  //         counter++
+  //         foreignSentenceClozed += clozeDeletion
+  //       }
+  //       else throw new Error(`uncovered type of node: ${node.nodeName}`)
+  //     })
 
-      const resp = await fetch(`/api/getEnglishTranslation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          language: targetLanguage,
-          sentence: foreignSentenceBase
-        })
-      }).then(resp => resp.json())
+  //     const resp = await fetch(`/api/getEnglishTranslation`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json'
+  //       },
+  //       body: JSON.stringify({
+  //         language: targetLanguage,
+  //         sentence: foreignSentenceBase
+  //       })
+  //     }).then(resp => resp.json())
 
-      const englishTranslation = resp.englishTranslation
-      const formattedCardText =
-        `${foreignSentenceClozed}
-        <br/><br/>
-      ${englishTranslation}`
-      const clozeFlashcard: ClozeFlashcard = {
-        text: formattedCardText,
-        back_extra: '',
-        foreign_sentence_base: foreignSentenceBase
-      }
-      return clozeFlashcard
-    }
+  //     const englishTranslation = resp.englishTranslation
+  //     const formattedCardText =
+  //       `${foreignSentenceClozed}
+  //       <br/><br/>
+  //     ${englishTranslation}`
+  //     const clozeFlashcard: ClozeFlashcard = {
+  //       text: formattedCardText,
+  //       back_extra: '',
+  //       foreign_sentence_base: foreignSentenceBase
+  //     }
+  //     return clozeFlashcard
+  //   }
 
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(XMLFlashcards, "text/xml");
-    let flashcardsPromises: (Promise<Flashcard>)[] = []
+  //   const parser = new DOMParser();
+  //   const xmlDoc = parser.parseFromString(XMLFlashcards, "text/xml");
+  //   let flashcardsPromises: (Promise<Flashcard>)[] = []
 
-    xmlDoc.querySelectorAll('cloze').forEach(clozeCardXml => {
+  //   xmlDoc.querySelectorAll('cloze').forEach(clozeCardXml => {
 
-      flashcardsPromises.push(createClozeCard(clozeCardXml))
-    })
+  //     flashcardsPromises.push(createClozeCard(clozeCardXml))
+  //   })
 
-    const flashcards = await Promise.all(flashcardsPromises);
+  //   const flashcards = await Promise.all(flashcardsPromises);
 
-    return flashcards
-  }
+  //   return flashcards
+  // }
 
   // useEffect(() => console.log('%ccurrently playing message index', 'color: lightgreen', currentlyPlayingMessageIndex), [currentlyPlayingMessageIndex])
   // useEffect(() => console.log('%cisAudioPlaying', 'color: lightgreen', isAudioPlaying), [isAudioPlaying])
   // useEffect(() => console.log('%caudioqueue.length', 'color: lightgreen', audioQueue.length), [audioQueue])
   useEffect(() => console.log('md\n', messagesData), [messagesData])
 
-  const makeFlashcards = async ({ pupilMessage, correctedMessage, mistakes }: { pupilMessage: string, correctedMessage: string, mistakes: string }) => {
-    console.log('processing xml flashcards for ', indexOfProcessingMessage)
-    const body = {
-      pupilMessage,
-      correctedMessage,
-      mistakes,
-      language: targetLanguage
-    }
-    console.log('full body: ', body)
-    const resp = await fetch(`/api/getXMLFlashcards`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    }).then(resp => resp.json())
-    const XMLFlashcards = resp.XMLFlashcards
-    const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
-    addFlashcards(_flashcards)
-  }
+  // const makeFlashcards = async ({ pupilMessage, correctedMessage, mistakes }: { pupilMessage: string, correctedMessage: string, mistakes: string }) => {
+  //   // console.log('processing xml flashcards for ', indexOfProcessingMessage)
+  //   const body = {
+  //     pupilMessage,
+  //     correctedMessage,
+  //     mistakes,
+  //     language: targetLanguage
+  //   }
+  //   // console.log('full body: ', body)
+  //   const resp = await fetch(`/api/getXMLFlashcards`, {
+  //     method: "POST",
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify(body)
+  //   }).then(resp => resp.json())
+  //   const XMLFlashcards = resp.XMLFlashcards
+  //   const _flashcards = await createFlashcardsFromXML(XMLFlashcards)
+  //   addFlashcards(_flashcards)
+  // }
 
   useEffect(() => {
     scrollToBottom();
@@ -641,12 +641,12 @@ export default function Home() {
     e.preventDefault()
     stopAudio()
     if (isAssistantStreaming) {
-      console.log("stop form event")
+      // console.log("stop form event")
       stopChat()
       setIsAssistantStreaming(false)
     } else {
       mixpanel.track('send_chat', { messagesData })
-      console.log("send form event")
+      // console.log("send form event")
       const lastAssistantMessageTokensData = messagesData[messagesData.length - 1].tokenDataArr
       if (lastAssistantMessageTokensData) updateCardsDict(lastAssistantMessageTokensData)
       append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, messagesData, focusList: [] } } })
@@ -688,7 +688,7 @@ export default function Home() {
     })
       .then(response => response.blob())
       .then(blob => {
-        console.log('handling blob')
+        // console.log('handling blob')
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -715,7 +715,7 @@ export default function Home() {
     setAudioPromiseQueue([])
     setIsAudioPlaying(false)
     setIsProcessingAudioPromise(false)
-    console.log('%cspot D so setting to null', 'color: red');
+    // console.log('%cspot D so setting to null', 'color: red');
     setCurrentlyPlayingMessageIndex(null)
   }
 

@@ -103,7 +103,7 @@ export async function POST(req: Request) {
     res.on("text", (text) => process.stdout.write(text));
     res.on("end", () => {
       const endTime = performance.now();
-      // console.log(chalk.bgRed(`\nLatency for LLM call: ${Math.round(endTime - startTime)}ms`));
+      console.log(chalk.bgRed(`\nLatency for LLM call: ${Math.round(endTime - startTime)}ms`));
     });
     const final = await res.finalMessage();
     const text = final.content[0].text;
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
     console.log({ hasMisusedWords, misusedTokens: misusedTokenData });
 
     if (!hasMisusedWords) {
-      // console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
+      console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
       return [text, xmlJson.result.answer[0], focusWordsUsed, tokenDataArr];
     } else {
       messages.push({
@@ -137,8 +137,8 @@ export async function POST(req: Request) {
     assistantResponse: string = ""
   ): Promise<[TokenData[], string[], TokenData[]]> => {
     const tokenDataArr = await tokenizer(assistantResponse);
-    // console.log('tokenDataArr')
-    // console.log(tokenDataArr)
+    console.log('tokenDataArr')
+    console.log(tokenDataArr)
     const misusedTokenData: TokenData[] = [];
     for (let tokenData of tokenDataArr) {
       if (!tokenData.id) continue; // skip over punctuation and spaced
