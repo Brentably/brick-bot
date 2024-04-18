@@ -117,8 +117,11 @@ export default function Home() {
   const append = async ({ id, role, content }:Message, { options: { body } }:any) => {
     const controller = new AbortController();
     const { signal } = controller;
+    appendControllerRef.current = controller;
 
-    setMessages(pM => [...pM, { id, role, content }])
+    const idOfAssMessage = crypto.randomUUID()
+
+    setMessagesData(pM => [...pM, { id, role, content }, { id: idOfAssMessage, role: 'assistant' as 'assistant', content: '' }])
 
     try {
       setProcessedSentenceChunkCount(0)
@@ -129,14 +132,17 @@ export default function Home() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          messages: [...messages.map(x => ({role: x.role, content: x.content})), { role, content }],
+          messages: [...messagesData.map(x => ({role: x.role, content: x.content})), { role, content }],
           messagesData,
           ...body
         }),
         signal
       })
       const data = await resp.json()
-      setMessages(pM => [...pM, { id: crypto.randomUUID(), role: 'assistant', content: data.response }])
+      setMessagesData(pM => {
+        const index = pM.findIndex(a => a.id === idOfAssMessage)
+        return [...pM.with(index, {...pM[index], id: id, role: 'assistant', content: data.response })]
+      })
       setIsAssistantStreaming(false)
       setMessagesData(pM => [...pM.with(pM.length-1, { ...pM[pM.length-1], tokenDataArr: data.tokenDataArr })])
     } catch (error:any) {
@@ -148,10 +154,8 @@ export default function Home() {
     }
 
 
-    appendControllerRef.current = controller;
   }
 
-  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setInput(e.target.value)
@@ -191,18 +195,20 @@ export default function Home() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const textareaContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const serializeMessages = useCallback(() => {
-    // console.log('serializing messages')
-    if (!hasHydrated) {
-      setMessages(zustandMessages)
-    } else if (messages.length >= zustandMessages.length && messages.length) {
-      // console.log('setting zustand messages from messages: ', messages)
-      setZustandMessages(messages)
-    } else if (zustandMessages.length > messages.length) {
-      // console.log('setting messages from zustand messages')
-      setMessages(zustandMessages)
-    }
-  }, [messages, zustandMessages, hasHydrated])
+  // const serializeMessages = useCallback(() => {
+  //   // console.log('serializing messages')
+  //   if (!hasHydrated) {
+  //     setMessages(zustandMessages)
+  //   } else if (messages.length >= zustandMessages.length && messages.length) {
+  //     // console.log('setting zustand messages from messages: ', messages)
+  //     setZustandMessages(messages)
+  //   } else if (zustandMessages.length > messages.length) {
+  //     // console.log('setting messages from zustand messages')
+  //     setMessages(zustandMessages)
+  //   }
+  // }, [messages, zustandMessages, hasHydrated])
+
+
 
   // const { input: correctionInput, setInput: setCorrectionInput, complete: correctionComplete, stop: stopCorrection, completion } = useCompletion({
   //   api: '/api/getCorrectedMessageAndFeedback', id: 'correction',
@@ -211,12 +217,6 @@ export default function Home() {
   //   onFinish: () => setIsCorrectionStreaming(false)
   // })
 
-
-  useEffect(() => {
-    // console.log('messages change')
-    // always keep messages data length 1 above messages to prevent undefined errors.
-    if (messagesData.length < messages.length + 1) setMessagesData(pMD => [...pMD, { didMakeMistakes: null, role: isEven(pMD.length) ? 'user' : 'assistant', tokenDataArr: [] }])
-  }, [messages])
 
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
   const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
@@ -341,7 +341,7 @@ export default function Home() {
   // load messagesData on initial render
   useEffect(() => {
     useBrickStore.persist.onFinishHydration((s) => {
-      serializeMessages()
+      // serializeMessages()
       setHasHydrated(true)
     })
     useBrickStore.persist.rehydrate()
@@ -418,7 +418,7 @@ export default function Home() {
   }, [audioQueue, isAudioPlaying]);
 
   // Function to add audio promises to the queue
-  const queueAudioFromText = (text: string, messageIndex: number = messages.length - 1) => {
+  const queueAudioFromText = (text: string, messageIndex: number = messagesData.length - 1) => {
     if(text.trim() === '') return
     const blobPromise = fetch('/api/tts', {
       method: 'POST',
@@ -431,13 +431,13 @@ export default function Home() {
 
 
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messagesData.length === 0) return;
 
-    const lastMessage = messages[messages.length - 1];
+    const lastMessage = messagesData[messagesData.length - 1];
     if (lastMessage.role !== 'assistant') return;
 
     // add WordData for each word in response to messageData
-    processAssistantResponse(messages[messages.length - 1].content, targetLanguage, messages.length-1)
+    // processAssistantResponse(messagesData[messagesData.length - 1].content, targetLanguage, messagesData.length-1)
 
     const messageStr = lastMessage.content;
     const sentenceChunks = messageStr.split(/(?<=[.!?])(?=(?:[^"]*"[^"]*")*[^"]*$)\s+/);
@@ -461,7 +461,7 @@ export default function Home() {
         setProcessedSentenceChunkCount(sentenceChunks.length - 1);
       }
     }
-  }, [messages, isAssistantStreaming]);
+  }, [messagesData, isAssistantStreaming]);
 
 
 
@@ -584,60 +584,58 @@ export default function Home() {
     scrollToBottom();
     if (isAssistantStreaming) return  // process latest message. think of as onFinish()
     // ON FINISH:
-    serializeMessages()
+    // serializeMessages()
 
 
-    const processMessageMistakesAndCorrection = async (message: Message, index: number) => {
-      if (message.role !== 'user') return
-      console.log('setting index of processing message', index)
-      setIndexOfProcessingMessage(index)
-      // if no instructor message just make some shit up
-      const instructorMessage = messages.at(-2)?.content ?? ''
+    // const processMessageMistakesAndCorrection = async (message: Message, index: number) => {
+    //   if (message.role !== 'user') return
+    //   console.log('setting index of processing message', index)
+    //   setIndexOfProcessingMessage(index)
+    //   // if no instructor message just make some shit up
+    //   const instructorMessage = messages.at(-2)?.content ?? ''
 
-      const resp = await fetch(`/api/didMakeMistakes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          language: targetLanguage,
-          instructorMessage,
-          pupilMessage: message.content,
-        })
-      }).then(resp => resp.json())
+    //   const resp = await fetch(`/api/didMakeMistakes`, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json'
+    //     },
+    //     body: JSON.stringify({
+    //       language: targetLanguage,
+    //       instructorMessage,
+    //       pupilMessage: message.content,
+    //     })
+    //   }).then(resp => resp.json())
 
-      const didMakeMistakes = resp?.didMakeMistakes === 'YES' ? true : false
+    //   const didMakeMistakes = resp?.didMakeMistakes === 'YES' ? true : false
 
-      setMessagesData(pM => {
-        const newArr = [...pM]
-        newArr[index] = { ...pM[index], didMakeMistakes }
-        return newArr
-      })
+    //   setMessagesData(pM => {
+    //     const newArr = [...pM]
+    //     newArr[index] = { ...pM[index], didMakeMistakes }
+    //     return newArr
+    //   })
 
-      if (!didMakeMistakes) return
+    //   if (!didMakeMistakes) return
 
-      const correctedJSON = await fetch(`/api/getCorrectedMessageAndFeedback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          language: targetLanguage,
-          pupilMessage: message.content,
-          instructorMessage
-        })
-      }).then(resp => resp.json())
+    //   const correctedJSON = await fetch(`/api/getCorrectedMessageAndFeedback`, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json'
+    //     },
+    //     body: JSON.stringify({
+    //       language: targetLanguage,
+    //       pupilMessage: message.content,
+    //       instructorMessage
+    //     })
+    //   }).then(resp => resp.json())
 
-      const { mistakes, corrected_message } = correctedJSON
+    //   const { mistakes, corrected_message } = correctedJSON
 
-      setMessagesData(pMD => [...pMD.with(index, { ...pMD[index], mistakes, correctedMessage: corrected_message })])
-      makeFlashcards({ pupilMessage: message.content, correctedMessage: corrected_message, mistakes })
+    //   setMessagesData(pMD => [...pMD.with(index, { ...pMD[index], mistakes, correctedMessage: corrected_message })])
+    //   makeFlashcards({ pupilMessage: message.content, correctedMessage: corrected_message, mistakes })
 
-    }
-    if (messages.length) {
-      processMessageMistakesAndCorrection(messages[messages.length - 1], messages.length - 1)
-    }
-  }, [messages, isAssistantStreaming, targetLanguage]);
+    // }
+    // if (messages.length) processMessageMistakesAndCorrection(messages[messages.length - 1], messages.length - 1)
+  }, [messagesData, isAssistantStreaming, targetLanguage]);
 
   const handleSendOrStop = (e: React.KeyboardEvent<HTMLTextAreaElement> | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault()
@@ -647,9 +645,9 @@ export default function Home() {
       stopChat()
       setIsAssistantStreaming(false)
     } else {
-      mixpanel.track('send_chat', { messages, messagesData })
+      mixpanel.track('send_chat', { messagesData })
       console.log("send form event")
-      const lastAssistantMessageTokensData: TokenData[] = messagesData[messagesData.length - 2].tokenDataArr
+      const lastAssistantMessageTokensData = messagesData[messagesData.length - 1].tokenDataArr
       if (lastAssistantMessageTokensData) updateCardsDict(lastAssistantMessageTokensData)
       append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic, messagesData, focusList: [] } } })
       setInput('')
@@ -886,7 +884,7 @@ export default function Home() {
                       <button className="flex-grow bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded" onClick={() => setShowResetConfirmationModal(false)}>Cancel</button>
                       <button className="flex-grow bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
                         stopChat()
-                        setMessages([])
+                        setMessagesData([])
                         resetStore()
                         setShowResetConfirmationModal(false)
                         mixpanel.track('reset_chat')
@@ -938,12 +936,11 @@ export default function Home() {
 
               <div className='flex-1 flex-grow relative flex flex-col justify-stretch overflow-y-auto'>
                 <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
-                  {messages.map((message, index) => (index > 0) ?
+                  {messagesData.map((messageData, index) =>
                     <Bubble
                       ref={messagesEndRef}
                       key={`message-${index}`}
-                      content={message}
-                      messageData={messagesData[index]}
+                      messageData={messageData}
                       handleAudio={() => {
                         const isCurrentlyPlaying = (isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)
                         // if this bubble is currently playing, then it pauses the audio.
@@ -957,7 +954,7 @@ export default function Home() {
                           stopAudio()
                         }
                         // normally, just plays the fucking audio of the bubble
-                        queueAudioFromText(message.content, index)
+                        queueAudioFromText(messageData.content, index)
                       }}
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
@@ -965,7 +962,7 @@ export default function Home() {
                       handleLemmaClick={(lemma: string) => {
 
                       }}
-                    /> : null
+                    /> 
                   )}
                 </div>
 

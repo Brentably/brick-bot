@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Flashcard } from "./types";
 import { Message } from "ai";
-import { MessageData } from "../app/page";
+import { MessageData } from "../lib/types";
 import { toast } from "react-toastify";
 
 export interface Store {
@@ -31,8 +31,6 @@ const INIT_STORE = {
   zustandMessages: [],
   hasStarted: false,
   messagesData: [
-    { role: "system", didMakeMistakes: null },
-    { role: "user", didMakeMistakes: null },
   ] as MessageData[],
   flashcardsGoal: 10,
   tooltipDisplayCount: 0,

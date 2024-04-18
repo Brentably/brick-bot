@@ -1,3 +1,5 @@
+import { Message } from "ai";
+
 export type BasicFlashcard = {
   front: string;
   back: string;
@@ -16,12 +18,11 @@ export interface TokenData {
   // any whitespace characters following original token
   token_ws: string,
   root_words: string[],
+  is_svp: boolean,
   clicked?: boolean
 }
 
-export type MessageData = {
-  role: "user" | "assistant";
-  didMakeMistakes: boolean | null;
+export interface MessageData extends Message{
   mistakes?: string;
   correctedMessage?: string;
   explanation?: string;
