@@ -20,11 +20,10 @@ interface BubbleProps {
   handleAudio?: () => void
   isPlaying: boolean
   isLoading: boolean
-  language: string
-  handleLemmaClick: (lemma: string) => void
+  handleTokenClick: (word: string) => void
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAudio, isPlaying, isLoading, language, handleLemmaClick }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAudio, isPlaying, isLoading, handleTokenClick }, ref) => {
 
   Bubble.displayName = 'Bubble';
   const { role } = messageData;
@@ -73,7 +72,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
                 // if token is a word, make it clickable
                 token.match(/[a-zA-ZÀ-ž]+/) ?
                   <>
-                    <span key={index} onClick={() => handleLemmaClick} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span>
+                    <span key={index} onClick={() => handleTokenClick(token)} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span>
                     <span key={index+'ws'}>{token_ws}</span>
                   </>
                   : <span key={index}>{token}{['-', '(', '\''].includes(token) ? '' : ' '}</span>

@@ -19,7 +19,6 @@ export interface TokenData {
   token_ws: string,
   root_words: string[],
   is_svp: boolean,
-  clicked?: boolean
 }
 
 export interface MessageData extends Message{
