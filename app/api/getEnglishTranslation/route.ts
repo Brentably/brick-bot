@@ -1,5 +1,8 @@
 import * as deepl from "deepl-node";
 
+
+
+
 const translator = new deepl.Translator(process.env.DEEPL_API_KEY!);
 
 // (async () => {
@@ -12,6 +15,7 @@ const translator = new deepl.Translator(process.env.DEEPL_API_KEY!);
 export async function POST(req: Request) {
   try {
     console.log('getEnglish translation hit')
+    console.log(process.env.DEEPL_API_KEY)
     const { sentence, language } = await req.json();
 
     console.log('translating ', sentence, ' to english')

@@ -41,6 +41,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
     if (isUser && !messageData) console.log("HELLO")
   }, [messageData])
 
+  const [hoveredTokenId, setHoveredTokenId] = useState<number|null>(null)
   return (
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`} data-tooltip-id="translateHint">
       {(!isUser && tooltipDisplayCount < 2) && <ReactTooltip id="translateHint" place="top" afterHide={incrementTooltipDisplayCount}>
@@ -72,7 +73,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
                 // if token is a word, make it clickable
                 token.match(/[a-zA-ZÀ-ž]+/) ?
                   <>
-                    <span key={index} onClick={() => handleTokenClick(token)} style={{ cursor: 'pointer' }} className="hover:bg-yellow-200">{token}</span>
+                    <span key={index} onClick={() => handleTokenClick(token)} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
                     <span key={index+'ws'}>{token_ws}</span>
                   </>
                   : <span key={index}>{token}{['-', '(', '\''].includes(token) ? '' : ' '}</span>
