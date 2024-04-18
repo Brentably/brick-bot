@@ -36,12 +36,11 @@ console.log('hwd: ', HARDCODED_WORD_LIST.join(', '))
 
 const createSystemPrompt = (
   language: string = `German`,
-  topic: string,
   wordList: string[],
   focusList: string[]
 ) => `
     <instructions>
-    You are Brick Bot, an expert ${language} speaker, eager to chat with the learner about ${topic}. Keep the conversation interesting! Engage with the user and ask them questions so they want to keep talking! 
+    You are Brick Bot, an expert ${language} speaker, eager to chat with the learner. Keep the conversation interesting! Engage with the user and ask them questions so they want to keep talking! 
 
     Only use words based on the following word list: 
     <list>
@@ -158,7 +157,7 @@ export async function POST(req: Request) {
 
     return [misusedTokenData, focusWordsUsed, tokenDataArr];
   };
-  const { messages, messagesData, language, topic, focusList } = await req.json();
+  const { messages, messagesData, language, focusList } = await req.json();
   console.log(`messagesData`)
   console.log(messagesData)
   const allUsedUserWords = Array.from(new Set((messagesData as MessageData[]).flatMap(x => 'tokenDataArr' in x ? x['tokenDataArr']!.map(tokenData => tokenData.token) : [])))
@@ -169,7 +168,7 @@ export async function POST(req: Request) {
     console.log('messages  s s s s ')
     console.log(messages)
 
-    const [xmlResp, cleanResp, focusWordsUsed, tokenDataArr] = await _main(messages, createSystemPrompt(language, topic, HARDCODED_WORD_LIST, focusList))
+    const [xmlResp, cleanResp, focusWordsUsed, tokenDataArr] = await _main(messages, createSystemPrompt(language, HARDCODED_WORD_LIST, focusList))
 
     console.log(`cleanResp generated: `, 'cleanResp')
 

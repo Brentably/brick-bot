@@ -478,6 +478,7 @@
     "pos": "das",
     "versions": ["Mal", "Males", "Mals", "Male", "Mäler", "Mälern", "Malen"]
   },
+  { "word": "mal", "pos": "adv", "versions": ["mal"]},
   {
     "word": "lassen",
     "pos": "verb",
@@ -1810,13 +1811,7 @@
   {
     "word": "nächsten",
     "pos": "adj",
-    "versions": [
-      "nächster",
-      "nächsten",
-      "nächstem",
-      "nächste",
-      "nächstes"
-    ]
+    "versions": ["nächster", "nächsten", "nächstem", "nächste", "nächstes"]
   },
   {
     "word": "erklären",

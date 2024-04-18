@@ -221,7 +221,6 @@ export default function Home() {
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
   const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [topic, setTopic] = useState('')
   const [targetLanguage, setTargetLanguage] = useState<string>('German')
   const flashcards = useBrickStore(state => state.flashcards)
   const addFlashcards = useBrickStore(state => state.addFlashcards)
@@ -656,7 +655,7 @@ export default function Home() {
     } else {
       mixpanel.track('send_chat', { messagesData })
       console.log("send form event")
-      append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic, messagesData, focusList: [] } } })
+      append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, messagesData, focusList: [] } } })
       setInput('')
     }
   }
@@ -669,12 +668,11 @@ export default function Home() {
   }, [input])
 
 
-  const beginChat = (_topic: string) => {
-    mixpanel.track('begin_chat', { topic: _topic, targetLanguage })
+  const beginChat = () => {
+    mixpanel.track('begin_chat', { targetLanguage })
     setHasStarted(true)
     if (window.innerWidth < 600) setIsHeaderOpen(false);
-    append({ id: crypto.randomUUID(), role: 'user', content: LANGUAGE_TO_HELLO[targetLanguage] }, { options: { body: { language: targetLanguage, topic: _topic, messagesData, focusList: [] } } })
-    setTopic(_topic)
+    append({ id: crypto.randomUUID(), role: 'user', content: LANGUAGE_TO_HELLO[targetLanguage] }, { options: { body: { language: targetLanguage, messagesData, focusList: [] } } })
   }
 
 
@@ -732,32 +730,32 @@ export default function Home() {
 
 
   // update the latest assistant messages data with its words data
-  // const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
-  //   console.log("processing assistant response for message: ")
-  //   // call process_message on messageContent to receive [word, id, [lemmas]][]
-  //   const url = 'http://localhost:8000/process-message'
-  //   //const url = 'https://api.brick.bot/process-message'
-  //   const response = await fetch(url, {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json'
-  //     },
-  //     body: JSON.stringify({
-  //       input_str: input_str,
-  //       language: language
-  //     })
-  //   })
+  const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
+    console.log("processing assistant response for message: ")
+    // call process_message on messageContent to receive [word, id, [lemmas]][]
+    const url = 'http://localhost:8000/process-message'
+    //const url = 'https://api.brick.bot/process-message'
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        input_str: input_str,
+        language: language
+      })
+    })
 
-  //   const responseTokenDataArr = (await response.json()).tokens
-  //   console.log(`responseTokenDataArr:`)
-  //   console.log(responseTokenDataArr)
-  //   // what if api call doesn't come back before latest message is updated?
-  //   setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
-  // }
+    const responseTokenDataArr = (await response.json()).tokens
+    console.log(`responseTokenDataArr:`)
+    console.log(responseTokenDataArr)
+    // what if api call doesn't come back before latest message is updated?
+    setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
+  }
 
   // useEffect(() => {
-  //   if (messages.length && messages[messages.length - 1].role === 'assistant') processAssistantResponse(messages[messages.length - 1].content, targetLanguage, messages.length-1)
-  // }, [messages])
+  //   if (messagesData.length && messagesData[messagesData.length - 1].role === 'assistant') processAssistantResponse(messagesData[messagesData.length - 1].content, targetLanguage, messagesData.length-1)
+  // }, [messagesData])
 
   return (
     <Div100vh>
@@ -973,7 +971,7 @@ export default function Home() {
                       className=" pl-3 pr-10 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                     >
                       <option value="German">German</option>
-                      <option value="Spanish">Spanish</option>
+                      {/* <option value="Spanish">Spanish</option>
                       <option value="French">French</option>
                       <option value="Chinese">Chinese</option>
                       <option value="Portuguese">Portuguese</option>
@@ -981,17 +979,25 @@ export default function Home() {
                       <option value="Russian">Russian</option>
                       <option value="Norwegian">Norwegian</option>
                       <option value="Swedish">Swedish</option>
-                      <option value="Indonesian">Indonesian</option>
+                      <option value="Indonesian">Indonesian</option> */}
 
                     </select>
                   </div>
 
-                  <div className="flex flex-row justify-between items-center mt-3">
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={beginChat}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-105"
+                    >
+                      Begin
+                    </button>
+                  </div>
+                  {/* <div className="flex flex-row justify-between items-center mt-3">
                     <label htmlFor="number-select" className="block text-lg font-medium text-gray-700"># of flashcards</label>
                     <input id='number-select' type='number' value={flashcardsGoal} onChange={(e) => setFlashcardsGoal(e.target.valueAsNumber)} className='px-3 py-2 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md max-w-[147px]' />
-                  </div>
+                  </div> */}
 
-                  <div className='flex flex-row flex-wrap justify-between items-center mt-3'>
+                  {/* <div className='flex flex-row flex-wrap justify-between items-center mt-3'>
                     <label htmlFor="topic-select" className="text-lg font-medium text-gray-700">Select a topic or enter your own!</label>
 
                     <div id='example prompts' className='flex flex-row flex-wrap justify-around'>
@@ -1011,7 +1017,7 @@ export default function Home() {
                         <SendIcon color='#374151' />
                       </button>
                     </div>
-                  </div>
+                  </div> */}
                   <div className="mt-4 text-center">
                     <a href="/terms.html" className="text-sm text-gray-600 hover:underline">Terms of Service</a>
                     <span className="mx-2">|</span>
