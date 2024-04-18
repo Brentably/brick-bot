@@ -32,7 +32,7 @@ const HARDCODED_WORD_LIST = (JSON.parse(fs.readFileSync(process.cwd() + '/app/50
 
 import util from 'util';
 import { Token } from "typescript";
-console.log('hwd: ', HARDCODED_WORD_LIST.join(', '))
+// console.log('hwd: ', HARDCODED_WORD_LIST.join(', '))
 
 const createSystemPrompt = (
   language: string = `German`,
@@ -103,7 +103,8 @@ export async function POST(req: Request) {
     res.on("text", (text) => process.stdout.write(text));
     res.on("end", () => {
       const endTime = performance.now();
-      console.log(chalk.bgRed(`\nLatency for LLM call: ${Math.round(endTime - startTime)}ms`));});
+      // console.log(chalk.bgRed(`\nLatency for LLM call: ${Math.round(endTime - startTime)}ms`));
+    });
     const final = await res.finalMessage();
     const text = final.content[0].text;
 
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
     console.log({ hasMisusedWords, misusedTokens: misusedTokenData });
 
     if (!hasMisusedWords) {
-      console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
+      // console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
       return [text, xmlJson.result.answer[0], focusWordsUsed, tokenDataArr];
     } else {
       messages.push({
@@ -165,12 +166,12 @@ export async function POST(req: Request) {
   
   try {
 
-    console.log('messages  s s s s ')
-    console.log(messages)
+    // console.log('messages  s s s s ')
+    // console.log(messages)
 
     const [xmlResp, cleanResp, focusWordsUsed, tokenDataArr] = await _main(messages, createSystemPrompt(language, HARDCODED_WORD_LIST, focusList))
 
-    console.log(`cleanResp generated: `, 'cleanResp')
+    // console.log(`cleanResp generated: `, 'cleanResp')
 
 
     const singleMessageStream = new ReadableStream({
