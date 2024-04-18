@@ -18,6 +18,7 @@ export interface TokenData {
   // any whitespace characters following original token
   token_ws: string,
   root_words: string[],
+  is_svp: boolean,
   clicked?: boolean
 }
 

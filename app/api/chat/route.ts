@@ -34,7 +34,12 @@ import util from 'util';
 import { Token } from "typescript";
 console.log('hwd: ', HARDCODED_WORD_LIST.join(', '))
 
-const createSystemPrompt = (language: string = `German`, topic: string,  wordList: string[], focusList: string[]) => `
+const createSystemPrompt = (
+  language: string = `German`,
+  topic: string,
+  wordList: string[],
+  focusList: string[]
+) => `
     <instructions>
     You are Brick Bot, an expert ${language} speaker, eager to chat with the learner about ${topic}. Keep the conversation interesting! Engage with the user and ask them questions so they want to keep talking! 
 
@@ -59,6 +64,7 @@ const createSystemPrompt = (language: string = `German`, topic: string,  wordLis
     If "unterer" is on the list, you could use "untere".
     If "nächster" is on the list, you could use "nächste".
     If "dieser" is on the list, you could use "dies".
+    If "anfangen" is NOT on the list, you can't say "fange an!", even if "fangen" and "an" are on the list!
     
 
     But *ONLY* use words and versions of words from this list. DO NOT use any other words. Let me reiterate, do NOT, use any other words.
@@ -109,11 +115,11 @@ export async function POST(req: Request) {
     messages.push({ role: "assistant", content: text });
 
     const aStartTime = performance.now();
-    const [misusedWords, focusWordsUsed, tokenDataArr] = await getAnalysis(xmlJson.result.answer[0]);
+    const [misusedTokenData, focusWordsUsed, tokenDataArr] = await getAnalysis(xmlJson.result.answer[0]);
     console.log(chalk.bgRed(`\nLatency for analysis: ${Math.round(performance.now() - aStartTime)}ms`));
 
-    const hasMisusedWords = misusedWords.length > 0;
-    console.log({ hasMisusedWords, misusedWords });
+    const hasMisusedWords = misusedTokenData.length > 0;
+    console.log({ hasMisusedWords, misusedTokens: misusedTokenData });
 
     if (!hasMisusedWords) {
       console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
@@ -121,9 +127,7 @@ export async function POST(req: Request) {
     } else {
       messages.push({
         role: "user",
-        content: `<instructions>Unfortunately, you used: ${misusedWords.join(
-          ", "
-        )}. Let me reiterate, do *ONLY* use words provided on the list. DO NOT mess up again.</instructions>`,
+        content: `<instructions>Unfortunately, you used: ${misusedTokenData.map(tokenData => tokenData.is_svp ? tokenData.root_words[0] : tokenData.token)}. Let me reiterate, do *ONLY* use words provided on the list. DO NOT mess up again.</instructions>`,
       });
       return await _main(messages, systemPrompt, depth + 1);
     }
@@ -131,11 +135,11 @@ export async function POST(req: Request) {
 
   const getAnalysis = async (
     assistantResponse: string = ""
-  ): Promise<[string[], string[], TokenData[]]> => {
+  ): Promise<[TokenData[], string[], TokenData[]]> => {
     const tokenDataArr = await tokenizer(assistantResponse);
     // console.log('tokenDataArr')
     // console.log(tokenDataArr)
-    const misused: string[] = [];
+    const misusedTokenData: TokenData[] = [];
     for (let tokenData of tokenDataArr) {
       if (!tokenData.id) continue; // skip over punctuation and spaced
       // if anyof the rootwords returned are in the wordList AND it's not a word that the user has used
@@ -144,14 +148,15 @@ export async function POST(req: Request) {
         !allUsedUserWords.includes(tokenData.token)
       ) {
         console.log('misused pushing token: ', tokenData)
-        misused.push(tokenData.token);
+        
+        misusedTokenData.push(tokenData);
       }
     }
 
 
-    const focusWordsUsed = misused.length !== 0 ? [] : Array.from(new Set(tokenDataArr.flatMap(tokenData => tokenData.root_words.filter(rootWord => focusList.includes(rootWord)))))
+    const focusWordsUsed = misusedTokenData.length !== 0 ? [] : Array.from(new Set(tokenDataArr.flatMap(tokenData => tokenData.root_words.filter(rootWord => focusList.includes(rootWord)))))
 
-    return [misused, focusWordsUsed, tokenDataArr];
+    return [misusedTokenData, focusWordsUsed, tokenDataArr];
   };
   const { messages, messagesData, language, topic, focusList } = await req.json();
   console.log(`messagesData`)

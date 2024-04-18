@@ -117,6 +117,7 @@ export default function Home() {
   const append = async ({ id, role, content }:Message, { options: { body } }:any) => {
     const controller = new AbortController();
     const { signal } = controller;
+    appendControllerRef.current = controller;
 
     const idOfAssMessage = crypto.randomUUID()
 
@@ -153,7 +154,6 @@ export default function Home() {
     }
 
 
-    appendControllerRef.current = controller;
   }
 
   const [input, setInput] = useState('')
