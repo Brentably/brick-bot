@@ -16,11 +16,6 @@ import mixpanel from 'mixpanel-browser';
 import { debounce } from "lodash"
 
 interface BubbleProps {
-  content: {
-    role: string;
-    content: string
-    [key: string]: any;
-  };
   messageData: MessageData;
   handleAudio?: () => void
   isPlaying: boolean
@@ -29,17 +24,17 @@ interface BubbleProps {
   handleLemmaClick: (lemma: string) => void
 }
 
-const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, handleAudio, isPlaying, isLoading, language, handleLemmaClick }, ref) => {
+const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAudio, isPlaying, isLoading, language, handleLemmaClick }, ref) => {
 
   Bubble.displayName = 'Bubble';
-  const { role } = content;
+  const { role } = messageData;
   const isUser = role === "user"
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const tooltipDisplayCount = useBrickStore(state => state.tooltipDisplayCount)
   const incrementTooltipDisplayCount = useBrickStore(state => state.incrementTooltipDisplayCount)
 
-  const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
+  // const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
 
   useEffect(() => console.log('navigator useragent', navigator.userAgent), [])
   useEffect(() => {
@@ -58,71 +53,15 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ content, messageData, 
         </button>
       )}
       <div className='flex flex-row items-center'>
-        {
-          isUser ? <>
-
-            {/*  */}
-            {isModalOpen && didMakeMistakes && (
-              <div className="fixed inset-0 z-50 flex justify-center items-center" onClick={() => setIsModalOpen(false)}>
-                <div className="bg-gray-100 bg-opacity-90 border border-gray-300 rounded-lg shadow-lg p-6 relative" style={{ width: 'calc(100% - 2rem)', maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setIsModalOpen(false)} className="absolute top-0 right-0 mt-4 mr-4 text-gray-600 hover:text-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                  <strong className="text-lg">Corrected Message:</strong>
-                  <p className="text-md mt-2">{messageData?.correctedMessage ? <>{messageData.correctedMessage}</> : <LoadingIndicator />}</p>
-                  <strong className="text-lg mt-4 inline-block">Mistakes:</strong>
-                  {messageData?.mistakes ?
-                    <Markdown
-                      className="markdown text-md grid grid-cols-1 gap-2 mt-2"
-                      remarkPlugins={[remarkGfm]}
-                    >
-                      {messageData.mistakes}
-                    </Markdown> : <LoadingIndicator />}
-                </div>
-              </div>
-            )}
-
-
-
-
-            {/*  */}
-
-
-            {didMakeMistakes === null ? (
-              <div className="h-6 w-6 rounded-full flex items-center justify-center mr-2 animate-spin">
-                <FaGear className="h-5 w-5" />
-              </div>
-            ) : (
-              <button
-                disabled={!didMakeMistakes}
-                className={`${didMakeMistakes
-                  ? 'bg-red-500 hover:opacity-80'
-                  : 'bg-green-500'
-                  } h-6 w-6 rounded-full focus:outline-none transition duration-200 flex items-center justify-center mr-2`}
-                onClick={() => {
-                  setIsModalOpen(!isModalOpen)
-                  mixpanel.track('modal_button_event', { isModalOpen })
-                }}
-              >
-                {didMakeMistakes ? (
-                  <HiOutlineQuestionMarkCircle className="h-6 w-6" />
-                ) : null}
-              </button>
-            )}
-
-
-          </> : null}
         <div className={`rounded-[10px] ${isUser ? 'rounded-br-none text-right text-[var(--text-primary)] bg-[var(--background-bubble-primary)]' : 'rounded-bl-none text-[var(--text-secondary-inverse)] bg-[var(--background-bubble-secondary)]'} p-2 lg:p-4 leading-[1.65] pr-9 relative self-start`}>
           {/* <Markdown
             className="markdown grid grid-cols-1 gap-3"
             remarkPlugins={[remarkGfm]}
           > {'\u200B' + content.content} </Markdown>
           */}
-          {'\u200B'}
+          {/* {'\u200B'} */}
           {isUser ? 
-          content.content 
+          messageData.content 
           : 
           messageData.tokenDataArr ?
           (
@@ -153,7 +92,7 @@ export default Bubble;
 
 export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assistant: BubbleProps | undefined }>(({ user, assistant }, ref) => {
   BubblePair.displayName = 'BubblePair';
-  const didMakeMistakes = typeof user.messageData === 'undefined' || user.messageData === null ? null : user.messageData.didMakeMistakes
+  // const didMakeMistakes = typeof user.messageData === 'undefined' || user.messageData === null ? null : user.messageData.didMakeMistakes
 
   useEffect(() => {
     // console.log('user updated: ')
@@ -168,7 +107,7 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
   return (<div className="flex flex-row">
     <div className="flex flex-col max-w-[60%] w-[60%] min-w-[60%] mr-2">
       <Bubble ref={ref} {...user} />
-      {assistant?.content && <Bubble ref={ref} {...assistant} />}
+      {assistant?.messageData && <Bubble ref={ref} {...assistant} />}
     </div>
 
     <div className="flex-grow flex">
@@ -176,8 +115,8 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
 
         <div className="p-2 lg:p-4">
           <div className="inline-block relative w-4 mr-1">
-            <span>&nbsp;</span>
-            <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />
+            {/* <span>&nbsp;</span> */}
+            {/* <div className={`${didMakeMistakes === null ? 'bg-yellow-500' : didMakeMistakes ? 'bg-red-500' : 'bg-green-500'} h-4 w-4 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} /> */}
           </div>
           <strong>{user.messageData?.correctedMessage}</strong>
         </div>

@@ -1,3 +1,5 @@
+import { Message } from "ai";
+
 export type BasicFlashcard = {
   front: string;
   back: string;
@@ -19,9 +21,7 @@ export interface TokenData {
   clicked?: boolean
 }
 
-export type MessageData = {
-  role: "user" | "assistant";
-  didMakeMistakes: boolean | null;
+export interface MessageData extends Message{
   mistakes?: string;
   correctedMessage?: string;
   explanation?: string;

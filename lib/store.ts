@@ -31,8 +31,6 @@ const INIT_STORE = {
   zustandMessages: [],
   hasStarted: false,
   messagesData: [
-    { role: "system", didMakeMistakes: null },
-    { role: "user", didMakeMistakes: null },
   ] as MessageData[],
   flashcardsGoal: 10,
   tooltipDisplayCount: 0,
