@@ -220,6 +220,7 @@
     "word": "geben",
     "pos": "verb",
     "versions": [
+      "geb",
       "gebe",
       "gibst",
       "gibt",
@@ -238,7 +239,8 @@
       "gäbet",
       "gebend",
       "gegeben"
-    ]
+    ],
+    "isSeperable": false
   },
   { "word": "vor", "pos": "prep", "versions": ["vor", "vorm"] },
   {
@@ -291,6 +293,7 @@
     "word": "machen",
     "pos": "verb",
     "versions": [
+      "mach",
       "mache",
       "machst",
       "macht",
@@ -303,7 +306,8 @@
       "machet",
       "machend",
       "gemacht"
-    ]
+    ],
+    "isSeperable": false
   },
   {
     "word": "andere",
@@ -340,13 +344,15 @@
       "sollet",
       "sollend",
       "gesollt"
-    ]
+    ],
+    "isSeperable": false
   },
   { "word": "schon", "pos": "adv", "versions": ["schon"] },
   {
     "word": "kommen",
     "pos": "verb",
     "versions": [
+      "komm",
       "komme",
       "kommst",
       "kömmst",
@@ -365,16 +371,19 @@
       "kämet",
       "kommend",
       "gekommen"
-    ]
+    ],
+    "isSeperable": false
   },
   { "word": "immer", "pos": "adv", "versions": ["immer"] },
   {
     "word": "gehen",
     "pos": "verb",
     "versions": [
+      "geh",
       "gehe",
       "gehst",
       "geht",
+      "gehn",
       "gehen",
       "ging",
       "gingst",
@@ -387,7 +396,8 @@
       "ginget",
       "gehend",
       "gegangen"
-    ]
+    ],
+    "isSeperable": false
   },
   {
     "word": "groß",
@@ -447,25 +457,32 @@
     "word": "sehen",
     "pos": "verb",
     "versions": [
+      "seh",
       "sehe",
       "siehst",
       "sieht",
+      "sehn",
       "sehen",
       "seht",
       "sah",
       "sahst",
+      "sahn",
       "sahen",
       "saht",
+      "sieh",
       "siehe",
       "sehest",
       "sehet",
       "sähe",
       "sähest",
+      "sähn",
       "sähen",
       "sähet",
       "sehend",
+      "gesehn",
       "gesehen"
-    ]
+    ],
+    "isSeperable": false
   },
   {
     "word": "einer",
@@ -478,11 +495,12 @@
     "pos": "das",
     "versions": ["Mal", "Males", "Mals", "Male", "Mäler", "Mälern", "Malen"]
   },
-  { "word": "mal", "pos": "adv", "versions": ["mal"]},
+  { "word": "mal", "pos": "adv", "versions": ["mal"] },
   {
     "word": "lassen",
     "pos": "verb",
     "versions": [
+      "lass",
       "lasse",
       "lässt",
       "lassen",
@@ -496,7 +514,8 @@
       "ließe",
       "lassend",
       "gelassen"
-    ]
+    ],
+    "isSeperable": false
   },
   {
     "word": "neu",
@@ -586,6 +605,7 @@
     "word": "leben",
     "pos": "verb",
     "versions": [
+      "leb",
       "lebe",
       "lebst",
       "lebt",
@@ -598,7 +618,8 @@
       "lebet",
       "lebend",
       "gelebt"
-    ]
+    ],
+    "isSeperable": false
   },
   { "word": "Frau", "pos": "die", "versions": ["Frau", "Frauen"] },
   {

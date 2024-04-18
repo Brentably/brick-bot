@@ -162,7 +162,7 @@ export async function POST(req: Request) {
   console.log(`messagesData`)
   console.log(messagesData)
   const allUsedUserWords = Array.from(new Set((messagesData as MessageData[]).flatMap(x => 'tokenDataArr' in x ? x['tokenDataArr']!.map(tokenData => tokenData.token) : [])))
-  allUsedUserWords.push('Brick', "Bot")
+  allUsedUserWords.push('Brick', "Bot", "Brickbot")
   
   try {
 
