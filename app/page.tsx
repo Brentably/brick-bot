@@ -636,8 +636,6 @@ export default function Home() {
     }
     if (messages.length) {
       processMessageMistakesAndCorrection(messages[messages.length - 1], messages.length - 1)
-      const lastAssistantMessageTokensData: TokenData[] = messagesData[messagesData.length - 2].tokenDataArr
-      if (lastAssistantMessageTokensData) updateCardsDict(lastAssistantMessageTokensData)
     }
   }, [messages, isAssistantStreaming, targetLanguage]);
 
@@ -651,6 +649,8 @@ export default function Home() {
     } else {
       mixpanel.track('send_chat', { messages, messagesData })
       console.log("send form event")
+      const lastAssistantMessageTokensData: TokenData[] = messagesData[messagesData.length - 2].tokenDataArr
+      if (lastAssistantMessageTokensData) updateCardsDict(lastAssistantMessageTokensData)
       append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic, messagesData, focusList: [] } } })
       setInput('')
     }
@@ -723,7 +723,6 @@ export default function Home() {
   }
 
   const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
-  const [fsrsCardsToUpdate, setFsrsCardsToUpdate] = useState<Record<string, [Card, boolean]>>({})
 
   // update the latest assistant messages data with its words data
   const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
@@ -750,23 +749,39 @@ export default function Home() {
   }
 
   const updateCardsDict = async (tokensData: TokenData[]) => {
+
+    const cardsToUpdate: Record<string, [Card, boolean]> = {}
+
     // for each word in WordsData for last assistant message
     // message that user just sent should be the last message
+    let existingCardsCount = 0;
+    let newCardsCount = 0;
+
     tokensData.forEach(tD => {
-      // if exists, add to cardsToUpdate
-      if (fsrsCardsDict[tD.token]) {
-        // add to cardsToUpdate
-        setFsrsCardsToUpdate(prev => ({ ...prev, [tD.token]: [fsrsCardsDict[tD.token], false] }))
-      }
-      // else, create a new card and add that
-      else {
-        // Create a new card and add it to cardsDict
-        const newCard = createEmptyCard();
-        setFsrsCardsDict(prev => ({ ...prev, [tD.token]: newCard }));
-        // add to cardsToUpdate
-        setFsrsCardsToUpdate(prev => ({ ...prev, [tD.token]: [newCard, false] }))
-      }
+      // if it is punctuation, do not add as card
+      if (tD.id === null) return;
+
+      // iterate through all root words for this token
+      tD.root_words.forEach(rW => {
+        // Check if rW is already in cardsToUpdate to avoid duplicates
+        if (!cardsToUpdate[rW]) {
+          // if card already exists, add to cardsToUpdate
+          if (fsrsCardsDict[rW]) {
+            existingCardsCount++;
+            cardsToUpdate[rW] = [fsrsCardsDict[rW], false];
+          }
+          // else, create a new card and add that to cardToUpdate
+          else {
+            newCardsCount++;
+            const newCard = createEmptyCard();
+            setFsrsCardsDict(prev => ({ ...prev, [rW]: newCard }));
+            cardsToUpdate[rW] = [newCard, false];
+          }
+        }
+      })
     });
+
+    console.log(`%cUpdating ${existingCardsCount} existing cards and ${newCardsCount} new cards`, "color: blue");
 
     // call fsrs on all cards from this message
     const resp = await fetch(`/api/fsrs/`, {
@@ -774,7 +789,7 @@ export default function Home() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(fsrsCardsToUpdate)
+      body: JSON.stringify(cardsToUpdate)
     })
     const updatedCards: [string, Card][] = await resp.json()
 
@@ -782,12 +797,10 @@ export default function Home() {
     updatedCards.forEach(([word, card]) => {
       setFsrsCardsDict(prev => ({ ...prev, [word]: card }));
     });
-  
-  }
 
-  useEffect(() => {
-    console.log(fsrsCardsDict)
-  }, [fsrsCardsDict])
+    console.log(`%c${updatedCards.length} cards successfully updated`, "color: blue");
+
+  }
 
   return (
     <Div100vh>
