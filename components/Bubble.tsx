@@ -41,7 +41,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
     if (isUser && !messageData) console.log("HELLO")
   }, [messageData])
 
-  const [hoveredTokenId, setHoveredTokenId] = useState<number|null>(null)
+  const [hoveredTokenId, setHoveredTokenId] = useState<number | null>(null)
   return (
     <div ref={ref} className={`pb-[7px] flex mt-4 lg:mt-6 ${isUser ? 'justify-end' : ''}`} data-tooltip-id="translateHint">
       {(!isUser && tooltipDisplayCount < 2) && <ReactTooltip id="translateHint" place="top" afterHide={incrementTooltipDisplayCount}>
@@ -60,26 +60,27 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
           > {'\u200B' + content.content} </Markdown>
           */}
           {/* {'\u200B'} */}
-          {isUser ? 
-          messageData.content 
-          : 
-          messageData.tokenDataArr ?
-          (
-            messageData.tokenDataArr.map((tokenData, index, tokenDataArr) => {
-              const token = tokenData.token
-              const token_ws = tokenData['token_ws']
+          {isUser ?
+            messageData.content
+            :
+            messageData.tokenDataArr ?
+              (
+                messageData.tokenDataArr.map((tokenData, index, tokenDataArr) => {
+                  const token = tokenData.token
+                  const token_ws = tokenData['token_ws']
 
-              return (
-                // if token is a word, make it clickable
-                token.match(/[a-zA-ZÀ-ž]+/) ?
-                  <>
-                    <span key={index} onClick={() => handleTokenClick(token)} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
-                    <span key={index+'ws'}>{token_ws}</span>
-                  </>
-                  : <span key={index}>{token}{['-', '(', '\''].includes(token) ? '' : ' '}</span>
-              )
-            })
-          ) : <LoadingIndicator />}
+                  return (
+                    // if token is a word, make it clickable
+                    token.match(/[a-zA-ZÀ-ž]+/) ?
+                      <span key={messageData.id + index + 'p'}>
+                        <span onClick={() => handleTokenClick(token)} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
+                        <span>{token_ws}</span>
+                      </span>
+
+                      : <span key={messageData.id + index + 'p'}>{token}{['-', '(', '\''].includes(token) ? '' : ' '}</span>
+                  )
+                })
+              ) : <LoadingIndicator />}
         </div>
       </div>
     </div>

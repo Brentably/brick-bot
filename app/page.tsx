@@ -141,10 +141,10 @@ export default function Home() {
       const data = await resp.json()
       setMessagesData(pM => {
         const index = pM.findIndex(a => a.id === idOfAssMessage)
-        return [...pM.with(index, {...pM[index], id: id, role: 'assistant', content: data.response })]
+        return [...pM.with(index, { ...pM[index], id: idOfAssMessage, role: 'assistant', content: data.response, tokenDataArr: data.tokenDataArr })]
       })
       setIsAssistantStreaming(false)
-      setMessagesData(pM => [...pM.with(pM.length-1, { ...pM[pM.length-1], tokenDataArr: data.tokenDataArr })])
+
     } catch (error:any) {
       if (error.name === 'AbortError') {
         console.log('Fetch aborted');
@@ -554,9 +554,10 @@ export default function Home() {
     return flashcards
   }
 
-  useEffect(() => console.log('%ccurrently playing message index', 'color: lightgreen', currentlyPlayingMessageIndex), [currentlyPlayingMessageIndex])
-  useEffect(() => console.log('%cisAudioPlaying', 'color: lightgreen', isAudioPlaying), [isAudioPlaying])
-  useEffect(() => console.log('%caudioqueue.length', 'color: lightgreen', audioQueue.length), [audioQueue])
+  // useEffect(() => console.log('%ccurrently playing message index', 'color: lightgreen', currentlyPlayingMessageIndex), [currentlyPlayingMessageIndex])
+  // useEffect(() => console.log('%cisAudioPlaying', 'color: lightgreen', isAudioPlaying), [isAudioPlaying])
+  // useEffect(() => console.log('%caudioqueue.length', 'color: lightgreen', audioQueue.length), [audioQueue])
+  useEffect(() => console.log('md\n', messagesData), [messagesData])
 
   const makeFlashcards = async ({ pupilMessage, correctedMessage, mistakes }: { pupilMessage: string, correctedMessage: string, mistakes: string }) => {
     console.log('processing xml flashcards for ', indexOfProcessingMessage)
@@ -953,7 +954,7 @@ export default function Home() {
                   {messagesData.map((messageData, index) =>
                     <Bubble
                       ref={messagesEndRef}
-                      key={`message-${index}`}
+                      key={`message-${messageData.id}`}
                       messageData={messageData}
                       handleAudio={() => {
                         const isCurrentlyPlaying = (isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)
