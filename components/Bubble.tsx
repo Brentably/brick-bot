@@ -35,11 +35,11 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
 
   // const didMakeMistakes = typeof messageData === 'undefined' || messageData === null ? null : messageData.didMakeMistakes
 
-  useEffect(() => console.log('navigator useragent', navigator.userAgent), [])
-  useEffect(() => {
-    if (messageData) console.log(messageData)
-    if (isUser && !messageData) console.log("HELLO")
-  }, [messageData])
+  // useEffect(() => console.log('navigator useragent', navigator.userAgent), [])
+  // useEffect(() => {
+  //   if (messageData) console.log(messageData)
+  //   if (isUser && !messageData) console.log("HELLO")
+  // }, [messageData])
 
   const [hoveredTokenId, setHoveredTokenId] = useState<number | null>(null)
   return (
