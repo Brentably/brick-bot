@@ -648,7 +648,7 @@ export default function Home() {
       console.log("send form event")
       const lastAssistantMessageTokensData = messagesData[messagesData.length - 1].tokenDataArr
       if (lastAssistantMessageTokensData) updateCardsDict(lastAssistantMessageTokensData)
-      append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, topic, messagesData, focusList: [] } } })
+      append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, messagesData, focusList: [] } } })
       setInput('')
     }
   }
