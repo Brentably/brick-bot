@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     systemPrompt: string,
     depth = 1
   ): Promise<[string, string, string[], TokenData[]]> {
-    console.log(`focusList:`, focusList);
+    console.log({messages})
     const startTime = performance.now();
     const res = client.messages.stream({
       model: "claude-3-haiku-20240307",
@@ -125,9 +125,10 @@ export async function POST(req: Request) {
       console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
       return [text, xmlJson.result.answer[0], focusWordsUsed, tokenDataArr];
     } else {
+      console.log(`retrying cause ${hasMisusedWords ? 'has misused words' : ''} , ${focusWordsUsed.length === 0 ? 'no focus words' : ''}`)
       messages.push({
         role: "user",
-        content: `<instructions>${hasMisusedWords && `Unfortunately, you used: ${misusedTokenData.map(tokenData => tokenData.is_svp ? tokenData.root_words[0] : tokenData.token)}. Let me reiterate, do *ONLY* use words provided on the list.`} ${focusList.length === 0 && 'Additionally you used NO focus words. Use at least one focus word.'} DO NOT mess up again.</instructions>`,
+        content: `<instructions>${hasMisusedWords ? `Unfortunately, you used: ${misusedTokenData.map(tokenData => tokenData.is_svp ? tokenData.root_words[0] : tokenData.token).join(', ')}. Let me reiterate, do *ONLY* use words provided on the list.` : ''} ${focusWordsUsed.length === 0 ? 'You used NO focus words. Use at least one focus word.' : ''} DO NOT mess up again.</instructions>`,
       });
       return await _main(messages, systemPrompt, depth + 1);
     }
@@ -151,8 +152,8 @@ export async function POST(req: Request) {
         const path = process.cwd() + '/misused.json'
         const exists = fs.existsSync(path)
 
-        const data:[string, number][] = exists ? JSON.parse(fs.readFileSync(path, 'utf-8')) : []
-        data.push([tokenData.token, allowedWordList.length])
+        const data:{[word: string]: number[]} = exists ? JSON.parse(fs.readFileSync(path, 'utf-8')) : {}
+        data[tokenData.token] = data[tokenData.token] ? [...data[tokenData.token], allowedWordList.length] : [allowedWordList.length]
         fs.writeFileSync(path, JSON.stringify(data))
 
         
