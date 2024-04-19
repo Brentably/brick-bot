@@ -396,7 +396,7 @@ export default function Home() {
   //   setIsClickedTokenTranslationLoading(false)
   // }
 
-  const getClickedTokenTranslation = async () => {
+  const getClickedTokenTranslation = async (clickedToken: string, clickedTokenMessage: string) => {
 
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
     if (!clickedToken || !_hasStarted) {
@@ -408,7 +408,7 @@ export default function Home() {
     setClickedTokenBoxActive(true)
     repositionClickedTokenBox()
     setIsClickedTokenTranslationLoading(true)
-    console.log("context: " + messagesData.map(m => m.content).join(' '))
+    console.log("context: " + clickedTokenMessage)
     const resp = await fetch(`/api/getEnglishTranslation`, {
       method: 'POST',
       headers: {
@@ -417,7 +417,7 @@ export default function Home() {
       body: JSON.stringify({
         language: targetLanguage,
         sentence: clickedToken,
-        context: messagesData.map(m => m.content).join(' ')
+        context: clickedTokenMessage
       })
     }).then(resp => resp.json())
     const english = resp.englishTranslation
@@ -427,7 +427,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-    getClickedTokenTranslation()
     repositionClickedTokenBox()
   }, [clickedToken])
 
@@ -1085,12 +1084,12 @@ export default function Home() {
                       }}
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
-                      handleTokenClick={(token: string, tokenX: number, tokenY: number) => {
+                      handleTokenClick={(token: string, tokenMessage: string, tokenX: number, tokenY: number) => {
                         // get root word(s) for token
                         const roots: string[] = messageData.tokenDataArr?.find(tokenData => tokenData.token === token)?.root_words || []
                         setClickedToken(token)
                         setClickedTokenRange([tokenX, tokenY])
-
+                        getClickedTokenTranslation(token, tokenMessage)
                         // add all roots that aren't already in prevTokens
                         setClickedRoots(prevTokens => [...prevTokens, ...roots.filter(root => !prevTokens.includes(root))])
                       }}

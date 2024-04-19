@@ -120,7 +120,7 @@ export async function POST(req: Request) {
 
     const hasMisusedWords = misusedTokenData.length > 0;
 
-    if (!hasMisusedWords && (focusWordsUsed.length > 0 || true)) {
+    if (!hasMisusedWords && (focusWordsUsed.length > 0 || focusList.length === 0)) {
       console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
       return [text, xmlJson.result.answer[0], focusWordsUsed, tokenDataArr];
     } else {
@@ -170,7 +170,7 @@ export async function POST(req: Request) {
   console.log(`messagesData`)
   console.log(messagesData)
   const allUsedUserWords = Array.from(new Set((messagesData as MessageData[]).flatMap(x => 'tokenDataArr' in x ? x['tokenDataArr']!.map(tokenData => tokenData.token) : [])))
-  allUsedUserWords.push('Brick', "Bot", "Brickbot", "Chatbot")
+  allUsedUserWords.push('Brick', "Bot", "Brickbot", "Chatbot", "Ah")
   
   try {
 
