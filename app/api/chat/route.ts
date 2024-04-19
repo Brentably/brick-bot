@@ -79,10 +79,9 @@ const createSystemPrompt = (
     <example>
     Give me a one sentence title for a musical about fish.
     <thinking>
-    Hmm. "Fisch" steht nicht auf der Liste, also kann ich das nicht verwenden. Welche anderen Wörter könnten für ein Musical über Fische nützlich sein? Steht "Musik" auf der Liste? Ja! Was ist mit "Wasser"? Ja, das steht auch auf der Liste. "Schwimmen" steht nicht auf der Liste, aber "Bewegen" schon. "Tier" steht auf der Liste, könnte also nützlich sein, weil ich "Fisch" nicht verwenden kann.
-    </thinking>
+    Hmm. "Fisch" steht nicht auf der Liste, also kann ich das nicht verwenden. Welche anderen Wörter könnten für ein Musical über Fische nützlich sein? Steht "Musik" auf der Liste? Ja! Was ist mit "Wasser"? Ja, das steht auch auf der Liste. "Schwimmen" steht nicht auf der Liste, aber "bewegen" schon. "Tier" steht auf der Liste, könnte also nützlich sein, weil ich "Fisch" nicht verwenden kann. Auch wenn "Wasser" auf der Liste steht und "Tier" auf der Liste steht, kann ich nicht "Wassertier" sagen, weil das ein Wort ist.</thinking>
     <answer>
-    Musikalische Wassertiere
+    Wasser Musik Tiere
     </answer>
     </example>`;
 
@@ -121,7 +120,7 @@ export async function POST(req: Request) {
 
     const hasMisusedWords = misusedTokenData.length > 0;
 
-    if (!hasMisusedWords && focusWordsUsed.length > 0) {
+    if (!hasMisusedWords && (focusWordsUsed.length > 0 || true)) {
       console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
       return [text, xmlJson.result.answer[0], focusWordsUsed, tokenDataArr];
     } else {

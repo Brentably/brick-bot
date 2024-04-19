@@ -136,7 +136,7 @@ export default function Home() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          length: 2000 // Assuming you want to fetch a specific number of words
+          length: 1300 // Assuming you want to fetch a specific number of words
         })
       }).then(resp => resp.json())
       const duplicates = wordsData.wordList.filter((item: any, index:number) => wordsData.wordList.indexOf(item) != index);
