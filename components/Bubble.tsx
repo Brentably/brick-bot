@@ -21,7 +21,7 @@ interface BubbleProps {
   handleAudio?: () => void
   isPlaying: boolean
   isLoading: boolean
-  handleTokenClick: (word: string, element: React.RefObject<HTMLSpanElement>) => void
+  handleTokenClick: (word: string, tokenSentence:string, element: React.RefObject<HTMLSpanElement>) => void
   // getTokenPositionValues: (token: string) => [number, number]
 }
 
@@ -83,7 +83,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
                       <span key={messageData.id + index + 'p'} >
                         <span ref={tokenData.id == hoveredTokenId ? elementRef : null} onClick={(element) => {
                           // console.log(element)
-                          handleTokenClick(token, elementRef)}} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
+                          handleTokenClick(token, messageData.content.trim(), elementRef)}} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
                         <span>{token_ws}</span>
                       </span>
 
