@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Flashcard } from "./types";
+import { BrickCard, Flashcard } from "./types";
 import { Message } from "ai";
 import { MessageData } from "../lib/types";
 import { toast } from "react-toastify";
-import { Card } from "ts-fsrs";
+
+
 
 export interface Store {
   flashcards: Flashcard[];
@@ -13,7 +14,7 @@ export interface Store {
   setZustandMessages: (zustandMessages: Message[]) => void;
   hasStarted: boolean;
   setHasStarted: (hasStarted: boolean) => void;
-  resetStore: () => void;
+  resetChat: () => void;
   messagesData: MessageData[];
   setMessagesData: (
     messagesData:
@@ -31,11 +32,11 @@ export interface Store {
       | string[] 
       | ((previousAllowedWordList: string[]) => string[])
   ) => void;
-  rootWordToCard: Record<string, Card>;
+  rootWordToCard: Record<string, BrickCard>;
   setRootWordToCard: (
     rootWordToCard:
-      | Record<string, Card>
-      | ((rootWordToCard: Record<string, Card>) => Record<string, Card>)
+      | Record<string, BrickCard>
+      | ((rootWordToCard: Record<string, BrickCard>) => Record<string, BrickCard>)
   ) => void;
 }
 
@@ -64,8 +65,8 @@ export const useBrickStore = create<Store>()(
       setZustandMessages: (zustandMessages) =>
         set((pS) => ({ ...pS, zustandMessages })),
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),
-      resetStore: () =>
-        set(() => ({ ...INIT_STORE, mixpanelId: get().mixpanelId })),
+      resetChat: () =>
+        set(() => ({ ...INIT_STORE, allowedWordList: get().allowedWordList, rootWordToCard: get().rootWordToCard, mixpanelId: get().mixpanelId })),
       setMessagesData: (newMessagesDataOrFunction) => {
         const newMessagesData =
           typeof newMessagesDataOrFunction === "object"

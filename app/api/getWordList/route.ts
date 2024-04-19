@@ -11,9 +11,9 @@ export async function POST(req: Request) {
     // console.log("tts input: " + input)
 
    
-    const wordList = (JSON.parse(fs.readFileSync(process.cwd() + '/app/5009_word_and_scraped_cd.json', 'utf8')) as any[]).map(wordData => wordData.word).slice(0, length)
+    const wordList = (JSON.parse(fs.readFileSync(process.cwd() + '/app/5009_word_and_scraped_cd.json', 'utf8')) as any[]).map(wordData => wordData.word)
 
-    return Response.json({wordList});
+    return Response.json({wordList: length? wordList.slice(0, length) : wordList});
   } catch (e) {
     throw e;
   }

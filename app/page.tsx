@@ -8,14 +8,16 @@ import Div100vh, { measureHeight } from 'react-div-100vh';
 import Image from 'next/image'
 import bricks from "../public/assets/bricks.svg"
 import { useBrickStore } from '../lib/store';
-import { BasicFlashcard, ClozeFlashcard, Flashcard, TokenData } from '../lib/types';
+import { BasicFlashcard, ClozeFlashcard, Flashcard, TokenData, BrickCard } from '../lib/types';
 import LoadingBrick from '../components/LoadingBrick';
 import { debounce } from "lodash"
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import { toast } from 'react-toastify'
 import { createChatSystemPrompt } from '../lib/prompts';
 import mixpanel from 'mixpanel-browser';
-import { Card, createEmptyCard } from 'ts-fsrs';
+import { createEmptyCard } from 'ts-fsrs';
+import chalk from 'chalk'
+
 
 function isEven(number: number): boolean {
   return number % 2 === 0;
@@ -113,6 +115,7 @@ const EXAMPLE_TOPICS = ['Food and Cuisine', 'Travel and Adventure', 'Music and E
 export default function Home() {
 
   const appendControllerRef = useRef<AbortController | null>(null);
+  const [focusWords, setFocusWords] = useState<Set<string>>(new Set())
 
   const append = async ({ id, role, content }:Message) => {
     const controller = new AbortController();
@@ -136,12 +139,15 @@ export default function Home() {
           length: 2000 // Assuming you want to fetch a specific number of words
         })
       }).then(resp => resp.json())
+      const duplicates = wordsData.wordList.filter((item: any, index:number) => wordsData.wordList.indexOf(item) != index);
+      if (duplicates.length > 0) {
+        console.log('Duplicate words found:', duplicates);
+      }
       wordListToUse = wordsData.wordList
       setAllowedWordList(wordListToUse)
     }
-    console.log('word list to use: ', wordListToUse.slice(0, 50))
-    let focusList = []
 
+    console.log('current focusList: ', Array.from(focusWords))
 
     try {
       setProcessedSentenceChunkCount(0)
@@ -156,7 +162,7 @@ export default function Home() {
           messagesData,
           allowedWordList: wordListToUse,
           language: targetLanguage,
-          focusList: []
+          focusList: Array.from(focusWords)
         }),
         signal
       })
@@ -249,7 +255,7 @@ export default function Home() {
   const addFlashcards = useBrickStore(state => state.addFlashcards)
   const hasStarted = useBrickStore(state => state.hasStarted)
   const setHasStarted = useBrickStore(state => state.setHasStarted)
-  const resetStore = useBrickStore(state => state.resetStore)
+  const resetChat = useBrickStore(state => state.resetChat)
   const [indexOfProcessingMessage, setIndexOfProcessingMessage] = useState<number | null>(null)
   const [isProcessingAudioPromise, setIsProcessingAudioPromise] = useState(false);
 
@@ -284,13 +290,25 @@ export default function Home() {
     if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
   }, [hasStarted])
 
-  const getDueWords = () => {
-    const dueWords = []
+
+
+  useEffect(() => {
+    const fW = getFocusWords()
+    setFocusWords(new Set(fW))
+  }, [rootWordToCard])
+
+  const getFocusWords = () => {
+    // console.log('getting focus words')
+    // console.log(rootWordToCard)
+    const focusWords = []
     for(let word in rootWordToCard) {
+      // console.log('for word: ', word)
       const card = rootWordToCard[word]
-      if(Date.now().valueOf() >= card.due.valueOf()) dueWords.push(word)
+      const isDueTime = Date.now().valueOf() >= new Date(card.due).valueOf()
+      if(isDueTime && card.isTracking) focusWords.push(word)
     }
-    return dueWords
+    // console.log(focusWords)
+    return focusWords
   }
 
   const repositionSelectionBox = () => {
@@ -338,7 +356,7 @@ export default function Home() {
     //   console.log('Selection changed');
     const selection = document.getSelection()
     const selectionString = selection?.toString()
-    console.log(selection, selectionString)
+    // console.log(selection, selectionString)
     // console.log(!Boolean(selectionString))
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
     if (!selectionString || !_hasStarted) {
@@ -710,6 +728,20 @@ export default function Home() {
     append({ id: crypto.randomUUID(), role: 'user', content: LANGUAGE_TO_HELLO[targetLanguage] })
   }
 
+// either add new cards, or track them
+  function addNewTrackingCards(wordList: string[]) {
+    console.log(`adding new cards!: `, wordList)
+    const cardsToAdd:Record<string, BrickCard> = {}
+    for(let word of wordList) {
+      cardsToAdd[word] = rootWordToCard[word] ? {...rootWordToCard[word], isTracking: true} : {...createEmptyCard(), isTracking: true}
+      if(allowedWordList.includes(word)) {
+        console.log(`allowed Wordlist already includes: ${word}`)
+      }
+    }
+    setRootWordToCard(pS => ({...pS, ...cardsToAdd}))
+
+    setAllowedWordList(p => Array.from(new Set([...p, ...wordList])))
+  }
 
 
   const handleDownloadFlashcards = () => {
@@ -748,6 +780,8 @@ export default function Home() {
       });
   }
 
+  // useEffect(() => console.log('rwToCard\n',rootWordToCard), [rootWordToCard])
+
   const stopAudio = () => {
     audioRef.current?.pause()
     setAudioQueue([])
@@ -784,7 +818,8 @@ export default function Home() {
 
   // update the cards dictionary by calling fsrs on all of the tokens inputted
   const updateFsrsFromLastMessageAndClicked = async (lastResponseTokensData: TokenData[]) => {
-    const rootWordToCardAndRating: Record<string, [Card, boolean]> = {}
+
+    const rootWordToCardAndRating: Record<string, [BrickCard, boolean]> = {}
 
     // iterate through clicked roots, add to cards to update as "again"
     for (const clickedRoot of clickedRoots) {
@@ -805,6 +840,8 @@ export default function Home() {
     // console.log(`%cUpdating ${clickedCards} clicked cards and ${unClickedCards} unclicked cards`, "color: blue");
 
     // call fsrs on all cards from this message
+    console.log(chalk.bgGreenBright('HELLO'))
+    console.log(rootWordToCardAndRating)
     const resp = await fetch(`/api/fsrs/`, {
       method: 'POST',
       headers: {
@@ -812,8 +849,9 @@ export default function Home() {
       },
       body: JSON.stringify(rootWordToCardAndRating)
     })
-    const updatedCards: Record<string, Card> = await resp.json()
-
+    const updatedCards: Record<string, BrickCard> = await resp.json()
+    console.log(chalk.bgGreenBright('HELLO2'))
+    console.log(updatedCards)
     setRootWordToCard(prev => ({...prev, ...updatedCards }))
 
     console.log(`%c${Object.keys(updatedCards).length} cards successfully updated`, "color: blue");
@@ -865,6 +903,24 @@ export default function Home() {
                       >
                         Reset Chat
                       </button>
+                      <button
+                        className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded hover:scale-105 transition duration-150 ease-in-out"
+                        onClick={async () => {
+                          fetch(`/api/getNextWords`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              allowedWordList: allowedWordList,
+                              length: 20
+                            })
+                          }).then(resp => resp.json())
+                          .then(resp => addNewTrackingCards(resp.wordList))
+                        }}
+                      >
+                        Add 20 Words
+                      </button>
 
                       {/* <button
                         className={`mt-4 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out transform ${flashcards.length === 0 || isDownloading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
@@ -891,7 +947,8 @@ export default function Home() {
               )}
               {hasStarted && (
                 <>
-                Allowed Words Length: {allowedWordList.length}
+                Allowed Words Length: {allowedWordList.length} <br/>
+                Focus Words: {focusWords.size}
                 <div className="relative w-full bg-gray-200 h-6 mt-4 flex items-center">
                   <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%`, transition: 'width 0.5s ease-in-out' }}></div>
                   <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
@@ -908,7 +965,7 @@ export default function Home() {
                       <button className="flex-grow bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
                         stopChat()
                         setMessagesData([])
-                        resetStore()
+                        resetChat()
                         setShowResetConfirmationModal(false)
                         mixpanel.track('reset_chat')
                       }}>Reset</button>

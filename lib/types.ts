@@ -1,4 +1,5 @@
 import { Message } from "ai";
+import { Card } from "ts-fsrs";
 
 export type BasicFlashcard = {
   front: string;
@@ -29,3 +30,9 @@ export interface MessageData extends Message{
   tokenDataArr?: TokenData[];
   xmlContent?: string
 };
+
+
+export interface BrickCard extends Card {
+  // is tracking means that it's in rotation of what we might decide to show the user or not.
+  isTracking?: boolean;
+}

@@ -47,7 +47,7 @@ const createSystemPrompt = (
     ${allowedWordList.join(`\n`)}
     </list>
 
-    Please try to use words from the following list as much as possible, while still engaging the user and conforming to the allowed word list!
+    Please try to use words from the following list as much as possible, while still engaging the user and conforming to the allowed word list! Use at least one word from this focus list:
     <list>
     ${focusList.join("\n")}
     </list>
@@ -92,6 +92,7 @@ export async function POST(req: Request) {
     systemPrompt: string,
     depth = 1
   ): Promise<[string, string, string[], TokenData[]]> {
+    console.log(`focusList:`, focusList);
     const startTime = performance.now();
     const res = client.messages.stream({
       model: "claude-3-haiku-20240307",
@@ -120,13 +121,13 @@ export async function POST(req: Request) {
 
     const hasMisusedWords = misusedTokenData.length > 0;
 
-    if (!hasMisusedWords) {
+    if (!hasMisusedWords && focusWordsUsed.length > 0) {
       console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
       return [text, xmlJson.result.answer[0], focusWordsUsed, tokenDataArr];
     } else {
       messages.push({
         role: "user",
-        content: `<instructions>Unfortunately, you used: ${misusedTokenData.map(tokenData => tokenData.is_svp ? tokenData.root_words[0] : tokenData.token)}. Let me reiterate, do *ONLY* use words provided on the list. DO NOT mess up again.</instructions>`,
+        content: `<instructions>${hasMisusedWords && `Unfortunately, you used: ${misusedTokenData.map(tokenData => tokenData.is_svp ? tokenData.root_words[0] : tokenData.token)}. Let me reiterate, do *ONLY* use words provided on the list.`} ${focusList.length === 0 && 'Additionally you used NO focus words. Use at least one focus word.'} DO NOT mess up again.</instructions>`,
       });
       return await _main(messages, systemPrompt, depth + 1);
     }
@@ -147,13 +148,21 @@ export async function POST(req: Request) {
         !allUsedUserWords.includes(tokenData.token)
       ) {
         console.log('misused pushing token: ', tokenData)
+        const path = process.cwd() + '/misused.json'
+        const exists = fs.existsSync(path)
+
+        const data:[string, number][] = exists ? JSON.parse(fs.readFileSync(path, 'utf-8')) : []
+        data.push([tokenData.token, allowedWordList.length])
+        fs.writeFileSync(path, JSON.stringify(data))
+
         
         misusedTokenData.push(tokenData);
       }
     }
 
 
-    const focusWordsUsed = misusedTokenData.length !== 0 ? [] : Array.from(new Set(tokenDataArr.flatMap(tokenData => tokenData.root_words.filter(rootWord => focusList.includes(rootWord)))))
+    const focusWordsUsed = Array.from(new Set(tokenDataArr.flatMap(tokenData => tokenData.root_words.filter(rootWord => focusList.includes(rootWord)))))
+    console.log(`focusWordsUsed: ${focusWordsUsed}`)
 
     return [misusedTokenData, focusWordsUsed, tokenDataArr];
   };
