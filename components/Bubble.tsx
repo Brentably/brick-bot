@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { forwardRef, JSXElementConstructor, useMemo, RefObject, useEffect, useRef, useState } from "react";
+import { forwardRef, JSXElementConstructor, useMemo, RefObject, useEffect, useRef, useState, createRef } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks"
@@ -15,12 +15,19 @@ import { useBrickStore } from "../lib/store";
 import mixpanel from 'mixpanel-browser';
 import { debounce } from "lodash"
 
+
 interface BubbleProps {
   messageData: MessageData;
   handleAudio?: () => void
   isPlaying: boolean
   isLoading: boolean
-  handleTokenClick: (word: string, tokenX: number, tokenY: number) => void
+  handleTokenClick: (word: string, element: React.RefObject<HTMLSpanElement>) => void
+  // getTokenPositionValues: (token: string) => [number, number]
+}
+
+export const getTokenPositionValues = (token: string) => {
+  const [x, y] = [0, 0]
+  return [x, y]
 }
 
 const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAudio, isPlaying, isLoading, handleTokenClick }, ref) => {
@@ -40,6 +47,7 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
   //   if (messageData) console.log(messageData)
   //   if (isUser && !messageData) console.log("HELLO")
   // }, [messageData])
+  const elementRef = useRef<HTMLSpanElement>(null)
 
   const [hoveredTokenId, setHoveredTokenId] = useState<number | null>(null)
   return (
@@ -72,10 +80,10 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
                   return (
                     // if token is a word, make it clickable
                     token.match(/[a-zA-ZÀ-ž]+/) ?
-                      <span key={messageData.id + index + 'p'}>
-                        <span onClick={(element) => {
+                      <span key={messageData.id + index + 'p'} >
+                        <span ref={tokenData.id == hoveredTokenId ? elementRef : null} onClick={(element) => {
                           // console.log(element)
-                          handleTokenClick(token, element.clientX, element.clientY)}} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
+                          handleTokenClick(token, elementRef)}} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
                         <span>{token_ws}</span>
                       </span>
 
@@ -103,8 +111,6 @@ export const BubblePair = forwardRef<HTMLDivElement, { user: BubbleProps, assist
     // console.log('rendering bubble pair with user', user)
     // console.log('and assistant', assistant)
   }, [user])
-
-
 
   return (<div className="flex flex-row">
     <div className="flex flex-col max-w-[60%] w-[60%] min-w-[60%] mr-2">

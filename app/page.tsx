@@ -309,19 +309,26 @@ export default function Home() {
     // console.log(focusWords)
     return focusWords
   }
-  const [clickedTokenRange, setClickedTokenRange] = useState<[number, number]>([0, 0]);
+  
+  const clickedTokenElementRef = useRef<HTMLSpanElement | null>(null)
 
   const repositionClickedTokenBox = () => {
+    console.log('repositionClickedTokenBox called')
     if (clickedToken) {
       const clickedTokenBox = clickedTokenBoxRef.current
       if (!clickedTokenBox) return;
 
-      const x = clickedTokenRange[0]
-      const y = clickedTokenRange[1]
+      // console.log(clickedTokenElementRef.current)
+      // console.dir(clickedTokenElementRef.current)
 
-      // set coords
-      clickedTokenBox.style.top = `${y}px`
-      clickedTokenBox.style.left = `${x}px`
+      const rect = clickedTokenElementRef.current?.getBoundingClientRect();
+      const x = rect?.left || 0;
+      const y = rect?.top || 0;
+      console.log("x, y: " + x, y)
+
+      // Center horizontally: Set left to x, and use transform to adjust by -50% horizontally.
+      clickedTokenBoxRef.current.style.left = `${x}px`;
+      clickedTokenBoxRef.current.style.top = `${y}px`;
     }
   }
 
@@ -1085,11 +1092,14 @@ export default function Home() {
                       }}
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
-                      handleTokenClick={(token: string, tokenX: number, tokenY: number) => {
+                      handleTokenClick={(token: string, elementRef: React.RefObject<HTMLSpanElement>) => {
                         // get root word(s) for token
                         const roots: string[] = messageData.tokenDataArr?.find(tokenData => tokenData.token === token)?.root_words || []
                         setClickedToken(token)
-                        setClickedTokenRange([tokenX, tokenY])
+
+                        // console.log('handling token click. updating element ref to')
+                        // console.log(clickedTokenElementRef.current)
+                        clickedTokenElementRef.current = elementRef.current
 
                         // add all roots that aren't already in prevTokens
                         setClickedRoots(prevTokens => [...prevTokens, ...roots.filter(root => !prevTokens.includes(root))])
