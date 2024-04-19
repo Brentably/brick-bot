@@ -114,7 +114,7 @@ export default function Home() {
 
   const appendControllerRef = useRef<AbortController | null>(null);
 
-  const append = async ({ id, role, content }:Message, { options: { body } }:any) => {
+  const append = async ({ id, role, content }:Message) => {
     const controller = new AbortController();
     const { signal } = controller;
     appendControllerRef.current = controller;
@@ -122,6 +122,26 @@ export default function Home() {
     const idOfAssMessage = crypto.randomUUID()
 
     setMessagesData(pM => [...pM, { id, role, content }, { id: idOfAssMessage, role: 'assistant' as 'assistant', content: '' }])
+    
+    // if no wordlist, fetch from api
+    let wordListToUse = allowedWordList
+    if (allowedWordList.length === 0) {
+      console.log('no allowed words, so fetching')
+      const wordsData = await fetch(`/api/getWordList`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          length: 2000 // Assuming you want to fetch a specific number of words
+        })
+      }).then(resp => resp.json())
+      wordListToUse = wordsData.wordList
+      setAllowedWordList(wordListToUse)
+    }
+    console.log('word list to use: ', wordListToUse.slice(0, 50))
+    let focusList = []
+
 
     try {
       setProcessedSentenceChunkCount(0)
@@ -132,16 +152,18 @@ export default function Home() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          messages: [...messagesData.map(x => ({role: x.role, content: x.content})), { role, content }],
+          messages: [...messagesData.map(x => ({role: x.role, content: x.xmlContent ?? x.content})), { role, content }],
           messagesData,
-          ...body
+          allowedWordList: wordListToUse,
+          language: targetLanguage,
+          focusList: []
         }),
         signal
       })
       const data = await resp.json()
       setMessagesData(pM => {
         const index = pM.findIndex(a => a.id === idOfAssMessage)
-        return [...pM.with(index, { ...pM[index], id: idOfAssMessage, role: 'assistant', content: data.response, tokenDataArr: data.tokenDataArr })]
+        return [...pM.with(index, { ...pM[index], id: idOfAssMessage, role: 'assistant', content: data.response, tokenDataArr: data.tokenDataArr, xmlContent: data.xmlContent })]
       })
       setIsAssistantStreaming(false)
 
@@ -217,7 +239,8 @@ export default function Home() {
   //   onFinish: () => setIsCorrectionStreaming(false)
   // })
 
-
+  const setAllowedWordList = useBrickStore(state => state.setAllowedWordList)
+  const allowedWordList = useBrickStore(state => state.allowedWordList)
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false)
   const [isCorrectionStreaming, setIsCorrectionStreaming] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -241,16 +264,34 @@ export default function Home() {
   const [processedSentenceChunkCount, setProcessedSentenceChunkCount] = useState(0)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true)
 
-  useEffect(() => {
-    if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
-  }, [hasStarted])
+  const [showResetConfirmationModal, setShowResetConfirmationModal] = useState(false)
+  const [showCompletedModal, setShowCompletedModal] = useState(true)
 
-
+  const rootWordToCard = useBrickStore(state => state.rootWordToCard)
+  const setRootWordToCard = useBrickStore(state => state.setRootWordToCard)
+  // const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
+  // clicked tokens to update in fsrs the next time updateCardsDict is called
+  const [clickedRoots, setClickedRoots] = useState<string[]>([])
+  
+  
   const selectionBoxRef = useRef<HTMLDivElement>(null)
   const [selectionBoxActive, setSelectionBoxActive] = useState(false)
   const [isSelectionTranslationLoading, setIsSelectionTranslationLoading] = useState(false)
   const [selectionTranslation, setSelectionTranslation] = useState('')
   const [selection, setSelection] = useState('')
+  
+  useEffect(() => {
+    if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
+  }, [hasStarted])
+
+  const getDueWords = () => {
+    const dueWords = []
+    for(let word in rootWordToCard) {
+      const card = rootWordToCard[word]
+      if(Date.now().valueOf() >= card.due.valueOf()) dueWords.push(word)
+    }
+    return dueWords
+  }
 
   const repositionSelectionBox = () => {
     // console.log('reposition selection Box')
@@ -648,8 +689,8 @@ export default function Home() {
       mixpanel.track('send_chat', { messagesData })
       // console.log("send form event")
       const lastAssistantMessageTokensData = messagesData[messagesData.length - 1].tokenDataArr
-      if (lastAssistantMessageTokensData) updateCardsDict(lastAssistantMessageTokensData)
-      append({ id: crypto.randomUUID(), content: input, role: 'user' }, { options: { body: { language: targetLanguage, messagesData, focusList: [] } } })
+      if (lastAssistantMessageTokensData) updateFsrsFromLastMessageAndClicked(lastAssistantMessageTokensData)
+      append({ id: crypto.randomUUID(), content: input, role: 'user' })
       setInput('')
     }
   }
@@ -662,11 +703,11 @@ export default function Home() {
   }, [input])
 
 
-  const beginChat = () => {
+  const beginChat = async () => {
     mixpanel.track('begin_chat', { targetLanguage })
     setHasStarted(true)
     if (window.innerWidth < 600) setIsHeaderOpen(false);
-    append({ id: crypto.randomUUID(), role: 'user', content: LANGUAGE_TO_HELLO[targetLanguage] }, { options: { body: { language: targetLanguage, messagesData, focusList: [] } } })
+    append({ id: crypto.randomUUID(), role: 'user', content: LANGUAGE_TO_HELLO[targetLanguage] })
   }
 
 
@@ -706,8 +747,6 @@ export default function Home() {
         setIsDownloading(false);
       });
   }
-  const [showResetConfirmationModal, setShowResetConfirmationModal] = useState(false)
-  const [showCompletedModal, setShowCompletedModal] = useState(true)
 
   const stopAudio = () => {
     audioRef.current?.pause()
@@ -719,82 +758,51 @@ export default function Home() {
     setCurrentlyPlayingMessageIndex(null)
   }
 
-  const [fsrsCardsDict, setFsrsCardsDict] = useState<Record<string, Card>>({})
-  // clicked tokens to update in fsrs the next time updateCardsDict is called
-  const [clickedRoots, setClickedRoots] = useState<string[]>([])
-
   // update the latest assistant messages data with its words data
-  const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
-    console.log("processing assistant response for message: ")
-    // call process_message on messageContent to receive [word, id, [lemmas]][]
-    const url = 'http://localhost:8000/process-message'
-    //const url = 'https://api.brick.bot/process-message'
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        input_str: input_str,
-        language: language
-      })
-    })
+  // const processAssistantResponse = async (input_str: string, language: string, index: number): Promise<void> => {
+  //   console.log("processing assistant response for message: ")
+  //   // call process_message on messageContent to receive [word, id, [lemmas]][]
+  //   const url = 'http://localhost:8000/process-message'
+  //   //const url = 'https://api.brick.bot/process-message'
+  //   const response = await fetch(url, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify({
+  //       input_str: input_str,
+  //       language: language
+  //     })
+  //   })
 
-    const responseTokenDataArr = (await response.json()).tokens
-    console.log(`responseTokenDataArr:`)
-    console.log(responseTokenDataArr)
-    // what if api call doesn't come back before latest message is updated?
-    setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
-  }
+  //   const responseTokenDataArr = (await response.json()).tokens
+  //   console.log(`responseTokenDataArr:`)
+  //   console.log(responseTokenDataArr)
+  //   // what if api call doesn't come back before latest message is updated?
+  //   setMessagesData(pM => [...pM.with(index, {...pM[index], tokenDataArr: responseTokenDataArr})])
+  // }
 
   // update the cards dictionary by calling fsrs on all of the tokens inputted
-  const updateCardsDict = async (tokensData: TokenData[]) => {
+  const updateFsrsFromLastMessageAndClicked = async (lastResponseTokensData: TokenData[]) => {
+    const rootWordToCardAndRating: Record<string, [Card, boolean]> = {}
 
-    const cardsToUpdate: Record<string, [Card, boolean]> = {}
-    let unClickedCards = 0
-    let clickedCards = 0
-
-    // Helper function to process a single token
-    const addWordToCardsToUpdate = (word: string, isClicked: boolean) => {
-      
-      // Check if token is already in cardsToUpdate to avoid duplicates
-      if (!cardsToUpdate[word]) {
-        isClicked ? clickedCards++ : unClickedCards++;
-        // if card already exists, add to cardsToUpdate
-        if (fsrsCardsDict[word]) {
-          cardsToUpdate[word] = [fsrsCardsDict[word], isClicked];
-        } else {
-          // else, create a new card and add that to cardsToUpdate
-          const newCard = createEmptyCard();
-          setFsrsCardsDict(prev => ({ ...prev, [word]: newCard }));
-          cardsToUpdate[word] = [newCard, isClicked];
-        }
-      } else if (isClicked && !cardsToUpdate[word][1]) {
-        // If the token is clicked but already in cardsToUpdate, ensure its boolean is true
-        // and increment clickedCards counter if it was previously unclicked
-        clickedCards++;
-        unClickedCards--;
-        cardsToUpdate[word][1] = true;
-      }
-    };
-
-    // Process each word in WordsData for the last assistant message
-    tokensData.forEach(tD => {
+    // iterate through clicked roots, add to cards to update as "again"
+    for (const clickedRoot of clickedRoots) {
+      rootWordToCardAndRating[clickedRoot] = [rootWordToCard[clickedRoot] ?? createEmptyCard(), false]
+    }
+    
+    // iterate through last messages roots, if not in clicked, add to cards to update as "good"
+    for (const tD of lastResponseTokensData) {
       // if it is punctuation, do not add as card
-      if (tD.id === null) return;
+      if (tD.id === null) continue;
 
-      // Iterate through all root words for this token
-      tD.root_words.forEach(rootWord => {
-        addWordToCardsToUpdate(rootWord, false);
-      });
-    });
+      for (const rootWord of tD.root_words) {
+        // if not added already, assume is good
+        if (!(rootWord in rootWordToCardAndRating)) rootWordToCardAndRating[rootWord] = [rootWordToCard[rootWord] ?? createEmptyCard(), true];
+      }
+    }
 
-    // Process clicked tokens
-    clickedRoots.forEach(clickedToken => {
-      addWordToCardsToUpdate(clickedToken, true);
-    });
-
-    console.log(`%cUpdating ${clickedCards} clicked cards and ${unClickedCards} unclicked cards`, "color: blue");
+    // console.log(`%cUpdating ${clickedCards} clicked cards and ${unClickedCards} unclicked cards`, "color: blue");
 
     // call fsrs on all cards from this message
     const resp = await fetch(`/api/fsrs/`, {
@@ -802,16 +810,13 @@ export default function Home() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(cardsToUpdate)
+      body: JSON.stringify(rootWordToCardAndRating)
     })
-    const updatedCards: [string, Card][] = await resp.json()
+    const updatedCards: Record<string, Card> = await resp.json()
 
-    // update cards dict w/ reviewed cards
-    updatedCards.forEach(([word, card]) => {
-      setFsrsCardsDict(prev => ({ ...prev, [word]: card }));
-    });
+    setRootWordToCard(prev => ({...prev, ...updatedCards }))
 
-    console.log(`%c${updatedCards.length} cards successfully updated`, "color: blue");
+    console.log(`%c${Object.keys(updatedCards).length} cards successfully updated`, "color: blue");
 
   }
 
@@ -885,10 +890,13 @@ export default function Home() {
                 </>
               )}
               {hasStarted && (
+                <>
+                Allowed Words Length: {allowedWordList.length}
                 <div className="relative w-full bg-gray-200 h-6 mt-4 flex items-center">
                   <div className="bg-blue-600 h-6" style={{ width: `${(flashcards.length / flashcardsGoal) * 100}%`, transition: 'width 0.5s ease-in-out' }}></div>
                   <p className="absolute w-full text-center text-sm">{`Flashcards generated: ${flashcards.length}/${flashcardsGoal}`}</p>
                 </div>
+                </>
               )}
 
               {showResetConfirmationModal && (

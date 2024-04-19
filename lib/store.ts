@@ -4,6 +4,7 @@ import { Flashcard } from "./types";
 import { Message } from "ai";
 import { MessageData } from "../lib/types";
 import { toast } from "react-toastify";
+import { Card } from "ts-fsrs";
 
 export interface Store {
   flashcards: Flashcard[];
@@ -23,18 +24,31 @@ export interface Store {
   setFlashcardsGoal: (flashcardsGoal: number) => void;
   tooltipDisplayCount: number;
   incrementTooltipDisplayCount: () => void;
-  mixpanelId: string
+  mixpanelId: string;
+  allowedWordList: string[];
+  setAllowedWordList: (
+    allowedWordList: 
+      | string[] 
+      | ((previousAllowedWordList: string[]) => string[])
+  ) => void;
+  rootWordToCard: Record<string, Card>;
+  setRootWordToCard: (
+    rootWordToCard:
+      | Record<string, Card>
+      | ((rootWordToCard: Record<string, Card>) => Record<string, Card>)
+  ) => void;
 }
 
 const INIT_STORE = {
   flashcards: [],
   zustandMessages: [],
   hasStarted: false,
-  messagesData: [
-  ] as MessageData[],
+  messagesData: [] as MessageData[],
   flashcardsGoal: 10,
   tooltipDisplayCount: 0,
-  mixpanelId: crypto.randomUUID()
+  mixpanelId: crypto.randomUUID(),
+  allowedWordList: [],
+  rootWordToCard: {},
 };
 
 export const useBrickStore = create<Store>()(
@@ -50,20 +64,36 @@ export const useBrickStore = create<Store>()(
       setZustandMessages: (zustandMessages) =>
         set((pS) => ({ ...pS, zustandMessages })),
       setHasStarted: (hasStarted) => set((pS) => ({ ...pS, hasStarted })),
-      resetStore: () => set(() => ({ ...INIT_STORE, mixpanelId: get().mixpanelId })),
+      resetStore: () =>
+        set(() => ({ ...INIT_STORE, mixpanelId: get().mixpanelId })),
       setMessagesData: (newMessagesDataOrFunction) => {
         const newMessagesData =
           typeof newMessagesDataOrFunction === "object"
             ? newMessagesDataOrFunction
             : newMessagesDataOrFunction(get().messagesData);
-        if (typeof newMessagesDataOrFunction === "object")
-          set((ps) => ({ ...ps, messagesData: newMessagesData }));
-        else set((ps) => ({ ...ps, messagesData: newMessagesData }));
+        set((ps) => ({ ...ps, messagesData: newMessagesData }));
       },
       setFlashcardsGoal: (flashcardsGoal) =>
         set((pS) => ({ ...pS, flashcardsGoal })),
       incrementTooltipDisplayCount: () =>
-        set((ps) => ({ ...ps, tooltipDisplayCount: ps.tooltipDisplayCount + 1 })),
+        set((ps) => ({
+          ...ps,
+          tooltipDisplayCount: ps.tooltipDisplayCount + 1,
+        })),
+      setAllowedWordList: (allowedWordListOrFunction) => {
+        const allowedWordList =
+          typeof allowedWordListOrFunction === "function"
+            ? allowedWordListOrFunction(get().allowedWordList)
+            : allowedWordListOrFunction;
+        set((pS) => ({ ...pS, allowedWordList }));
+      },
+      setRootWordToCard: (newRootWordToCardOrFunction) => {
+        const newRootWordToCard =
+          typeof newRootWordToCardOrFunction === "object"
+            ? newRootWordToCardOrFunction
+            : newRootWordToCardOrFunction(get().rootWordToCard);
+          set((ps) => ({ ...ps, rootWordToCard: newRootWordToCard }));
+      },
     }),
     {
       name: "brick-storage",

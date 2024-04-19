@@ -28,7 +28,7 @@ const client = new Anthropic({
 
 // export const runtime = "edge"; // 'nodejs' is the default
 
-const HARDCODED_WORD_LIST = (JSON.parse(fs.readFileSync(process.cwd() + '/app/5009_word_and_scraped_cd.json', 'utf8')) as any[]).map(wordData => wordData.word).slice(0, 2000)
+// const HARDCODED_WORD_LIST = (JSON.parse(fs.readFileSync(process.cwd() + '/app/5009_word_and_scraped_cd.json', 'utf8')) as any[]).map(wordData => wordData.word).slice(0, 2000)
 
 import util from 'util';
 import { Token } from "typescript";
@@ -36,7 +36,7 @@ import { Token } from "typescript";
 
 const createSystemPrompt = (
   language: string = `German`,
-  wordList: string[],
+  allowedWordList: string[],
   focusList: string[]
 ) => `
     <instructions>
@@ -44,7 +44,7 @@ const createSystemPrompt = (
 
     Only use words based on the following word list: 
     <list>
-    ${wordList.join(`\n`)}
+    ${allowedWordList.join(`\n`)}
     </list>
 
     Please try to use words from the following list as much as possible, while still engaging the user and conforming to the allowed word list!
@@ -119,7 +119,6 @@ export async function POST(req: Request) {
     console.log(chalk.bgRed(`\nLatency for analysis: ${Math.round(performance.now() - aStartTime)}ms`));
 
     const hasMisusedWords = misusedTokenData.length > 0;
-    console.log({ hasMisusedWords, misusedTokens: misusedTokenData });
 
     if (!hasMisusedWords) {
       console.log("\x1b[33m%s\x1b[0m", `${depth} attempts to finish`);
@@ -137,14 +136,14 @@ export async function POST(req: Request) {
     assistantResponse: string = ""
   ): Promise<[TokenData[], string[], TokenData[]]> => {
     const tokenDataArr = await tokenizer(assistantResponse);
-    console.log('tokenDataArr')
-    console.log(tokenDataArr)
+    // console.log('tokenDataArr')
+    // console.log(tokenDataArr)
     const misusedTokenData: TokenData[] = [];
     for (let tokenData of tokenDataArr) {
       if (!tokenData.id) continue; // skip over punctuation and spaced
       // if anyof the rootwords returned are in the wordList AND it's not a word that the user has used
       if (
-        !tokenData.root_words.some((word) => HARDCODED_WORD_LIST.includes(word)) &&
+        !tokenData.root_words.some((word) => allowedWordList.includes(word)) &&
         !allUsedUserWords.includes(tokenData.token)
       ) {
         console.log('misused pushing token: ', tokenData)
@@ -158,18 +157,18 @@ export async function POST(req: Request) {
 
     return [misusedTokenData, focusWordsUsed, tokenDataArr];
   };
-  const { messages, messagesData, language, focusList } = await req.json();
+  const { messages, messagesData, language, focusList, allowedWordList } = await req.json();
   console.log(`messagesData`)
   console.log(messagesData)
   const allUsedUserWords = Array.from(new Set((messagesData as MessageData[]).flatMap(x => 'tokenDataArr' in x ? x['tokenDataArr']!.map(tokenData => tokenData.token) : [])))
-  allUsedUserWords.push('Brick', "Bot", "Brickbot")
+  allUsedUserWords.push('Brick', "Bot", "Brickbot", "Chatbot")
   
   try {
 
     // console.log('messages  s s s s ')
     // console.log(messages)
 
-    const [xmlResp, cleanResp, focusWordsUsed, tokenDataArr] = await _main(messages, createSystemPrompt(language, HARDCODED_WORD_LIST, focusList))
+    const [xmlResp, cleanResp, focusWordsUsed, tokenDataArr] = await _main(messages, createSystemPrompt(language, allowedWordList, focusList))
 
     // console.log(`cleanResp generated: `, 'cleanResp')
 
@@ -182,7 +181,7 @@ export async function POST(req: Request) {
     });
     
     // return new StreamingTextResponse(singleMessageStream)
-    return Response.json({response: cleanResp, tokenDataArr})
+    return Response.json({response: cleanResp, tokenDataArr, xmlContent: xmlResp})
   } catch (e) {
     throw e;
   }

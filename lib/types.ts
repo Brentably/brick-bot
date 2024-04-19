@@ -27,4 +27,5 @@ export interface MessageData extends Message{
   explanation?: string;
   // store word/lemma/clicked data for each word in message
   tokenDataArr?: TokenData[];
+  xmlContent?: string
 };
