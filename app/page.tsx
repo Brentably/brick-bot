@@ -408,6 +408,7 @@ export default function Home() {
     setClickedTokenBoxActive(true)
     repositionClickedTokenBox()
     setIsClickedTokenTranslationLoading(true)
+    console.log("context: " + messagesData.map(m => m.content).join(' '))
     const resp = await fetch(`/api/getEnglishTranslation`, {
       method: 'POST',
       headers: {
@@ -415,7 +416,8 @@ export default function Home() {
       },
       body: JSON.stringify({
         language: targetLanguage,
-        sentence: clickedToken
+        sentence: clickedToken,
+        context: messagesData.map(m => m.content).join(' ')
       })
     }).then(resp => resp.json())
     const english = resp.englishTranslation
