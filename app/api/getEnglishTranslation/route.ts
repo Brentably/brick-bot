@@ -16,11 +16,13 @@ export async function POST(req: Request) {
   try {
     console.log('getEnglish translation hit')
     console.log(process.env.DEEPL_API_KEY)
-    const { sentence, language } = await req.json();
+    const { sentence, language, context } = await req.json();
 
-    console.log('translating ', sentence, ' to english')
+    const languageCode = language === "German" ? "de" : null
 
-    const result = await translator.translateText(sentence, null, 'en-US')
+    console.log('translating ', sentence, ' from ', languageCode, ' to english')
+
+    const result = await translator.translateText(sentence, languageCode, 'en-US', context)
 
     console.log('result:')
     console.log(result)
