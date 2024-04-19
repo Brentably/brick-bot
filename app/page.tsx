@@ -279,12 +279,11 @@ export default function Home() {
   // clicked tokens to update in fsrs the next time updateCardsDict is called
   const [clickedRoots, setClickedRoots] = useState<string[]>([])
   
-  
-  const selectionBoxRef = useRef<HTMLDivElement>(null)
-  const [selectionBoxActive, setSelectionBoxActive] = useState(false)
-  const [isSelectionTranslationLoading, setIsSelectionTranslationLoading] = useState(false)
-  const [selectionTranslation, setSelectionTranslation] = useState('')
-  const [selection, setSelection] = useState('')
+    const clickedTokenBoxRef = useRef<HTMLDivElement>(null)
+  const [clickedTokenBoxActive, setClickedTokenBoxActive] = useState(false)
+  const [isClickedTokenTranslationLoading, setIsClickedTokenTranslationLoading] = useState(false)
+  const [clickedTokenTranslation, setClickedTokenTranslation] = useState('')
+  const [clickedToken, setClickedToken] = useState('')
   
   useEffect(() => {
     if (hasStarted && typeof window !== 'undefined' && window.innerWidth < 600) setIsHeaderOpen(false)
@@ -310,23 +309,35 @@ export default function Home() {
     // console.log(focusWords)
     return focusWords
   }
+  const [clickedTokenRange, setClickedTokenRange] = useState<[number, number]>([0, 0]);
 
-  const repositionSelectionBox = () => {
-    // console.log('reposition selection Box')
-    const selection = document.getSelection()
-    if (selection && selection.rangeCount > 0) {
-      const selectionBox = selectionBoxRef.current
-      if (!selectionBox) return
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
+  const repositionClickedTokenBox = () => {
+    if (clickedToken) {
+      const clickedTokenBox = clickedTokenBoxRef.current
+      if (!clickedTokenBox) return;
 
-      // Get the coordinates of the selected text
-      const x = rect.left + window.scrollX;
-      const y = rect.top + window.scrollY;
-      selectionBox.style.top = `${y}px`
-      selectionBox.style.left = `${x}px`
+      const x = clickedTokenRange[0]
+      const y = clickedTokenRange[1]
+
+      // set coords
+      clickedTokenBox.style.top = `${y}px`
+      clickedTokenBox.style.left = `${x}px`
     }
   }
+
+  // if the user clicks outside of the clicked token ref, stop showing the translation box
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clickedTokenBoxRef.current && !clickedTokenBoxRef.current.contains(event.target as Node)) {
+        setClickedTokenBoxActive(false); 
+      }
+    };
+  
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [clickedTokenBoxRef]);
 
   const mixpanelId = useBrickStore(state => state.mixpanelId)
   useEffect(() => {
@@ -350,25 +361,53 @@ export default function Home() {
   useEffect(() => console.log('has Started', hasStarted), [hasStarted])
 
   const incrementTooltipDisplayCount = useBrickStore(state => state.incrementTooltipDisplayCount)
-  const handleSelectionChange = async () => {
-    //   console.log('handle selection change')
-    // Your logic here
-    //   console.log('Selection changed');
-    const selection = document.getSelection()
-    const selectionString = selection?.toString()
-    // console.log(selection, selectionString)
-    // console.log(!Boolean(selectionString))
+  // const handleSelectionChange = async () => {
+  //   //   console.log('handle selection change')
+  //   // Your logic here
+  //   //   console.log('Selection changed');
+  //   const selection = document.getSelection()
+  //   const selectionString = selection?.toString()
+  //   console.log(selection, selectionString)
+  //   // console.log(!Boolean(selectionString))
+  //   const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
+  //   if (!selectionString || !_hasStarted) {
+  //     setClickedTokenBoxActive(false)
+  //     setClickedTokenTranslation('')
+  //     return
+  //   }
+
+  //   setClickedToken(selectionString)
+  //   setClickedTokenBoxActive(true)
+  //   repositionSelectionBox()
+  //   setIsClickedTokenTranslationLoading(true)
+  //   const resp = await fetch(`/api/getEnglishTranslation`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify({
+  //       language: targetLanguage,
+  //       sentence: selectionString
+  //     })
+  //   }).then(resp => resp.json())
+  //   const english = resp.englishTranslation
+  //   setClickedTokenTranslation(english)
+  //   incrementTooltipDisplayCount()
+  //   setIsClickedTokenTranslationLoading(false)
+  // }
+
+  const getClickedTokenTranslation = async () => {
+
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
-    if (!selectionString || !_hasStarted) {
-      setSelectionBoxActive(false)
-      setSelectionTranslation('')
+    if (!clickedToken || !_hasStarted) {
+      setClickedTokenBoxActive(false)
+      setClickedTokenTranslation('')
       return
     }
 
-    setSelection(selectionString)
-    setSelectionBoxActive(true)
-    repositionSelectionBox()
-    setIsSelectionTranslationLoading(true)
+    setClickedTokenBoxActive(true)
+    repositionClickedTokenBox()
+    setIsClickedTokenTranslationLoading(true)
     const resp = await fetch(`/api/getEnglishTranslation`, {
       method: 'POST',
       headers: {
@@ -376,20 +415,25 @@ export default function Home() {
       },
       body: JSON.stringify({
         language: targetLanguage,
-        sentence: selectionString
+        sentence: clickedToken
       })
     }).then(resp => resp.json())
     const english = resp.englishTranslation
-    setSelectionTranslation(english)
+    setClickedTokenTranslation(english)
     incrementTooltipDisplayCount()
-    setIsSelectionTranslationLoading(false)
+    setIsClickedTokenTranslationLoading(false)
   }
+
+  useEffect(() => {
+    getClickedTokenTranslation()
+    repositionClickedTokenBox()
+  }, [clickedToken])
 
   const addSelectionFlashcard = () => {
     // console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
     const flashcard: BasicFlashcard = {
-      front: selection,
-      back: selectionTranslation
+      front: clickedToken,
+      back: clickedTokenTranslation
     }
     addFlashcards([flashcard])
     toast(`Flashcard added!`, { position: "top-center", type: "success" });
@@ -404,17 +448,18 @@ export default function Home() {
     })
     useBrickStore.persist.rehydrate()
 
-    const debouncedSelectionChange = debounce(handleSelectionChange, 300)
+    // const debouncedSelectionChange = debounce(handleSelectionChange, 300)
 
     if (typeof window !== 'undefined') {
-      document.addEventListener("selectionchange", debouncedSelectionChange);
-      window.addEventListener("resize", repositionSelectionBox);
+      // document.addEventListener("selectionchange", debouncedSelectionChange);
+      window.addEventListener("resize", repositionClickedTokenBox);
     }
 
     return () => {
-      document.removeEventListener('selectionchange', debouncedSelectionChange);
-      window.removeEventListener("resize", repositionSelectionBox);
+      // document.removeEventListener('selectionchange', debouncedSelectionChange);
+      window.removeEventListener("resize", repositionClickedTokenBox);
     }
+
   }, [])
 
   useEffect(() => {
@@ -1015,7 +1060,7 @@ export default function Home() {
             {hasStarted ?
 
               <div className='flex-1 flex-grow relative flex flex-col justify-stretch overflow-y-auto'>
-                <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionSelectionBox}>
+                <div id='messages parent' className='w-full overflow-x-hidden flex-grow z-10 relative' onScroll={repositionClickedTokenBox}>
                   {messagesData.map((messageData, index) =>
                     <Bubble
                       ref={messagesEndRef}
@@ -1038,11 +1083,11 @@ export default function Home() {
                       }}
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
-                      handleTokenClick={(token: string) => {
+                      handleTokenClick={(token: string, tokenX: number, tokenY: number) => {
                         // get root word(s) for token
                         const roots: string[] = messageData.tokenDataArr?.find(tokenData => tokenData.token === token)?.root_words || []
-
-                        console.log("handling click for token: " + token + " with roots " + roots)
+                        setClickedToken(token)
+                        setClickedTokenRange([tokenX, tokenY])
 
                         // add all roots that aren't already in prevTokens
                         setClickedRoots(prevTokens => [...prevTokens, ...roots.filter(root => !prevTokens.includes(root))])
@@ -1164,13 +1209,10 @@ export default function Home() {
 
         </section>
       </main>
-      <div ref={selectionBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] max-w-[80%] lg:max-w-[700px] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${selectionBoxActive ? '' : 'invisible'}`}>
-        {!isSelectionTranslationLoading ?
+      <div ref={clickedTokenBoxRef} className={`bg-[var(--background-soft)] text-[var(--text-primary-inverse)] max-w-[80%] lg:max-w-[700px] absolute z-10 p-3 mb-1 -translate-y-[calc(100%+8px)] rounded-md ${clickedTokenBoxActive ? '' : 'invisible'}`}>
+        {!isClickedTokenTranslationLoading ?
           <div className='select-none flex justify-between items-center'>
-            {selectionTranslation}
-            <button onClick={addSelectionFlashcard} data-tooltip-id="add-flashcard" className='hover:bg-gray-300 text-[var(--text-primary-main)] rounded-full ml-2 p-1.5 transition duration-300 ease-in-out transform hover:scale-110 hover:shadow-xl'>
-              <svg className={`w-5 h-5`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-            </button>
+            {clickedTokenTranslation}
           </div>
           : <LoadingBrick className='w-10 h-10 animate-spin' />}
       </div>
