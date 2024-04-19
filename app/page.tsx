@@ -291,22 +291,35 @@ export default function Home() {
     }
     return dueWords
   }
-  const [clickedTokenRange, setClickedTokenRange] = useState<Range | null>(null);
+  const [clickedTokenRange, setClickedTokenRange] = useState<[number, number]>([0, 0]);
 
   const repositionClickedTokenBox = () => {
-    if (clickedToken && clickedTokenBoxActive) {
+    if (clickedToken) {
       const clickedTokenBox = clickedTokenBoxRef.current
-      if (!clickedTokenBox || !clickedTokenRange) return
+      if (!clickedTokenBox) return;
 
-      const rect = clickedTokenRange.getBoundingClientRect();
+      const x = clickedTokenRange[0]
+      const y = clickedTokenRange[1]
 
-      // Get the coordinates of the selected text
-      const x = rect.left + window.scrollX;
-      const y = rect.top + window.scrollY;
+      // set coords
       clickedTokenBox.style.top = `${y}px`
       clickedTokenBox.style.left = `${x}px`
     }
   }
+
+  // if the user clicks outside of the clicked token ref, stop showing the translation box
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clickedTokenBoxRef.current && !clickedTokenBoxRef.current.contains(event.target as Node)) {
+        setClickedTokenBoxActive(false); 
+      }
+    };
+  
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [clickedTokenBoxRef]);
 
   const mixpanelId = useBrickStore(state => state.mixpanelId)
   useEffect(() => {
@@ -365,7 +378,7 @@ export default function Home() {
   //   setIsClickedTokenTranslationLoading(false)
   // }
 
-  const getClickedWordTranslation = async () => {
+  const getClickedTokenTranslation = async () => {
 
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
     if (!clickedToken || !_hasStarted) {
@@ -393,6 +406,11 @@ export default function Home() {
     setIsClickedTokenTranslationLoading(false)
   }
 
+  useEffect(() => {
+    getClickedTokenTranslation()
+    repositionClickedTokenBox()
+  }, [clickedToken])
+
   const addSelectionFlashcard = () => {
     // console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
     const flashcard: BasicFlashcard = {
@@ -414,15 +432,16 @@ export default function Home() {
 
     // const debouncedSelectionChange = debounce(handleSelectionChange, 300)
 
-    // if (typeof window !== 'undefined') {
-    //   document.addEventListener("selectionchange", debouncedSelectionChange);
-    //   window.addEventListener("resize", repositionSelectionBox);
-    // }
+    if (typeof window !== 'undefined') {
+      // document.addEventListener("selectionchange", debouncedSelectionChange);
+      window.addEventListener("resize", repositionClickedTokenBox);
+    }
 
-    // return () => {
-    //   document.removeEventListener('selectionchange', debouncedSelectionChange);
-    //   window.removeEventListener("resize", repositionSelectionBox);
-    // }
+    return () => {
+      // document.removeEventListener('selectionchange', debouncedSelectionChange);
+      window.removeEventListener("resize", repositionClickedTokenBox);
+    }
+
   }, [])
 
   useEffect(() => {
@@ -1007,14 +1026,11 @@ export default function Home() {
                       }}
                       isPlaying={(isAudioPlaying || Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
                       isLoading={(!Boolean(audioQueue.length)) && (currentlyPlayingMessageIndex === index)}
-                      handleTokenClick={(token: string, range: Range) => {
+                      handleTokenClick={(token: string, tokenX: number, tokenY: number) => {
                         // get root word(s) for token
                         const roots: string[] = messageData.tokenDataArr?.find(tokenData => tokenData.token === token)?.root_words || []
                         setClickedToken(token)
-                        setClickedTokenRange(range)
-                        getClickedWordTranslation()
-
-                        console.log("handling click for token: " + token + " with roots " + roots)
+                        setClickedTokenRange([tokenX, tokenY])
 
                         // add all roots that aren't already in prevTokens
                         setClickedRoots(prevTokens => [...prevTokens, ...roots.filter(root => !prevTokens.includes(root))])

@@ -20,7 +20,7 @@ interface BubbleProps {
   handleAudio?: () => void
   isPlaying: boolean
   isLoading: boolean
-  handleTokenClick: (word: string, range: Range) => void
+  handleTokenClick: (word: string, tokenX: number, tokenY: number) => void
 }
 
 const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAudio, isPlaying, isLoading, handleTokenClick }, ref) => {
@@ -73,7 +73,9 @@ const Bubble = forwardRef<HTMLDivElement, BubbleProps>(({ messageData, handleAud
                     // if token is a word, make it clickable
                     token.match(/[a-zA-ZÀ-ž]+/) ?
                       <span key={messageData.id + index + 'p'}>
-                        <span onClick={() => handleTokenClick(token, document.createRange())} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
+                        <span onClick={(element) => {
+                          console.log(element)
+                          handleTokenClick(token, element.clientX, element.clientY)}} style={{ cursor: 'pointer' }} className={tokenData.id == hoveredTokenId ? `bg-yellow-200` : ``} onMouseOver={() => setHoveredTokenId(tokenData.id)} onMouseLeave={() => setHoveredTokenId(null)}>{token}</span>
                         <span>{token_ws}</span>
                       </span>
 
