@@ -122,7 +122,6 @@ export default function Home() {
 
   const { append, messages, input, handleInputChange, setMessages, reload, stop: stopChat, setInput } = useChat({
     onResponse: () => {
-      // console.log('setting to 0')
       setProcessedSentenceChunkCount(0)
       setIsAssistantStreaming(true)
     },
@@ -146,24 +145,15 @@ export default function Home() {
   const textareaContainerRef = useRef<HTMLDivElement | null>(null);
 
   const serializeMessages = useCallback(() => {
-    // console.log('serializing messages')
     if (!hasHydrated) {
       setMessages(zustandMessages)
     } else if (messages.length >= zustandMessages.length && messages.length) {
-      // console.log('setting zustand messages from messages: ', messages)
       setZustandMessages(messages)
     } else if (zustandMessages.length > messages.length) {
-      // console.log('setting messages from zustand messages')
       setMessages(zustandMessages)
     }
   }, [messages, zustandMessages, hasHydrated])
 
-  // const { input: correctionInput, setInput: setCorrectionInput, complete: correctionComplete, stop: stopCorrection, completion } = useCompletion({
-  //   api: '/api/getCorrectedMessageAndFeedback', id: 'correction',
-  //   onResponse: () => setIsCorrectionStreaming(true),
-  //   // onFinish does not have access to the latest data, so we can't do useful operations on the whole [] :( so instead we set streaming to false and do our operations in a useEffect when streaming is false
-  //   onFinish: () => setIsCorrectionStreaming(false)
-  // })
 
 
   useEffect(() => {
@@ -228,33 +218,26 @@ export default function Home() {
 const mixpanelId = useBrickStore(state => state.mixpanelId)
   useEffect(() => {
     if(!hasHydrated) return
-    // const MIXPANEL_CUSTOM_LIB_URL = "https://mixpanel-fork-production.up.railway.app/lib.min.js";
     const MIXPANEL_CUSTOM_LIB_URL = "https://mixpanel-fork-production.up.railway.app/";
 
-    // mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', {api_host: MIXPANEL_CUSTOM_LIB_URL, debug: true, track_pageview: true, persistence: 'localStorage' });
     mixpanel.init('c4095a0ae8a95da78f65b9be3dd476e3', { debug: true, track_pageview: true, persistence: 'localStorage' });
 
     // Set this to a unique identifier for the user performing the event.
     mixpanel.identify(mixpanelId)
 
     console.log('%cmp initialized', 'color: red; background-color: black;')
-    // Track an event. It can be anything, but in this example, we're tracking a Sign Up event.
-    // mixpanel.track('Sign Up', {
-    //   'Signup Type': 'Referral'
-    // })
+
   }, [hasHydrated])
 
   useEffect(() => console.log('has Started', hasStarted), [hasStarted])
 
   const incrementTooltipDisplayCount = useBrickStore(state => state.incrementTooltipDisplayCount)
   const handleSelectionChange = async () => {
- //   console.log('handle selection change')
-    // Your logic here
- //   console.log('Selection changed');
+
     const selection = document.getSelection()
     const selectionString = selection?.toString()
     console.log(selection, selectionString)
-    // console.log(!Boolean(selectionString))
+
     const _hasStarted = useBrickStore.getState().hasStarted // bc normally getting it doesnt work and i tried a callback and it didnt work
     if (!selectionString || !_hasStarted) {
       setSelectionBoxActive(false)
@@ -283,7 +266,6 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
   }
 
   const addSelectionFlashcard = () => {
-   // console.log('add selection flashcard called with front/back: ', selection, selectionTranslation)
     const flashcard: BasicFlashcard = {
       front: selection,
       back: selectionTranslation
@@ -314,13 +296,14 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
     }
   }, [])
 
+
   useEffect(() => {
     console.log('audioPromiseQueue useEffect hit. isProcessingAudioPromise & audioPromiseQueue.length', isProcessingAudioPromise, audioPromiseQueue.length)
     if (isProcessingAudioPromise || audioPromiseQueue.length === 0) return
     console.log('audioPromiseQueue useEffect running w/', audioPromiseQueue)
-    // if(isAudioProcessingRef.current === true) throw new Error('boogagooga')
+
     setIsProcessingAudioPromise(true)
-    // isAudioProcessingRef.current = true
+
     const numToProcess = audioPromiseQueue.length
     console.log('aPQ, processing this many:', numToProcess)
     const promises = Array.from(audioPromiseQueue)
@@ -330,32 +313,27 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
       setAudioPromiseQueue(ps => ps.slice(numToProcess))
       console.log('setting isProcessingAudioPromise to FALSE')
       setIsProcessingAudioPromise(false)
-      // isAudioProcessingRef.current = false
     })
   }, [audioPromiseQueue, isProcessingAudioPromise]);
 
   useEffect(() => {
     console.log('audioQueue useEffect')
     if (audioQueue.length === 0 && audioPromiseQueue.length === 0 && !isAudioPlaying) {
-      console.log('%cspot A so setting to null', 'color: red');
+
       setCurrentlyPlayingMessageIndex(null)}
     if (audioQueue.length === 0 || isAudioPlaying) return;
     console.log('audioQueue useEffect running w/ ', audioQueue)
-    // if(isAudioPlayingRef.current === true) throw new Error('googabooga')
+
     setIsAudioPlaying(true);
-    // isAudioPlayingRef.current = true
 
 
     const currentBlobURL = URL.createObjectURL(audioQueue[0]);
 
     audioRef.current = new Audio(currentBlobURL);
-    // Remove the first item from the audio queue
     
     audioRef.current.onended = () => {
       setAudioQueue(pq => pq.slice(1));
       setIsAudioPlaying(false);
-      // setCurrentlyPlayingMessageIndex(null)
-      // isAudioPlayingRef.current = false
     };
 
     audioRef.current.play().catch((e) => {
@@ -363,10 +341,8 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
       console.error('error playing audio: ', e)
       setIsAudioPlaying(false);
       
-      console.log('%cspot B so setting to null', 'color: red');
       setCurrentlyPlayingMessageIndex(null)
 
-      // isAudioPlayingRef.current = false
     })
 
 
@@ -380,7 +356,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
       body: JSON.stringify({ "input": text })
     }).then(res => res.blob());
     setAudioPromiseQueue(pq => [...pq, blobPromise]);
-    console.log('%cspot C so setting to ', 'color: red', messageIndex);
+
     setCurrentlyPlayingMessageIndex(messageIndex)
   };
 
@@ -433,22 +409,6 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
     } else return
   }
 
-  // useEffect(() => {
-  //   // prevents running on first render
-  //   if (messages.length < 1) return
-  //   // console.log('completion update: ', completion)
-
-  //   // correction is streaming in so this gets called a bunch
-  //   const processCorrectionStream = (completionStream: string) => {
-
-  //     const correctedMessageText = extractTextFromInsideTags(completionStream, 'corrected-message')
-  //     const mistakesText = extractTextFromInsideTags(completionStream, 'mistakes')
-  //     const explanationText = extractTextFromInsideTags(completionStream, 'explanation')
-  //     if (indexOfProcessingMessage === null) throw new Error(`no index of processing message`)
-  //     setMessagesData(pMD => [...pMD.with(indexOfProcessingMessage, { ...pMD[indexOfProcessingMessage], mistakes: mistakesText, correctedMessage: correctedMessageText, explanation: explanationText })])
-  //   }
-  //   processCorrectionStream(completion)
-  // }, [completion])
 
   async function createFlashcardsFromXML(XMLFlashcards: string) {
     console.log('createFlashcards from XML hit')
@@ -668,7 +628,7 @@ const mixpanelId = useBrickStore(state => state.mixpanelId)
     setAudioPromiseQueue([])
     setIsAudioPlaying(false)
     setIsProcessingAudioPromise(false)
-    console.log('%cspot D so setting to null', 'color: red');
+
     setCurrentlyPlayingMessageIndex(null)
   }
 

@@ -1,11 +1,6 @@
 import * as deepl from "deepl-node";
 
 
-// (async () => {
-  //   const result = await translator.translateText("Hello, world!", null, "fr");
-  //   console.log(result.text); // Bonjour, le monde !
-  // })();
-  
   // export const runtime = "edge"; // 'nodejs' is the default
   
   export async function POST(req: Request) {
